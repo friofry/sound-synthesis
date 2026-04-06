@@ -7,6 +7,7 @@ import { parseInstrumentFile, serializeInstrumentFile } from "../engine/fileIO/i
 import { SncCreator } from "../engine/snc/sncCreator";
 import { SimpleMixer } from "../engine/snc/simpleMixer";
 import { executeSncCommands, parseSncText } from "../engine/snc/sncParser";
+import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "../engine/tuning";
 import { encodeWavBlob } from "../engine/snc/wavExport";
 import { GraphModel } from "../engine/graph";
 import type { RawInstrumentNote, SimulationParams, SimulationResult, SimulationWorkerMessage } from "../engine/types";
@@ -315,11 +316,37 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
           const baseIndex = 9;
           const baseFrequency = 440;
           const lengthK = resolveLengthK(safeDurationMs, safeSampleRate, safeTillSilence);
+          const ratioForIndex = (index: number): number => 2 ** ((index - baseIndex) / 12);
+          let calibrationPitchRatio = 1;
           const notes: RawInstrumentNote[] = [];
 
+          setInstrumentGenerationState({
+            instrumentGenerationProgress: 0,
+            instrumentGenerationLabel: "Calibrating first note...",
+          });
+          const firstTargetRatio = ratioForIndex(0);
+          const calibrationGraph = scaleGraphForPitchRatio(graph, firstTargetRatio);
+          calibrationGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
+          const calibrationResult = await runSimulationInWorker(
+            calibrationGraph,
+            {
+              sampleRate: safeSampleRate,
+              lengthK,
+              attenuation: safeAttenuation,
+              squareAttenuation: safeSquareAttenuation,
+              method: safeMethod,
+              playingPoint: calibrationGraph.playingPoint ?? 0,
+            },
+          );
+          const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, safeSampleRate);
+          if (measuredFirstFrequency !== null) {
+            calibrationPitchRatio = derivePitchCalibrationRatio(baseFrequency * firstTargetRatio, measuredFirstFrequency);
+          }
+
           for (let index = 0; index < safeNoteCount; index += 1) {
-            const ratio = 2 ** ((index - baseIndex) / 12);
-            const noteGraph = scaleGraphForPitchRatio(graph, ratio);
+            const targetRatio = ratioForIndex(index);
+            const tunedRatio = targetRatio * calibrationPitchRatio;
+            const noteGraph = scaleGraphForPitchRatio(graph, tunedRatio);
             noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
 
             const result = await runSimulationInWorker(
@@ -347,7 +374,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
               keyLabel: DEFAULT_KEY_LABELS[index] ?? String(index),
               keyCode: DEFAULT_KEYBINDS[index] ?? `Digit${index}`,
               index,
-              frequency: baseFrequency * ratio,
+              frequency: baseFrequency * targetRatio,
               buffer: result.playingPointBuffer,
               sampleRate: safeSampleRate,
             });

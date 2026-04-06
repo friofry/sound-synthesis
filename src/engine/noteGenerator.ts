@@ -1,6 +1,7 @@
 import { GraphModel } from "./graph";
 import { scaleGraphForPitchRatio } from "./gridGenerators";
 import { runSimulation } from "./simulation";
+import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "./tuning";
 import type { RawInstrumentNote, SimulationParams } from "./types";
 import { DEFAULT_KEYBINDS, DEFAULT_KEY_LABELS } from "../components/PianoPlayer/KeyboardMapping";
 
@@ -27,11 +28,32 @@ export function generateInstrumentFromGraph(
   const attenuation = options.attenuation ?? 4;
   const squareAttenuation = options.squareAttenuation ?? (1 / 50) * attenuation;
   const method = options.method ?? "euler";
+  const ratioForIndex = (index: number): number => 2 ** ((index - baseIndex) / 12);
+  let calibrationPitchRatio = 1;
+
+  if (noteCount > 0) {
+    const firstTargetRatio = ratioForIndex(0);
+    const calibrationGraph = scaleGraphForPitchRatio(graph, firstTargetRatio);
+    calibrationGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
+    const calibrationResult = runSimulation(calibrationGraph.toGraphData(), {
+      sampleRate,
+      lengthK,
+      method,
+      attenuation,
+      squareAttenuation,
+      playingPoint: calibrationGraph.playingPoint ?? 0,
+    });
+    const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, sampleRate);
+    if (measuredFirstFrequency !== null) {
+      calibrationPitchRatio = derivePitchCalibrationRatio(baseFrequency * firstTargetRatio, measuredFirstFrequency);
+    }
+  }
 
   const notes: RawInstrumentNote[] = [];
   for (let index = 0; index < noteCount; index += 1) {
-    const ratio = 2 ** ((index - baseIndex) / 12);
-    const noteGraph = scaleGraphForPitchRatio(graph, ratio);
+    const targetRatio = ratioForIndex(index);
+    const tunedRatio = targetRatio * calibrationPitchRatio;
+    const noteGraph = scaleGraphForPitchRatio(graph, tunedRatio);
     noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
     const result = runSimulation(noteGraph.toGraphData(), {
       sampleRate,
@@ -47,7 +69,7 @@ export function generateInstrumentFromGraph(
       keyLabel: DEFAULT_KEY_LABELS[index] ?? String(index),
       keyCode: DEFAULT_KEYBINDS[index] ?? `Digit${index}`,
       index,
-      frequency: baseFrequency * ratio,
+      frequency: baseFrequency * targetRatio,
       buffer: result.playingPointBuffer,
       sampleRate,
     });

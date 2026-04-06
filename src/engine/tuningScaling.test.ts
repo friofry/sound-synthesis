@@ -2,29 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GraphModel } from "./graph";
 import { scaleGraphForPitchRatio, stiffnessRatioForPitchRatio } from "./gridGenerators";
 import { runSimulation } from "./simulation";
-
-function estimateFrequencyFromZeroCrossings(buffer: Float32Array, sampleRate: number): number {
-  const start = Math.floor(buffer.length * 0.1);
-  const end = Math.floor(buffer.length * 0.9);
-  const crossings: number[] = [];
-
-  for (let i = start + 1; i < end; i += 1) {
-    if (buffer[i - 1] <= 0 && buffer[i] > 0) {
-      crossings.push(i);
-    }
-  }
-
-  if (crossings.length < 4) {
-    throw new Error("Not enough zero crossings to estimate frequency.");
-  }
-
-  const periods: number[] = [];
-  for (let i = 1; i < crossings.length; i += 1) {
-    periods.push(crossings[i] - crossings[i - 1]);
-  }
-  const averagePeriod = periods.reduce((sum, value) => sum + value, 0) / periods.length;
-  return sampleRate / averagePeriod;
-}
+import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "./tuning";
 
 function buildSingleSpringGraph(baseK: number): GraphModel {
   const graph = new GraphModel();
@@ -44,7 +22,11 @@ function simulateFundamental(graph: GraphModel, sampleRate: number): number {
     squareAttenuation: 0,
     playingPoint: graph.playingPoint ?? 0,
   });
-  return estimateFrequencyFromZeroCrossings(result.playingPointBuffer, sampleRate);
+  const frequency = estimateFrequencyFromZeroCrossings(result.playingPointBuffer, sampleRate);
+  if (frequency === null) {
+    throw new Error("Unable to estimate fundamental frequency");
+  }
+  return frequency;
 }
 
 describe("pitch-to-stiffness scaling", () => {
@@ -63,5 +45,11 @@ describe("pitch-to-stiffness scaling", () => {
     const observedRatio = octaveFrequency / baseFrequency;
 
     expect(Math.abs(observedRatio - 2)).toBeLessThan(0.15);
+  });
+
+  it("derives calibration ratio from measured first note frequency", () => {
+    expect(derivePitchCalibrationRatio(200, 100)).toBe(2);
+    expect(derivePitchCalibrationRatio(100, 200)).toBe(0.5);
+    expect(derivePitchCalibrationRatio(100, 0)).toBe(1);
   });
 });
