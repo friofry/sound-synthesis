@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:wasm && tsc -b && vite build",
+    "build:docker": "vite build",
     "build:wasm": "src/engine/wasm/build.sh",
     "lint": "eslint .",
     "preview": "vite preview",
