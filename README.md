@@ -41,6 +41,11 @@ The system is integrated in time with one of two numerical methods:
 - `Euler-Cramer`
 - `Runge-Kutta (RK4)`
 
+Related references:
+
+- `Euler-Cramer` is a variant of the [Euler method](https://en.wikipedia.org/wiki/Euler_method)
+- `Runge-Kutta (RK4)` belongs to the [Runge-Kutta methods](https://en.wikipedia.org/wiki/Runge%E2%80%93Kutta_methods) family
+
 For `Euler-Cramer`, the update is:
 
 `v(t + dt) = v(t) + a(t) * dt`  
@@ -53,6 +58,8 @@ The output signal is taken from the selected `playingPoint`:
 `s[n] = u_playingPoint(n)`
 
 This sampled displacement becomes the waveform of a note. The final buffer is then exported as a `16-bit PCM WAV` file.
+
+The physical behavior of elastic points and restoring forces in this model is related to the [harmonic oscillator](https://en.wikipedia.org/wiki/Harmonic_oscillator) concept.
 
 ## Documentation
 
