@@ -80,7 +80,21 @@ function App() {
       {
         id: "help",
         label: "Help",
-        items: [{ id: "about", label: "About", disabled: true }],
+        items: [
+          {
+            id: "documentation",
+            label: "Documentation",
+            onClick: () => window.open("http://swsoft.nsu.ru/~iivanov/", "_blank", "noopener,noreferrer"),
+          },
+          { kind: "separator", id: "help-sep-0" },
+          {
+            id: "contribute",
+            label: "Contribute",
+            onClick: () => window.open("https://github.com/friofry/sound-synthesis", "_blank", "noopener,noreferrer"),
+          },
+          { kind: "separator", id: "help-sep-1" },
+          { id: "about", label: "About", disabled: true },
+        ],
       },
     ],
     [openCellTemplateDialog, openHexTemplateDialog, openInsertDialog, resetViewport, tab, zoomViewport],
