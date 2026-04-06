@@ -9,10 +9,28 @@ import type {
 
 const DEFAULT_EDGE_FADE_MS = 2;
 
-type PackedSparseMatrix = {
-  row: Uint32Array;
-  col: Uint32Array;
-  value: Float64Array;
+type FreeFreeEdges = {
+  edgeI: Uint32Array;
+  edgeJ: Uint32Array;
+  kOverMassI: Float64Array;
+  kOverMassJ: Float64Array;
+};
+
+type FreeFixedEdges = {
+  freeIndex: Uint32Array;
+  kOverMass: Float64Array;
+};
+
+type SplitEdges = {
+  freeFree: FreeFreeEdges;
+  freeFixed: FreeFixedEdges;
+};
+
+type FreeNodeMapping = {
+  freeToGlobal: Uint32Array;
+  globalToFree: Int32Array;
+  initialU: Float64Array;
+  initialV: Float64Array;
 };
 
 type RungeKuttaWorkspace = {
@@ -38,7 +56,7 @@ type RunSimulationOptions = {
   capture?: SimulationCaptureMode;
 };
 
-export function runSimulationOptimized(
+export function runSimulationEdgeTypes(
   graph: GraphData,
   params: SimulationParams,
   onProgress?: (completed: number, total: number) => void,
@@ -48,21 +66,38 @@ export function runSimulationOptimized(
   const totalSamples = params.lengthK * 1024;
   const captureMode = options?.capture ?? "full";
   const captureFull = captureMode === "full";
-  const playingPoint = Math.max(0, Math.min(totalDots - 1, graph.playingPoint ?? params.playingPoint));
-  const runtime = createOptimizedRuntimeStepper(graph, params);
+  const playingPointGlobal = Math.max(0, Math.min(totalDots - 1, graph.playingPoint ?? params.playingPoint));
+  const mapping = createFreeNodeMapping(graph);
+  const freeCount = mapping.freeToGlobal.length;
+  const playingPointFree = mapping.globalToFree[playingPointGlobal];
+  const dt = 1 / params.sampleRate;
+  const edges = createSplitEdges(graph, mapping.globalToFree);
+
+  const state: SimulationState = {
+    u: mapping.initialU.slice(),
+    v: mapping.initialV.slice(),
+  };
+  const eulerSpring = new Float64Array(freeCount);
+  const rk = createRungeKuttaWorkspace(freeCount);
 
   const frames = captureFull ? new Array<Float64Array>(totalSamples) : [];
   const playingPointBuffer = new Float32Array(totalSamples);
   const packedHistory = captureFull ? new Float64Array(totalSamples * totalDots) : null;
 
   for (let sample = 0; sample < totalSamples; sample += 1) {
-    runtime.step(1);
-    const u = runtime.state.u;
+    if (params.method === "runge-kutta") {
+      rungeKuttaStepEdgeTypes(state, edges, dt, params.attenuation, params.squareAttenuation, rk);
+    } else {
+      eulerCramerStepEdgeTypes(state, edges, dt, params.attenuation, params.squareAttenuation, eulerSpring);
+    }
 
     if (packedHistory) {
-      packedHistory.set(u, sample * totalDots);
+      const offset = sample * totalDots;
+      for (let i = 0; i < mapping.freeToGlobal.length; i += 1) {
+        packedHistory[offset + mapping.freeToGlobal[i]] = state.u[i];
+      }
     }
-    playingPointBuffer[sample] = u[playingPoint] ?? 0;
+    playingPointBuffer[sample] = playingPointFree >= 0 ? state.u[playingPointFree] ?? 0 : 0;
 
     if (onProgress && (sample % 128 === 0 || sample === totalSamples - 1)) {
       onProgress(sample + 1, totalSamples);
@@ -95,56 +130,57 @@ export function runSimulationOptimized(
   };
 }
 
-export function createOptimizedRuntimeStepper(graph: GraphData, params: SimulationParams): RuntimeSimulationStepper {
+export function createEdgeTypesRuntimeStepper(graph: GraphData, params: SimulationParams): RuntimeSimulationStepper {
   const totalDots = graph.dots.length;
   const dt = 1 / params.sampleRate;
-  const matrix = createPackedConnectionMatrix(graph);
-  const fixedIndices = collectFixedIndices(graph);
+  const mapping = createFreeNodeMapping(graph);
+  const edges = createSplitEdges(graph, mapping.globalToFree);
+  const freeCount = mapping.freeToGlobal.length;
   const state: SimulationState = {
     u: new Float64Array(totalDots),
     v: new Float64Array(totalDots),
   };
+  const dynamicState: SimulationState = {
+    u: mapping.initialU.slice(),
+    v: mapping.initialV.slice(),
+  };
 
-  for (let i = 0; i < totalDots; i += 1) {
-    const dot = graph.dots[i];
-    state.u[i] = dot.fixed ? 0 : dot.u;
-    state.v[i] = dot.fixed ? 0 : dot.v;
+  for (let i = 0; i < mapping.freeToGlobal.length; i += 1) {
+    const globalIndex = mapping.freeToGlobal[i];
+    state.u[globalIndex] = dynamicState.u[i];
+    state.v[globalIndex] = dynamicState.v[i];
   }
 
-  const eulerSpring = new Float64Array(totalDots);
-  const rk = createRungeKuttaWorkspace(totalDots);
+  const eulerSpring = new Float64Array(freeCount);
+  const rk = createRungeKuttaWorkspace(freeCount);
 
   return {
     state,
     step(steps = 1) {
       for (let s = 0; s < steps; s += 1) {
         if (params.method === "runge-kutta") {
-          rungeKuttaStepOptimized(state, matrix, dt, params.attenuation, params.squareAttenuation, rk);
+          rungeKuttaStepEdgeTypes(dynamicState, edges, dt, params.attenuation, params.squareAttenuation, rk);
         } else {
-          eulerCramerStepOptimized(state, matrix, dt, params.attenuation, params.squareAttenuation, eulerSpring);
+          eulerCramerStepEdgeTypes(dynamicState, edges, dt, params.attenuation, params.squareAttenuation, eulerSpring);
         }
+      }
 
-        for (const index of fixedIndices) {
-          state.u[index] = 0;
-          state.v[index] = 0;
-        }
+      for (let i = 0; i < mapping.freeToGlobal.length; i += 1) {
+        const globalIndex = mapping.freeToGlobal[i];
+        state.u[globalIndex] = dynamicState.u[i];
+        state.v[globalIndex] = dynamicState.v[i];
       }
     },
   };
 }
 
-function createPackedConnectionMatrix(graph: GraphData): PackedSparseMatrix {
-  const row: number[] = [];
-  const col: number[] = [];
-  const value: number[] = [];
-
-  const add = (i: number, j: number, v: number) => {
-    if (v !== 0) {
-      row.push(i);
-      col.push(j);
-      value.push(v);
-    }
-  };
+function createSplitEdges(graph: GraphData, globalToFree: Int32Array): SplitEdges {
+  const edgeI: number[] = [];
+  const edgeJ: number[] = [];
+  const kOverMassI: number[] = [];
+  const kOverMassJ: number[] = [];
+  const freeIndex: number[] = [];
+  const kOverMass: number[] = [];
 
   for (const line of graph.lines) {
     const d1 = graph.dots[line.dot1];
@@ -154,50 +190,81 @@ function createPackedConnectionMatrix(graph: GraphData): PackedSparseMatrix {
     }
 
     if (!d1.fixed && !d2.fixed) {
-      add(line.dot1, line.dot1, -line.k / d1.weight);
-      add(line.dot1, line.dot2, line.k / d1.weight);
-      add(line.dot2, line.dot2, -line.k / d2.weight);
-      add(line.dot2, line.dot1, line.k / d2.weight);
+      edgeI.push(globalToFree[line.dot1]);
+      edgeJ.push(globalToFree[line.dot2]);
+      kOverMassI.push(line.k / d1.weight);
+      kOverMassJ.push(line.k / d2.weight);
       continue;
     }
 
     if (!d1.fixed) {
-      add(line.dot1, line.dot1, -line.k / d1.weight);
+      freeIndex.push(globalToFree[line.dot1]);
+      kOverMass.push(-line.k / d1.weight);
     }
     if (!d2.fixed) {
-      add(line.dot2, line.dot2, -line.k / d2.weight);
+      freeIndex.push(globalToFree[line.dot2]);
+      kOverMass.push(-line.k / d2.weight);
     }
   }
 
   return {
-    row: Uint32Array.from(row),
-    col: Uint32Array.from(col),
-    value: Float64Array.from(value),
+    freeFree: {
+      edgeI: Uint32Array.from(edgeI),
+      edgeJ: Uint32Array.from(edgeJ),
+      kOverMassI: Float64Array.from(kOverMassI),
+      kOverMassJ: Float64Array.from(kOverMassJ),
+    },
+    freeFixed: {
+      freeIndex: Uint32Array.from(freeIndex),
+      kOverMass: Float64Array.from(kOverMass),
+    },
   };
 }
 
-function collectFixedIndices(graph: GraphData): number[] {
-  const fixed: number[] = [];
-  for (let i = 0; i < graph.dots.length; i += 1) {
-    if (graph.dots[i].fixed) {
-      fixed.push(i);
+function createFreeNodeMapping(graph: GraphData): FreeNodeMapping {
+  const globalToFree = new Int32Array(graph.dots.length);
+  globalToFree.fill(-1);
+  const freeToGlobal: number[] = [];
+  const initialU: number[] = [];
+  const initialV: number[] = [];
+
+  for (let globalIndex = 0; globalIndex < graph.dots.length; globalIndex += 1) {
+    const dot = graph.dots[globalIndex];
+    if (!dot.fixed) {
+      const freeIndex = freeToGlobal.length;
+      freeToGlobal.push(globalIndex);
+      globalToFree[globalIndex] = freeIndex;
+      initialU.push(dot.u);
+      initialV.push(dot.v);
     }
   }
-  return fixed;
+
+  return {
+    freeToGlobal: Uint32Array.from(freeToGlobal),
+    globalToFree,
+    initialU: Float64Array.from(initialU),
+    initialV: Float64Array.from(initialV),
+  };
 }
 
-function multiplyPackedSparse(
-  n: number,
-  vector: FloatArray,
-  matrix: PackedSparseMatrix,
-  out: FloatArray,
-): FloatArray {
-  const result = out.length === n ? out : new Float64Array(n);
-  result.fill(0);
-  for (let i = 0; i < matrix.value.length; i += 1) {
-    result[matrix.row[i]] += matrix.value[i] * vector[matrix.col[i]];
+function computeSpringAcceleration(u: FloatArray, edges: SplitEdges, out: FloatArray): FloatArray {
+  out.fill(0);
+  const { freeFree, freeFixed } = edges;
+
+  for (let e = 0; e < freeFree.edgeI.length; e += 1) {
+    const i = freeFree.edgeI[e];
+    const j = freeFree.edgeJ[e];
+    const du = u[j] - u[i];
+    out[i] += freeFree.kOverMassI[e] * du;
+    out[j] -= freeFree.kOverMassJ[e] * du;
   }
-  return result;
+
+  for (let e = 0; e < freeFixed.freeIndex.length; e += 1) {
+    const i = freeFixed.freeIndex[e];
+    out[i] += freeFixed.kOverMass[e] * u[i];
+  }
+
+  return out;
 }
 
 function applySquareAttenuation(acceleration: FloatArray, velocity: FloatArray, squareAttenuation: number): void {
@@ -206,16 +273,16 @@ function applySquareAttenuation(acceleration: FloatArray, velocity: FloatArray, 
   }
 }
 
-function eulerCramerStepOptimized(
+function eulerCramerStepEdgeTypes(
   state: SimulationState,
-  matrix: PackedSparseMatrix,
+  edges: SplitEdges,
   dt: number,
   attenuation: number,
   squareAttenuation: number,
   springScratch: FloatArray,
 ): void {
   const { u, v } = state;
-  const spring = multiplyPackedSparse(u.length, u, matrix, springScratch);
+  const spring = computeSpringAcceleration(u, edges, springScratch);
   for (let i = 0; i < u.length; i += 1) {
     spring[i] -= attenuation * v[i];
   }
@@ -227,9 +294,9 @@ function eulerCramerStepOptimized(
   }
 }
 
-function rungeKuttaStepOptimized(
+function rungeKuttaStepEdgeTypes(
   state: SimulationState,
-  matrix: PackedSparseMatrix,
+  edges: SplitEdges,
   dt: number,
   attenuation: number,
   squareAttenuation: number,
@@ -237,7 +304,7 @@ function rungeKuttaStepOptimized(
 ): void {
   const n = state.u.length;
   const { k1u, k1v, u2, v2, u3, v3, u4, v4, k2v, k3v, k4v } = workspace;
-  buildAcceleration(state.u, state.v, matrix, attenuation, squareAttenuation, k1v);
+  buildAcceleration(state.u, state.v, edges, attenuation, squareAttenuation, k1v);
 
   for (let i = 0; i < n; i += 1) {
     k1u[i] = state.v[i];
@@ -248,21 +315,21 @@ function rungeKuttaStepOptimized(
     v2[i] = state.v[i] + (k1v[i] * dt) / 2;
   }
   const k2u = v2;
-  buildAcceleration(u2, v2, matrix, attenuation, squareAttenuation, k2v);
+  buildAcceleration(u2, v2, edges, attenuation, squareAttenuation, k2v);
 
   for (let i = 0; i < n; i += 1) {
     u3[i] = state.u[i] + (k2u[i] * dt) / 2;
     v3[i] = state.v[i] + (k2v[i] * dt) / 2;
   }
   const k3u = v3;
-  buildAcceleration(u3, v3, matrix, attenuation, squareAttenuation, k3v);
+  buildAcceleration(u3, v3, edges, attenuation, squareAttenuation, k3v);
 
   for (let i = 0; i < n; i += 1) {
     u4[i] = state.u[i] + k3u[i] * dt;
     v4[i] = state.v[i] + k3v[i] * dt;
   }
   const k4u = v4;
-  buildAcceleration(u4, v4, matrix, attenuation, squareAttenuation, k4v);
+  buildAcceleration(u4, v4, edges, attenuation, squareAttenuation, k4v);
 
   for (let i = 0; i < n; i += 1) {
     state.u[i] += (dt / 6) * (k1u[i] + 2 * k2u[i] + 2 * k3u[i] + k4u[i]);
@@ -273,12 +340,12 @@ function rungeKuttaStepOptimized(
 function buildAcceleration(
   u: FloatArray,
   v: FloatArray,
-  matrix: PackedSparseMatrix,
+  edges: SplitEdges,
   attenuation: number,
   squareAttenuation: number,
   out: FloatArray,
 ): FloatArray {
-  const acceleration = multiplyPackedSparse(u.length, u, matrix, out);
+  const acceleration = computeSpringAcceleration(u, edges, out);
   for (let i = 0; i < u.length; i += 1) {
     acceleration[i] -= attenuation * v[i];
   }

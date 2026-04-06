@@ -28,6 +28,8 @@ export const Default: Story = {
       attenuation: 4,
       squareAttenuation: 0.08,
       method: "euler",
+      backend: "wasm-hotloop",
+      precision: 64,
     },
   },
 };
@@ -40,6 +42,8 @@ export const RungeKutta: Story = {
       attenuation: 2,
       squareAttenuation: 0.02,
       method: "runge-kutta",
+      backend: "wasm-hotloop",
+      precision: 64,
     },
   },
 };

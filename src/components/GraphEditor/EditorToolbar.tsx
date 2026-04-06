@@ -11,7 +11,7 @@ type ToolEntry = MfcToolbarItem<ToolMode> & {
 
 const TOOLS: Array<ToolEntry | MfcToolbarSeparator> = [
   { id: "move-group", spriteIndex: 0, label: "Move group", implemented: true },
-  { id: "drag-point", spriteIndex: 1, label: "Drag point", implemented: true },
+  { id: "drag-point", spriteIndex: 0, label: "Drag point", implemented: true },
   { id: "drag-viewport", spriteIndex: 1, label: "Drag viewport", implemented: true },
   { kind: "separator", id: "sep-1" },
   { id: "modify-point", spriteIndex: 2, label: "Modify point", implemented: true },
@@ -63,6 +63,7 @@ export type EditorToolbarViewProps = {
   onSelectTool: (tool: ToolMode) => void;
   onAddCellGraph: () => void;
   onAddHexGraph: () => void;
+  onReprepareAndGenerate: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
 };
@@ -72,6 +73,7 @@ export function EditorToolbarView({
   onSelectTool,
   onAddCellGraph,
   onAddHexGraph,
+  onReprepareAndGenerate,
   onZoomIn,
   onZoomOut,
 }: EditorToolbarViewProps) {
@@ -86,11 +88,15 @@ export function EditorToolbarView({
         buttonClassName="toolbar-icon-btn"
         renderItem={(entry) => (
           <>
-            <span
-              className="toolbar-sprite toolbar3-sprite"
-              style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
-              aria-hidden
-            />
+            {entry.id === "move-group" ? (
+              <span className="toolbar-selection-rect-icon" aria-hidden />
+            ) : (
+              <span
+                className="toolbar-sprite toolbar3-sprite"
+                style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
+                aria-hidden
+              />
+            )}
             <span className="sr-only">{entry.label}</span>
           </>
         )}
@@ -119,6 +125,15 @@ export function EditorToolbarView({
             <span className="toolbar-sprite toolbar3-sprite" style={{ "--sprite-index": 8 } as CSSProperties} aria-hidden />
             <span className="sr-only">Add hexagonal graph</span>
           </span>
+        </button>
+        <button
+          type="button"
+          className="mfc-toolbar-button toolbar-icon-btn"
+          onClick={onReprepareAndGenerate}
+          title="Reprepare graph and generate octaves (2)"
+          aria-label="Reprepare graph and generate octaves (2)"
+        >
+          <span className="mfc-toolbar-button-content">🔄</span>
         </button>
       </div>
       <MfcToolbar
@@ -169,7 +184,11 @@ export function EditorToolbarView({
   );
 }
 
-export function EditorToolbar() {
+type EditorToolbarProps = {
+  onReprepareAndGenerate?: () => void;
+};
+
+export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
   const { tool, setTool, openCellTemplateDialog, openHexTemplateDialog, zoomViewport } = useGraphStore();
 
   return (
@@ -178,6 +197,7 @@ export function EditorToolbar() {
       onSelectTool={setTool}
       onAddCellGraph={openCellTemplateDialog}
       onAddHexGraph={openHexTemplateDialog}
+      onReprepareAndGenerate={onReprepareAndGenerate ?? (() => {})}
       onZoomIn={() => zoomViewport(1.25)}
       onZoomOut={() => zoomViewport(1 / 1.25)}
     />

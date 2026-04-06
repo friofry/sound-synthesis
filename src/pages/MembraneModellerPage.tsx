@@ -18,7 +18,6 @@ import { PianoToolbar } from "../components/PianoPlayer/PianoToolbar";
 import { OscillogramView } from "../components/PianoPlayer/OscillogramView";
 import { FrequencyAnalyzer } from "../components/PianoPlayer/FrequencyAnalyzer";
 import { MfcSplitView } from "../components/ui/MfcSplitView";
-import type { DistributionMode } from "../components/GraphEditor/dialogs/GroupModifyDialog";
 import type { GridType, StiffnessType } from "../engine/types";
 import { useGraphStore } from "../store/graphStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
@@ -32,6 +31,8 @@ export function MembraneModellerPage() {
     insertDialog,
     canvasSize,
     closeInsertDialog,
+    createPresetGraph,
+    setDefaults,
   } = useGraphStore();
 
   const {
@@ -48,9 +49,11 @@ export function MembraneModellerPage() {
     generateNotesDialogOpen,
     generateNotesSettings,
     isGeneratingInstrument,
+    generationProgressDialogOpen,
     instrumentGenerationProgress,
     instrumentGenerationLabel,
     closeGenerateNotesDialog,
+    closeGenerationProgressDialog,
     handleConfirmGenerateNotes,
     handleToggleRecording,
     handleSaveInstrument,
@@ -60,13 +63,7 @@ export function MembraneModellerPage() {
   } = usePianoToolbar({ graph, simulationParams });
 
   const InitializeFuzzyGraph = useCallback(() => {
-    const graphTypes: GridType[] = ["cell", "triangle", "astra", "hexagon"];
-    const randomGraphType = graphTypes[randomInt(0, graphTypes.length - 1)];
-    const randomSize = randomInt(30, 50);
-    const randomStiffness = randomFloat(0.5, 2.5);
-    const randomAmplitude = randomFloat(0.5, 1);
-    const randomStiffnessType: StiffnessType = Math.random() < 0.5 ? "tetradic" : "isotropic";
-    const distribution: DistributionMode = "smoothed";
+    const randomPreset = createRandomPresetConfig();
 
     const initialState = useGraphStore.getState();
     const width = Math.max(1, initialState.canvasSize.width);
@@ -74,95 +71,30 @@ export function MembraneModellerPage() {
 
     initialState.setDefaults({
       fixedBorder: true,
-      stiffnessType: randomStiffnessType,
-      defaultStiffness: randomStiffness,
+      stiffnessType: randomPreset.stiffnessType,
+      defaultStiffness: randomPreset.stiffness,
     });
 
-    initialState.createPresetGraph(randomGraphType, {
-      n: randomSize,
-      m: randomSize,
-      layers: randomSize,
-      stiffness: randomStiffness,
+    initialState.createPresetGraph(randomPreset.graphType, {
+      n: randomPreset.size,
+      m: randomPreset.size,
+      layers: randomPreset.size,
+      stiffness: randomPreset.stiffness,
       weight: initialState.defaultWeight,
       fixedBorder: true,
-      stiffnessType: randomStiffnessType,
+      stiffnessType: randomPreset.stiffnessType,
       width,
       height,
-    });
-
-    const stateAfterCreate = useGraphStore.getState();
-    const generatedGraph = stateAfterCreate.graph;
-    if (!generatedGraph.dots.length) {
-      return;
-    }
-
-    const bounds = generatedGraph.dots.reduce(
-      (acc, dot) => ({
-        minX: Math.min(acc.minX, dot.x),
-        maxX: Math.max(acc.maxX, dot.x),
-        minY: Math.min(acc.minY, dot.y),
-        maxY: Math.max(acc.maxY, dot.y),
-      }),
-      {
-        minX: Number.POSITIVE_INFINITY,
-        maxX: Number.NEGATIVE_INFINITY,
-        minY: Number.POSITIVE_INFINITY,
-        maxY: Number.NEGATIVE_INFINITY,
+    }, {
+      playingPointMode: "center",
+      centerGroup: {
+        enabled: true,
+        maxAmplitude: randomPreset.amplitude,
+        maxWeight: initialState.defaultWeight,
+        stiffness: randomPreset.stiffness,
+        distribution: "smoothed",
+        fixMode: "none",
       },
-    );
-
-    const centerX = (bounds.minX + bounds.maxX) / 2;
-    const centerY = (bounds.minY + bounds.maxY) / 2;
-    const centerDotIndex = generatedGraph.dots.reduce(
-      (best, dot, idx) => {
-        if (dot.fixed) {
-          return best;
-        }
-
-        const distance = Math.hypot(dot.x - centerX, dot.y - centerY);
-        return distance < best.distance ? { idx, distance } : best;
-      },
-      { idx: -1, distance: Number.POSITIVE_INFINITY },
-    ).idx;
-
-    if (centerDotIndex >= 0) {
-      stateAfterCreate.setPlayingPoint(centerDotIndex);
-    }
-
-    const areaRatio = Math.sqrt(0.5);
-    const rectWidth = (bounds.maxX - bounds.minX) * areaRatio;
-    const rectHeight = (bounds.maxY - bounds.minY) * areaRatio;
-    const rect = {
-      x1: centerX - rectWidth / 2,
-      y1: centerY - rectHeight / 2,
-      x2: centerX + rectWidth / 2,
-      y2: centerY + rectHeight / 2,
-    };
-
-    stateAfterCreate.updateGraph((next) => {
-      const cx = (rect.x1 + rect.x2) / 2;
-      const cy = (rect.y1 + rect.y2) / 2;
-      const radius = Math.max(1, Math.hypot(rect.x2 - cx, rect.y2 - cy));
-
-      const selected = next.dots
-        .map((dot, idx) => ({ dot, idx }))
-        .filter(
-          ({ dot }) =>
-            dot.x >= Math.min(rect.x1, rect.x2) &&
-            dot.x <= Math.max(rect.x1, rect.x2) &&
-            dot.y >= Math.min(rect.y1, rect.y2) &&
-            dot.y <= Math.max(rect.y1, rect.y2),
-        );
-
-      selected.forEach(({ dot, idx }) => {
-        const dist = Math.hypot(dot.x - cx, dot.y - cy);
-        const factor = distribution === "smoothed" ? Math.max(0, 1 - dist / radius) : 1;
-        next.setDotProps(idx, {
-          u: randomAmplitude * factor,
-          weight: stateAfterCreate.defaultWeight * Math.max(0.1, factor),
-          fixed: dot.fixed,
-        });
-      });
     });
   }, []);
 
@@ -174,13 +106,67 @@ export function MembraneModellerPage() {
     InitializeFuzzyGraph();
   }, [InitializeFuzzyGraph]);
 
+  const handleReprepareAndGenerate = useCallback(() => {
+    const randomPreset = createRandomPresetConfig();
+    const currentState = useGraphStore.getState();
+    const width = Math.max(1, currentState.canvasSize.width);
+    const height = Math.max(1, currentState.canvasSize.height);
+
+    setDefaults({
+      fixedBorder: true,
+      stiffnessType: randomPreset.stiffnessType,
+      defaultStiffness: randomPreset.stiffness,
+    });
+
+    createPresetGraph(randomPreset.graphType, {
+      n: randomPreset.size,
+      m: randomPreset.size,
+      layers: randomPreset.size,
+      stiffness: randomPreset.stiffness,
+      weight: currentState.defaultWeight,
+      fixedBorder: true,
+      stiffnessType: randomPreset.stiffnessType,
+      width,
+      height,
+    }, {
+      playingPointMode: "center",
+      centerGroup: {
+        enabled: true,
+        maxAmplitude: randomPreset.amplitude,
+        maxWeight: currentState.defaultWeight,
+        stiffness: randomPreset.stiffness,
+        distribution: "smoothed",
+        fixMode: "none",
+      },
+    });
+
+    const preparedGraph = useGraphStore.getState().graph.clone();
+    void handleConfirmGenerateNotes({
+      octaves: 2,
+      attenuation: generateNotesSettings.attenuation,
+      squareAttenuation: generateNotesSettings.squareAttenuation,
+      durationMs: 150,
+      tillSilence: false,
+      sampleRate: 44100,
+      method: "runge-kutta",
+      backend: "wasm-hotloop",
+      precision: 64,
+    }, preparedGraph);
+  }, [
+    createPresetGraph,
+    generateNotesSettings.attenuation,
+    generateNotesSettings.squareAttenuation,
+    handleConfirmGenerateNotes,
+    setDefaults,
+  ]);
+
   return (
     <section className="workspace-layout">
       <MfcSplitView className="workspace-split-view" defaultRatio={0.5} minPaneSize={280}>
         <section className="graph-pane">
           <section className="graph-pane-inner">
             <aside className="tool-column">
-              <EditorToolbar />
+              <EditorToolbar onReprepareAndGenerate={handleReprepareAndGenerate} />
             </aside>
             <div className="graph-stage">
               <GraphCanvas />
@@ -230,9 +216,10 @@ export function MembraneModellerPage() {
               onSubmit={handleConfirmGenerateNotes}
             />
             <GenerationProgressDialog
-              open={isGeneratingInstrument}
+              open={isGeneratingInstrument && generationProgressDialogOpen}
               progress={instrumentGenerationProgress}
               label={instrumentGenerationLabel}
+              onClose={closeGenerationProgressDialog}
             />
             <PianoKeyboard
               noteCount={noteCount}
@@ -249,7 +236,24 @@ export function MembraneModellerPage() {
       <GroupModifyDialog />
       <CellTemplateDialog />
       <HexTemplateDialog />
-      <InsertGraphDialog open={insertDialog.open} canvasSize={canvasSize} onClose={closeInsertDialog} />
+      <InsertGraphDialog
+        open={insertDialog.open}
+        canvasSize={canvasSize}
+        onGenerateOctaves123={(octaves) => {
+          void handleConfirmGenerateNotes({
+            octaves,
+            attenuation: generateNotesSettings.attenuation,
+            squareAttenuation: generateNotesSettings.squareAttenuation,
+            durationMs: 150,
+            tillSilence: false,
+            sampleRate: 44100,
+            method: "runge-kutta",
+            backend: "wasm-hotloop",
+            precision: 64,
+          });
+        }}
+        onClose={closeInsertDialog}
+      />
     </section>
   );
 }
@@ -260,4 +264,21 @@ function randomInt(min: number, max: number): number {
 
 function randomFloat(min: number, max: number): number {
   return min + Math.random() * (max - min);
+}
+
+function createRandomPresetConfig(): {
+  graphType: GridType;
+  size: number;
+  stiffness: number;
+  amplitude: number;
+  stiffnessType: StiffnessType;
+} {
+  const graphTypes: GridType[] = ["cell", "triangle", "astra", "hexagon"];
+  return {
+    graphType: graphTypes[randomInt(0, graphTypes.length - 1)],
+    size: randomInt(30, 50),
+    stiffness: randomFloat(0.5, 2.5),
+    amplitude: randomFloat(0.5, 1),
+    stiffnessType: Math.random() < 0.5 ? "tetradic" : "isotropic",
+  };
 }

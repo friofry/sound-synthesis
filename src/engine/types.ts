@@ -20,6 +20,8 @@ export const DEFAULT_SQUARE_ATTENUATION = (1 / 50) * DEFAULT_ATTENUATION;
 export type StiffnessType = "isotropic" | "tetradic";
 export type GridType = "cell" | "perimeter" | "empty" | "triangle" | "astra" | "hexagon";
 export type SimMethod = "euler" | "runge-kutta";
+export type SimulationPrecision = 32 | 64;
+export type FloatArray = Float32Array | Float64Array;
 
 export type ToolMode =
   | "add-point-link"
@@ -104,24 +106,49 @@ export interface SimulationParams {
 }
 
 export interface SimulationState {
-  u: Float64Array;
-  v: Float64Array;
+  u: FloatArray;
+  v: FloatArray;
 }
 
 export interface SimulationResult {
-  frames: Float64Array[];
+  frames: FloatArray[];
   playingPointBuffer: Float32Array;
   allPointBuffers: Float32Array[];
 }
 
 export type SimulationCaptureMode = "full" | "playing-point-only";
-export type SimulationBackend = "legacy" | "optimized";
+export type SimulationBackend =
+  | "legacy"
+  | "optimized"
+  | "edge-list"
+  | "edge-types"
+  | "compiled"
+  | "fused-loop"
+  | "sorted-edge-csr"
+  | "wasm-hotloop";
+
+export type SimulationBackendOption = {
+  value: SimulationBackend;
+  label: string;
+};
+
+export const SIMULATION_BACKEND_OPTIONS = [
+  { value: "legacy", label: "Original Simulation" },
+  { value: "optimized", label: "Optimized" },
+  { value: "edge-list", label: "Edge List" },
+  { value: "edge-types", label: "Edge Types" },
+  { value: "compiled", label: "Compiled" },
+  { value: "fused-loop", label: "Fused Loop" },
+  { value: "sorted-edge-csr", label: "Sorted Edge CSR" },
+  { value: "wasm-hotloop", label: "WASM Hotloop" },
+] as const satisfies readonly SimulationBackendOption[];
 
 export interface SimulationWorkerRequest {
   graph: GraphData;
   params: SimulationParams;
   outputMode?: SimulationCaptureMode;
   backend?: SimulationBackend;
+  precision?: SimulationPrecision;
 }
 
 export interface SimulationWorkerProgress {

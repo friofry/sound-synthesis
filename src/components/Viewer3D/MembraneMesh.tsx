@@ -174,7 +174,7 @@ export function MembraneMesh() {
         dots: graph.dots,
         lines: graph.lines,
         playingPoint: graph.playingPoint ?? simulationParams.playingPoint,
-      }, simulationParams, "optimized");
+      }, simulationParams, "wasm-hotloop");
     }
 
     const runtimeStepper = runtimeStepperRef.current;

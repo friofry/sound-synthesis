@@ -4,13 +4,14 @@ type GenerationProgressDialogProps = {
   open: boolean;
   progress: number;
   label: string;
+  onClose: () => void;
 };
 
-export function GenerationProgressDialog({ open, progress, label }: GenerationProgressDialogProps) {
+export function GenerationProgressDialog({ open, progress, label, onClose }: GenerationProgressDialogProps) {
   const safeProgress = Math.max(0, Math.min(100, Math.round(progress)));
 
   return (
-    <MfcDialog title="Generating instrument..." open={open} onClose={() => {}} width={360}>
+    <MfcDialog title="Generating instrument..." open={open} onClose={onClose} width={360}>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <div>{label || "Please wait..."}</div>
         <div

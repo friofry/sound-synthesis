@@ -1,9 +1,11 @@
 import type {
+  FloatArray,
   GraphData,
   KoeffStr,
   SimulationBackend,
   SimulationCaptureMode,
   SimulationParams,
+  SimulationPrecision,
   SimulationResult,
   SimulationState,
 } from "./types";
@@ -12,6 +14,36 @@ import {
   runSimulationOptimized,
   type RuntimeSimulationStepper as OptimizedRuntimeSimulationStepper,
 } from "./simulationOptimized";
+import {
+  createEdgeListRuntimeStepper,
+  runSimulationEdgeList,
+  type RuntimeSimulationStepper as EdgeListRuntimeSimulationStepper,
+} from "./simulationOptimized2EdgeList";
+import {
+  createEdgeTypesRuntimeStepper,
+  runSimulationEdgeTypes,
+  type RuntimeSimulationStepper as EdgeTypesRuntimeSimulationStepper,
+} from "./simulationOptimized3EdgeTypes";
+import {
+  createCompiledRuntimeStepperBackend,
+  runSimulationCompiledBackend,
+  type RuntimeSimulationStepper as CompiledRuntimeSimulationStepper,
+} from "./simulationOptimized4Compiled";
+import {
+  createFusedLoopRuntimeStepperBackend,
+  runSimulationFusedLoopBackend,
+  type RuntimeSimulationStepper as FusedLoopRuntimeSimulationStepper,
+} from "./simulationOptimized5FusedLoop";
+import {
+  createSortedEdgeCSRRuntimeStepperBackend,
+  runSimulationSortedEdgeCSRBackend,
+  type RuntimeSimulationStepper as SortedEdgeCSRRuntimeSimulationStepper,
+} from "./simulationOptimized6SortedEdgeCSR";
+import {
+  createWasmRuntimeStepperBackend,
+  runSimulationWasmBackend,
+  type RuntimeSimulationStepper as WasmRuntimeSimulationStepper,
+} from "./simulationOptimized7Wasm";
 
 const DEFAULT_EDGE_FADE_MS = 2;
 
@@ -32,6 +64,7 @@ type RungeKuttaWorkspace = {
 type RunSimulationOptions = {
   capture?: SimulationCaptureMode;
   backend?: SimulationBackend;
+  precision?: SimulationPrecision;
 };
 
 export type RuntimeSimulationStepper = {
@@ -76,11 +109,16 @@ export function createConnectionStructure(graph: GraphData): KoeffStr[] {
 
 export function multiplySparse(
   n: number,
-  vector: Float64Array,
+  vector: FloatArray,
   coeffs: KoeffStr[],
-  out?: Float64Array,
-): Float64Array {
-  const result = out && out.length === n ? out : new Float64Array(n);
+  out?: FloatArray,
+): FloatArray {
+  const result =
+    out && out.length === n
+      ? out
+      : vector instanceof Float32Array
+        ? new Float32Array(n)
+        : new Float64Array(n);
   result.fill(0);
   for (const coeff of coeffs) {
     result[coeff.i] += coeff.value * vector[coeff.j];
@@ -88,7 +126,7 @@ export function multiplySparse(
   return result;
 }
 
-export function sqrAnnuation(acceleration: Float64Array, velocity: Float64Array, squareAttenuation: number): void {
+export function sqrAnnuation(acceleration: FloatArray, velocity: FloatArray, squareAttenuation: number): void {
   for (let i = 0; i < velocity.length; i += 1) {
     acceleration[i] -= squareAttenuation * Math.abs(velocity[i]) * velocity[i];
   }
@@ -100,7 +138,7 @@ export function eulerCramerStep(
   dt: number,
   attenuation: number,
   squareAttenuation = 0,
-  springScratch?: Float64Array,
+  springScratch?: FloatArray,
 ): void {
   const { u, v } = state;
   const spring = multiplySparse(u.length, u, coeffs, springScratch);
@@ -161,13 +199,13 @@ export function rungeKuttaStep(
 }
 
 function buildAcceleration(
-  u: Float64Array,
-  v: Float64Array,
+  u: FloatArray,
+  v: FloatArray,
   coeffs: KoeffStr[],
   attenuation: number,
   squareAttenuation: number,
-  out?: Float64Array,
-): Float64Array {
+  out?: FloatArray,
+): FloatArray {
   const acceleration = multiplySparse(u.length, u, coeffs, out);
   for (let i = 0; i < u.length; i += 1) {
     acceleration[i] -= attenuation * v[i];
@@ -235,6 +273,24 @@ export function runSimulation(
   if (backend === "optimized") {
     return runSimulationOptimized(graph, params, onProgress, options);
   }
+  if (backend === "edge-list") {
+    return runSimulationEdgeList(graph, params, onProgress, options);
+  }
+  if (backend === "edge-types") {
+    return runSimulationEdgeTypes(graph, params, onProgress, options);
+  }
+  if (backend === "compiled") {
+    return runSimulationCompiledBackend(graph, params, onProgress, options);
+  }
+  if (backend === "fused-loop") {
+    return runSimulationFusedLoopBackend(graph, params, onProgress, options);
+  }
+  if (backend === "sorted-edge-csr") {
+    return runSimulationSortedEdgeCSRBackend(graph, params, onProgress, options);
+  }
+  if (backend === "wasm-hotloop") {
+    return runSimulationWasmBackend(graph, params, onProgress, options);
+  }
   return runSimulationLegacy(graph, params, onProgress, options);
 }
 
@@ -245,6 +301,24 @@ export function createRuntimeSimulationStepper(
 ): RuntimeSimulationStepper {
   if (backend === "optimized") {
     return createOptimizedRuntimeStepper(graph, params) as OptimizedRuntimeSimulationStepper;
+  }
+  if (backend === "edge-list") {
+    return createEdgeListRuntimeStepper(graph, params) as EdgeListRuntimeSimulationStepper;
+  }
+  if (backend === "edge-types") {
+    return createEdgeTypesRuntimeStepper(graph, params) as EdgeTypesRuntimeSimulationStepper;
+  }
+  if (backend === "compiled") {
+    return createCompiledRuntimeStepperBackend(graph, params) as CompiledRuntimeSimulationStepper;
+  }
+  if (backend === "fused-loop") {
+    return createFusedLoopRuntimeStepperBackend(graph, params) as FusedLoopRuntimeSimulationStepper;
+  }
+  if (backend === "sorted-edge-csr") {
+    return createSortedEdgeCSRRuntimeStepperBackend(graph, params) as SortedEdgeCSRRuntimeSimulationStepper;
+  }
+  if (backend === "wasm-hotloop") {
+    return createWasmRuntimeStepperBackend(graph, params) as WasmRuntimeSimulationStepper;
   }
   return createLegacyRuntimeStepper(graph, params);
 }

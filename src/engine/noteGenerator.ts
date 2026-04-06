@@ -46,7 +46,7 @@ export function generateInstrumentFromGraph(
         playingPoint: calibrationGraph.playingPoint ?? 0,
       },
       undefined,
-      { capture: "playing-point-only" },
+      { capture: "playing-point-only", backend: "fused-loop" },
     );
     const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, sampleRate);
     if (measuredFirstFrequency !== null) {
@@ -60,14 +60,19 @@ export function generateInstrumentFromGraph(
     const tunedRatio = targetRatio * calibrationPitchRatio;
     const noteGraph = scaleGraphForPitchRatio(graph, tunedRatio);
     noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
-    const result = runSimulation(noteGraph.toGraphData(), {
-      sampleRate,
-      lengthK,
-      method,
-      attenuation,
-      squareAttenuation,
-      playingPoint: noteGraph.playingPoint ?? 0,
-    }, undefined, { capture: "playing-point-only" });
+    const result = runSimulation(
+      noteGraph.toGraphData(),
+      {
+        sampleRate,
+        lengthK,
+        method,
+        attenuation,
+        squareAttenuation,
+        playingPoint: noteGraph.playingPoint ?? 0,
+      },
+      undefined,
+      { capture: "playing-point-only", backend: "fused-loop" },
+    );
 
     notes.push({
       alias: `note-${index}`,

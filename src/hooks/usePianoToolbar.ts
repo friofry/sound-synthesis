@@ -12,8 +12,10 @@ import { encodeWavBlob } from "../engine/snc/wavExport";
 import { GraphModel } from "../engine/graph";
 import type {
   RawInstrumentNote,
+  SimulationBackend,
   SimulationCaptureMode,
   SimulationParams,
+  SimulationPrecision,
   SimulationResult,
   SimulationWorkerMessage,
 } from "../engine/types";
@@ -76,48 +78,121 @@ function resolveLengthK(durationMs: number, sampleRate: number, tillSilence: boo
   return Math.max(1, Math.ceil(sampleCount / 1024));
 }
 
+function formatRemainingDuration(remainingMs: number | null): string {
+  if (remainingMs === null || !Number.isFinite(remainingMs) || remainingMs <= 0) {
+    return "calculating...";
+  }
+  const totalSeconds = Math.max(1, Math.ceil(remainingMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes <= 0) {
+    return `${seconds}s`;
+  }
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+}
+
+function createAbortError(): Error {
+  const error = new Error("Instrument generation cancelled");
+  error.name = "AbortError";
+  return error;
+}
+
 function runSimulationInWorker(
   graph: GraphModel,
   params: SimulationParams,
   outputMode: SimulationCaptureMode = "full",
+  backend: SimulationBackend = "fused-loop",
+  precision: SimulationPrecision = 64,
   onProgress?: (completed: number, total: number) => void,
+  signal?: AbortSignal,
+  sharedWorker?: Worker,
 ): Promise<SimulationResult> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL("../engine/simulation.worker.ts", import.meta.url), { type: "module" });
+    const worker = sharedWorker ?? new Worker(new URL("../engine/simulation.worker.ts", import.meta.url), { type: "module" });
+    const ownsWorker = !sharedWorker;
+    let settled = false;
+    let onMessage: ((event: MessageEvent<SimulationWorkerMessage>) => void) | null = null;
+    let onError: ((event: ErrorEvent) => void) | null = null;
 
-    worker.onmessage = (event: MessageEvent<SimulationWorkerMessage>) => {
+    const cleanup = () => {
+      if (signal) {
+        signal.removeEventListener("abort", onAbort);
+      }
+      if (onMessage) {
+        worker.removeEventListener("message", onMessage as EventListener);
+      }
+      if (onError) {
+        worker.removeEventListener("error", onError as EventListener);
+      }
+    };
+
+    const rejectWith = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const resolveWith = (result: SimulationResult) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(result);
+    };
+
+    const onAbort = () => {
+      worker.terminate();
+      rejectWith(createAbortError());
+    };
+
+    if (signal?.aborted) {
+      onAbort();
+      return;
+    }
+    signal?.addEventListener("abort", onAbort, { once: true });
+
+    onMessage = (event: MessageEvent<SimulationWorkerMessage>) => {
       const message = event.data;
       if (message.type === "progress") {
         onProgress?.(message.completed, message.total);
         return;
       }
       if (message.type === "complete") {
-        worker.terminate();
+        if (ownsWorker) {
+          worker.terminate();
+        }
         if (message.outputMode === "playing-point-only") {
-          resolve({
+          resolveWith({
             frames: [],
             allPointBuffers: [],
             playingPointBuffer: message.playingPointBuffer,
           });
           return;
         }
-        resolve(message.result);
+        resolveWith(message.result);
         return;
       }
-      worker.terminate();
-      reject(new Error(message.message));
+      if (ownsWorker) {
+        worker.terminate();
+      }
+      rejectWith(new Error(message.message));
     };
 
-    worker.onerror = (event) => {
-      worker.terminate();
-      reject(new Error(event.message || "Simulation worker failed"));
+    onError = (event: ErrorEvent) => {
+      if (ownsWorker) {
+        worker.terminate();
+      }
+      rejectWith(new Error(event.message || "Simulation worker failed"));
     };
+    worker.addEventListener("message", onMessage as EventListener);
+    worker.addEventListener("error", onError as EventListener);
 
     worker.postMessage({
       graph: graph.toGraphData(),
       params,
       outputMode,
-      backend: "optimized",
+      backend,
+      precision,
     });
   });
 }
@@ -159,6 +234,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   const generateNotesDialogOpen = usePianoStore((s) => s.generateNotesDialogOpen);
   const generateNotesSettings = usePianoStore((s) => s.generateNotesSettings);
   const isGeneratingInstrument = usePianoStore((s) => s.isGeneratingInstrument);
+  const generationProgressDialogOpen = usePianoStore((s) => s.generationProgressDialogOpen);
   const instrumentGenerationProgress = usePianoStore((s) => s.instrumentGenerationProgress);
   const instrumentGenerationLabel = usePianoStore((s) => s.instrumentGenerationLabel);
   const recording = usePianoStore((s) => s.recording);
@@ -185,6 +261,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   const activeAliasesRef = useRef(new Set<string>());
   const recorderRef = useRef<SncCreator | null>(null);
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
+  const generationAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setInstrumentNotes(initialNotes);
@@ -299,8 +376,19 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     setGenerateNotesDialogOpen(false);
   }, [setGenerateNotesDialogOpen]);
 
+  const closeGenerationProgressDialog = useCallback(() => {
+    generationAbortRef.current?.abort();
+    setInstrumentGenerationState({
+      isGeneratingInstrument: false,
+      generationProgressDialogOpen: false,
+      instrumentGenerationProgress: 0,
+      instrumentGenerationLabel: "",
+    });
+  }, [setInstrumentGenerationState]);
+
   const handleConfirmGenerateNotes = useCallback(
-    async (values: GenerateNotesDialogValues) => {
+    async (values: GenerateNotesDialogValues, sourceGraph?: GraphModel) => {
+      const targetGraph = sourceGraph ?? graph;
       const safeOctaves = Math.max(1, Math.min(3, Math.round(values.octaves))) as 1 | 2 | 3;
       const safeAttenuation = Number.isFinite(values.attenuation) ? Math.max(0, values.attenuation) : simulationParams.attenuation;
       const safeSquareAttenuation = Number.isFinite(values.squareAttenuation)
@@ -310,6 +398,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       const safeDurationMs = Number.isFinite(values.durationMs) ? Math.max(1, Math.round(values.durationMs)) : 150;
       const safeTillSilence = Boolean(values.tillSilence);
       const safeMethod = values.method === "runge-kutta" ? "runge-kutta" : "euler";
+      const safeBackend: SimulationBackend = values.backend;
+      const safePrecision: SimulationPrecision = values.precision === 32 ? 32 : 64;
       const safeNoteCount = safeOctaves * 12;
 
       setGenerateNotesSettings({
@@ -320,16 +410,28 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
         tillSilence: safeTillSilence,
         sampleRate: safeSampleRate,
         method: safeMethod,
+        backend: safeBackend,
+        precision: safePrecision,
       });
       setGenerateNotesDialogOpen(false);
       setInstrumentGenerationState({
         isGeneratingInstrument: true,
+        generationProgressDialogOpen: true,
         instrumentGenerationProgress: 0,
         instrumentGenerationLabel: "Preparing simulation...",
       });
+      const abortController = new AbortController();
+      const cpuCount = typeof navigator !== "undefined" ? navigator.hardwareConcurrency ?? 2 : 2;
+      const workerCount = Math.max(1, Math.min(safeNoteCount, Math.min(4, Math.max(2, Math.floor(cpuCount / 2)))));
+      const generationWorkers = Array.from(
+        { length: workerCount },
+        () => new Worker(new URL("../engine/simulation.worker.ts", import.meta.url), { type: "module" }),
+      );
+      generationAbortRef.current = abortController;
+      const generationStartMs = performance.now();
 
       try {
-        if (graph.dots.length > 0) {
+        if (targetGraph.dots.length > 0) {
           const baseIndex = 9;
           const baseFrequency = 440;
           const lengthK = resolveLengthK(safeDurationMs, safeSampleRate, safeTillSilence);
@@ -342,8 +444,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
             instrumentGenerationLabel: "Calibrating first note...",
           });
           const firstTargetRatio = ratioForIndex(0);
-          const calibrationGraph = scaleGraphForPitchRatio(graph, firstTargetRatio);
-          calibrationGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
+          const calibrationGraph = scaleGraphForPitchRatio(targetGraph, firstTargetRatio);
+          calibrationGraph.playingPoint = targetGraph.playingPoint ?? targetGraph.findFirstPlayableDot();
           const calibrationResult = await runSimulationInWorker(
             calibrationGraph,
             {
@@ -355,66 +457,114 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
               playingPoint: calibrationGraph.playingPoint ?? 0,
             },
             "playing-point-only",
+            safeBackend,
+            safePrecision,
+            undefined,
+            abortController.signal,
+            generationWorkers[0],
           );
           const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, safeSampleRate);
           if (measuredFirstFrequency !== null) {
             calibrationPitchRatio = derivePitchCalibrationRatio(baseFrequency * firstTargetRatio, measuredFirstFrequency);
           }
 
-          for (let index = 0; index < safeNoteCount; index += 1) {
-            const targetRatio = ratioForIndex(index);
-            const tunedRatio = targetRatio * calibrationPitchRatio;
-            const noteGraph = scaleGraphForPitchRatio(graph, tunedRatio);
-            noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
-
-            const result = await runSimulationInWorker(
-              noteGraph,
-              {
-                sampleRate: safeSampleRate,
-                lengthK,
-                attenuation: safeAttenuation,
-                squareAttenuation: safeSquareAttenuation,
-                method: safeMethod,
-                playingPoint: noteGraph.playingPoint ?? 0,
-              },
-              "playing-point-only",
-              (completed, total) => {
-                const insideNote = total > 0 ? completed / total : 0;
-                const absoluteProgress = ((index + insideNote) / safeNoteCount) * 100;
-                setInstrumentGenerationState({
-                  instrumentGenerationProgress: Math.round(absoluteProgress),
-                  instrumentGenerationLabel: `Generating note ${index + 1} of ${safeNoteCount}`,
-                });
-              },
-            );
-
-            notes.push({
-              alias: `note-${index}`,
-              keyLabel: DEFAULT_KEY_LABELS[index] ?? String(index),
-              keyCode: DEFAULT_KEYBINDS[index] ?? `Digit${index}`,
-              index,
-              frequency: baseFrequency * targetRatio,
-              buffer: result.playingPointBuffer,
-              sampleRate: safeSampleRate,
+          const noteProgress = new Array<number>(safeNoteCount).fill(0);
+          const updateGenerationProgress = () => {
+            const totalProgress = noteProgress.reduce((sum, value) => sum + value, 0);
+            const absoluteProgress = (totalProgress / safeNoteCount) * 100;
+            const generationElapsedMs = performance.now() - generationStartMs;
+            const ratio = absoluteProgress / 100;
+            const remainingMs = ratio > 0 ? (generationElapsedMs * (1 - ratio)) / ratio : null;
+            const estimationText = formatRemainingDuration(remainingMs);
+            const completedNotes = noteProgress.filter((value) => value >= 1).length;
+            setInstrumentGenerationState({
+              instrumentGenerationProgress: Math.round(absoluteProgress),
+              instrumentGenerationLabel: `Generating notes ${completedNotes}/${safeNoteCount} (${workerCount} workers). Estimation: ${estimationText}`,
             });
-          }
+          };
+
+          let nextIndex = 0;
+          const runWorkerLane = async (worker: Worker) => {
+            while (true) {
+              if (abortController.signal.aborted) {
+                throw createAbortError();
+              }
+              const index = nextIndex;
+              nextIndex += 1;
+              if (index >= safeNoteCount) {
+                return;
+              }
+              const targetRatio = ratioForIndex(index);
+              const tunedRatio = targetRatio * calibrationPitchRatio;
+              const noteGraph = scaleGraphForPitchRatio(targetGraph, tunedRatio);
+              noteGraph.playingPoint = targetGraph.playingPoint ?? targetGraph.findFirstPlayableDot();
+
+              const result = await runSimulationInWorker(
+                noteGraph,
+                {
+                  sampleRate: safeSampleRate,
+                  lengthK,
+                  attenuation: safeAttenuation,
+                  squareAttenuation: safeSquareAttenuation,
+                  method: safeMethod,
+                  playingPoint: noteGraph.playingPoint ?? 0,
+                },
+                "playing-point-only",
+                safeBackend,
+                safePrecision,
+                (completed, total) => {
+                  noteProgress[index] = total > 0 ? completed / total : 0;
+                  updateGenerationProgress();
+                },
+                abortController.signal,
+                worker,
+              );
+
+              noteProgress[index] = 1;
+              updateGenerationProgress();
+              notes[index] = {
+                alias: `note-${index}`,
+                keyLabel: DEFAULT_KEY_LABELS[index] ?? String(index),
+                keyCode: DEFAULT_KEYBINDS[index] ?? `Digit${index}`,
+                index,
+                frequency: baseFrequency * targetRatio,
+                buffer: result.playingPointBuffer,
+                sampleRate: safeSampleRate,
+              };
+            }
+          };
+
+          await Promise.all(generationWorkers.map((worker) => runWorkerLane(worker)));
           setInstrumentNotes(notes);
         } else {
           setInstrumentNotes(createFallbackNotes(safeNoteCount));
         }
         setLastRenderedWav(null);
+        if (abortController.signal.aborted) {
+          throw createAbortError();
+        }
         setInstrumentGenerationState({
           isGeneratingInstrument: false,
+          generationProgressDialogOpen: false,
           instrumentGenerationProgress: 100,
           instrumentGenerationLabel: "Done",
         });
       } catch (error) {
+        const isAbort = error instanceof Error && error.name === "AbortError";
         setInstrumentGenerationState({
           isGeneratingInstrument: false,
+          generationProgressDialogOpen: false,
           instrumentGenerationProgress: 0,
           instrumentGenerationLabel: "",
         });
-        window.alert(error instanceof Error ? error.message : "Instrument generation failed");
+        if (!isAbort) {
+          window.alert(error instanceof Error ? error.message : "Instrument generation failed");
+        }
+      } finally {
+        generationWorkers.forEach((worker) => worker.terminate());
+        if (generationAbortRef.current === abortController) {
+          generationAbortRef.current = null;
+        }
       }
     },
     [
@@ -614,9 +764,11 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     generateNotesDialogOpen,
     generateNotesSettings,
     isGeneratingInstrument,
+    generationProgressDialogOpen,
     instrumentGenerationProgress,
     instrumentGenerationLabel,
     closeGenerateNotesDialog,
+    closeGenerationProgressDialog,
     handleConfirmGenerateNotes,
     handleToggleRecording,
     handleSaveInstrument,

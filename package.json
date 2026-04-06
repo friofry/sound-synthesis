@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build:wasm && tsc -b && vite build",
+    "build:docker": "vite build",
+    "build:wasm": "src/engine/wasm/build.sh",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:unit": "vitest run --config vitest.unit.config.ts",

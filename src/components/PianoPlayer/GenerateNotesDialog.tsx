@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { MfcButton, MfcCheckbox, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup } from "../ui/MfcDialog";
-import type { SimMethod } from "../../engine/types";
+import { MfcButton, MfcCheckbox, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup, MfcSelect } from "../ui/MfcDialog";
+import { SIMULATION_BACKEND_OPTIONS, type SimMethod, type SimulationBackend, type SimulationPrecision } from "../../engine/types";
 import "./GenerateNotesDialog.css";
 
 export type GenerateNotesDialogValues = {
@@ -11,6 +11,8 @@ export type GenerateNotesDialogValues = {
   tillSilence: boolean;
   sampleRate: 8000 | 22050 | 44100;
   method: SimMethod;
+  backend: SimulationBackend;
+  precision: SimulationPrecision;
 };
 
 type GenerateNotesDialogProps = {
@@ -53,6 +55,8 @@ function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateN
   const [tillSilence, setTillSilence] = useState(initialValues.tillSilence);
   const [sampleRate, setSampleRate] = useState<8000 | 22050 | 44100>(initialValues.sampleRate);
   const [method, setMethod] = useState<SimMethod>(initialValues.method);
+  const [backend, setBackend] = useState<SimulationBackend>(initialValues.backend);
+  const [precision, setPrecision] = useState<SimulationPrecision>(initialValues.precision);
 
   return (
     <MfcDialog
@@ -68,6 +72,8 @@ function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateN
           tillSilence,
           sampleRate,
           method,
+          backend,
+          precision,
         })
       }
       width={460}
@@ -113,6 +119,32 @@ function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateN
                 { value: "runge-kutta", label: "Runge-Kutta" },
               ]}
             />
+          </MfcGroupBox>
+
+          <MfcGroupBox legend="Optimization">
+            <MfcField label="Backend" labelWidth={58}>
+              <MfcSelect
+                value={backend}
+                onChange={(value) => setBackend(value)}
+                options={[...SIMULATION_BACKEND_OPTIONS]}
+              />
+            </MfcField>
+            <MfcField label="Precision" labelWidth={58}>
+              <MfcRadioGroup
+                name="generate-notes-precision"
+                value={String(precision)}
+                onChange={(value) => {
+                  if (value === "32" || value === "64") {
+                    setPrecision(Number(value) as SimulationPrecision);
+                  }
+                }}
+                direction="row"
+                options={[
+                  { value: "64", label: "64" },
+                  { value: "32", label: "32" },
+                ]}
+              />
+            </MfcField>
           </MfcGroupBox>
 
           <MfcGroupBox legend="Duration">
