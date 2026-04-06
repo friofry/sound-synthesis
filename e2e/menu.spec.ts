@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { clearGraph, getGraphState } from "./helpers";
+import { clearGraph, getGraphState, getStoreState } from "./helpers";
 
 test.describe("MfcMenu", () => {
   test.beforeEach(async ({ page }) => {
@@ -44,7 +44,10 @@ test.describe("MfcMenu", () => {
     await expect(dialog).not.toBeVisible();
 
     const graph = await getGraphState(page);
+    const store = await getStoreState(page);
     expect(graph.dotsCount).toBeGreaterThan(0);
     expect(graph.linesCount).toBeGreaterThan(0);
+    expect(store.playingPoint).not.toBeNull();
+    expect(graph.dots.some((dot) => dot.u > 0)).toBe(true);
   });
 });

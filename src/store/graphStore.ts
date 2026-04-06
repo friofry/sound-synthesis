@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { generateGraph } from "../engine/gridGenerators";
 import { GraphModel } from "../engine/graph";
+import { preparePresetGraph, type PresetGraphPreparationOptions } from "../engine/presetGraphPreparation";
 import {
   DEFAULT_ATTENUATION,
   DEFAULT_SAMPLE_RATE,
@@ -73,7 +74,7 @@ interface GraphStore {
   setGraph: (graph: GraphModel) => void;
   updateGraph: (updater: (graph: GraphModel) => void) => void;
   clearGraph: () => void;
-  createPresetGraph: (type: GridType, params: GridParams) => void;
+  createPresetGraph: (type: GridType, params: GridParams, preparation?: PresetGraphPreparationOptions) => void;
   openInsertDialog: () => void;
   closeInsertDialog: () => void;
   openCellTemplateDialog: () => void;
@@ -226,8 +227,9 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       playingPoint: null,
       simulationResult: null,
     }),
-  createPresetGraph: (type, params) => {
+  createPresetGraph: (type, params, preparation) => {
     const graph = generateGraph(type, params);
+    preparePresetGraph(graph, preparation);
     set({
       graph,
       selectedDotA: null,

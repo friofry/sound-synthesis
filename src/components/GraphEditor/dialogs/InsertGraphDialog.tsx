@@ -1,7 +1,22 @@
 import { useState } from "react";
 import type { GridType, StiffnessType } from "../../../engine/types";
+import type {
+  CenterGroupModifyOptions,
+  DistributionMode,
+  FixMode,
+  PlayingPointMode,
+} from "../../../engine/presetGraphPreparation";
 import { useGraphStore } from "../../../store/graphStore";
-import { MfcButton, MfcCheckbox, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup } from "../../ui/MfcDialog";
+import {
+  MfcButton,
+  MfcCheckbox,
+  MfcDialog,
+  MfcField,
+  MfcGroupBox,
+  MfcNumberInput,
+  MfcRadioGroup,
+  MfcSelect,
+} from "../../ui/MfcDialog";
 
 export type InsertGraphFormProps = {
   open: boolean;
@@ -21,6 +36,8 @@ export type InsertGraphFormProps = {
     stiffness: number;
     fixedBorder: boolean;
     stiffnessType: StiffnessType;
+    playingPointMode: PlayingPointMode;
+    centerGroup: CenterGroupModifyOptions;
   }) => void;
   onClose: () => void;
 };
@@ -38,8 +55,20 @@ export function InsertGraphForm({
   const [layers, setLayers] = useState(5);
   const [weight, setWeight] = useState(defaults.weight);
   const [stiffness, setStiffness] = useState(defaults.stiffness);
-  const [border, setBorder] = useState(true);
-  const [stiffType, setStiffType] = useState<StiffnessType>("tetradic");
+  const [border, setBorder] = useState(defaults.fixedBorder);
+  const [stiffType, setStiffType] = useState<StiffnessType>(defaults.stiffnessType);
+  const [playingPointMode, setPlayingPointMode] = useState<PlayingPointMode>("center");
+  const [applyCenterGroup, setApplyCenterGroup] = useState(true);
+  const [maxAmplitude, setMaxAmplitude] = useState(0.75);
+  const [distribution, setDistribution] = useState<DistributionMode>("smoothed");
+  const [fixMode, setFixMode] = useState<FixMode>("none");
+  const [groupWeight, setGroupWeight] = useState(defaults.weight);
+  const [groupWeightTouched, setGroupWeightTouched] = useState(false);
+  const [groupStiffness, setGroupStiffness] = useState(defaults.stiffness);
+  const [groupStiffnessTouched, setGroupStiffnessTouched] = useState(false);
+
+  const effectiveGroupWeight = groupWeightTouched ? groupWeight : weight;
+  const effectiveGroupStiffness = groupStiffnessTouched ? groupStiffness : stiffness;
 
   if (!open) {
     return null;
@@ -59,8 +88,17 @@ export function InsertGraphForm({
         weight: Number.isFinite(weight) ? weight : 0.000001,
         fixedBorder: border,
         stiffnessType: stiffType,
+        playingPointMode,
+        centerGroup: {
+          enabled: applyCenterGroup,
+          maxAmplitude: Number.isFinite(maxAmplitude) ? maxAmplitude : 0.75,
+          maxWeight: Number.isFinite(effectiveGroupWeight) ? effectiveGroupWeight : 0.000001,
+          stiffness: Number.isFinite(effectiveGroupStiffness) ? effectiveGroupStiffness : 1,
+          distribution,
+          fixMode,
+        },
       })}
-      width={420}
+      width={460}
       actions={
         <>
           <MfcButton onClick={onClose}>Cancel</MfcButton>
@@ -100,10 +138,14 @@ export function InsertGraphForm({
 
       <MfcGroupBox legend="Defaults">
         <MfcField label="Stiffness Type" labelWidth={110}>
-          <select value={stiffType} onChange={(event) => setStiffType(event.target.value as StiffnessType)}>
-            <option value="isotropic">Isotropic</option>
-            <option value="tetradic">Tetradic</option>
-          </select>
+          <MfcSelect
+            value={stiffType}
+            onChange={setStiffType}
+            options={[
+              { value: "isotropic", label: "Isotropic" },
+              { value: "tetradic", label: "Tetradic" },
+            ]}
+          />
         </MfcField>
         <MfcField label="Default Stiffness" labelWidth={110}>
           <MfcNumberInput step="0.1" value={stiffness} onChange={setStiffness} />
@@ -114,6 +156,70 @@ export function InsertGraphForm({
         <MfcCheckbox checked={border} onChange={setBorder}>
           Fixed Border
         </MfcCheckbox>
+      </MfcGroupBox>
+
+      <MfcGroupBox legend="Generation Prep">
+        <MfcField label="Playing Point" labelWidth={110}>
+          <MfcSelect
+            value={playingPointMode}
+            onChange={setPlayingPointMode}
+            options={[
+              { value: "center", label: "Center" },
+              { value: "first-playable", label: "First playable" },
+            ]}
+          />
+        </MfcField>
+        <MfcCheckbox checked={applyCenterGroup} onChange={setApplyCenterGroup}>
+          Apply center modify group
+        </MfcCheckbox>
+        {applyCenterGroup ? (
+          <>
+            <MfcField label="Max Amplitude" labelWidth={110}>
+              <MfcNumberInput step="0.01" value={maxAmplitude} onChange={setMaxAmplitude} />
+            </MfcField>
+            <MfcField label="Max Weight" labelWidth={110}>
+              <MfcNumberInput
+                step="0.000001"
+                value={effectiveGroupWeight}
+                onChange={(value) => {
+                  setGroupWeightTouched(true);
+                  setGroupWeight(value);
+                }}
+              />
+            </MfcField>
+            <MfcField label="Stiffness" labelWidth={110}>
+              <MfcNumberInput
+                step="0.1"
+                value={effectiveGroupStiffness}
+                onChange={(value) => {
+                  setGroupStiffnessTouched(true);
+                  setGroupStiffness(value);
+                }}
+              />
+            </MfcField>
+            <MfcField label="Distribution" labelWidth={110}>
+              <MfcSelect
+                value={distribution}
+                onChange={setDistribution}
+                options={[
+                  { value: "equivalent", label: "Equivalent" },
+                  { value: "smoothed", label: "Smoothed" },
+                ]}
+              />
+            </MfcField>
+            <MfcField label="Fix / Unfix" labelWidth={110}>
+              <MfcSelect
+                value={fixMode}
+                onChange={setFixMode}
+                options={[
+                  { value: "none", label: "No change" },
+                  { value: "fix", label: "Fix points" },
+                  { value: "unfix", label: "Unfix points" },
+                ]}
+              />
+            </MfcField>
+          </>
+        ) : null}
       </MfcGroupBox>
     </MfcDialog>
   );
@@ -172,6 +278,9 @@ export function InsertGraphDialog({
           stiffnessType: values.stiffnessType,
           width: canvasSize.width,
           height: canvasSize.height,
+        }, {
+          playingPointMode: values.playingPointMode,
+          centerGroup: values.centerGroup,
         });
         onClose();
       }}

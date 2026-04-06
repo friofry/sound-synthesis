@@ -105,14 +105,24 @@ function runSimulationInWorker(
   precision: SimulationPrecision = 64,
   onProgress?: (completed: number, total: number) => void,
   signal?: AbortSignal,
+  sharedWorker?: Worker,
 ): Promise<SimulationResult> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL("../engine/simulation.worker.ts", import.meta.url), { type: "module" });
+    const worker = sharedWorker ?? new Worker(new URL("../engine/simulation.worker.ts", import.meta.url), { type: "module" });
+    const ownsWorker = !sharedWorker;
     let settled = false;
+    let onMessage: ((event: MessageEvent<SimulationWorkerMessage>) => void) | null = null;
+    let onError: ((event: ErrorEvent) => void) | null = null;
 
     const cleanup = () => {
       if (signal) {
         signal.removeEventListener("abort", onAbort);
+      }
+      if (onMessage) {
+        worker.removeEventListener("message", onMessage as EventListener);
+      }
+      if (onError) {
+        worker.removeEventListener("error", onError as EventListener);
       }
     };
 
@@ -141,14 +151,16 @@ function runSimulationInWorker(
     }
     signal?.addEventListener("abort", onAbort, { once: true });
 
-    worker.onmessage = (event: MessageEvent<SimulationWorkerMessage>) => {
+    onMessage = (event: MessageEvent<SimulationWorkerMessage>) => {
       const message = event.data;
       if (message.type === "progress") {
         onProgress?.(message.completed, message.total);
         return;
       }
       if (message.type === "complete") {
-        worker.terminate();
+        if (ownsWorker) {
+          worker.terminate();
+        }
         if (message.outputMode === "playing-point-only") {
           resolveWith({
             frames: [],
@@ -160,14 +172,20 @@ function runSimulationInWorker(
         resolveWith(message.result);
         return;
       }
-      worker.terminate();
+      if (ownsWorker) {
+        worker.terminate();
+      }
       rejectWith(new Error(message.message));
     };
 
-    worker.onerror = (event) => {
-      worker.terminate();
+    onError = (event: ErrorEvent) => {
+      if (ownsWorker) {
+        worker.terminate();
+      }
       rejectWith(new Error(event.message || "Simulation worker failed"));
     };
+    worker.addEventListener("message", onMessage as EventListener);
+    worker.addEventListener("error", onError as EventListener);
 
     worker.postMessage({
       graph: graph.toGraphData(),
@@ -409,6 +427,12 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
         instrumentGenerationLabel: "Preparing simulation...",
       });
       const abortController = new AbortController();
+      const cpuCount = typeof navigator !== "undefined" ? navigator.hardwareConcurrency ?? 2 : 2;
+      const workerCount = Math.max(1, Math.min(safeNoteCount, Math.min(4, Math.max(2, Math.floor(cpuCount / 2)))));
+      const generationWorkers = Array.from(
+        { length: workerCount },
+        () => new Worker(new URL("../engine/simulation.worker.ts", import.meta.url), { type: "module" }),
+      );
       generationAbortRef.current = abortController;
       const generationStartMs = performance.now();
 
@@ -443,56 +467,80 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
             safePrecision,
             undefined,
             abortController.signal,
+            generationWorkers[0],
           );
           const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, safeSampleRate);
           if (measuredFirstFrequency !== null) {
             calibrationPitchRatio = derivePitchCalibrationRatio(baseFrequency * firstTargetRatio, measuredFirstFrequency);
           }
 
-          for (let index = 0; index < safeNoteCount; index += 1) {
-            const targetRatio = ratioForIndex(index);
-            const tunedRatio = targetRatio * calibrationPitchRatio;
-            const noteGraph = scaleGraphForPitchRatio(graph, tunedRatio);
-            noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
-
-            const result = await runSimulationInWorker(
-              noteGraph,
-              {
-                sampleRate: safeSampleRate,
-                lengthK,
-                attenuation: safeAttenuation,
-                squareAttenuation: safeSquareAttenuation,
-                method: safeMethod,
-                playingPoint: noteGraph.playingPoint ?? 0,
-              },
-              "playing-point-only",
-              safeBackend,
-              safePrecision,
-              (completed, total) => {
-                const insideNote = total > 0 ? completed / total : 0;
-                const absoluteProgress = ((index + insideNote) / safeNoteCount) * 100;
-                const generationElapsedMs = performance.now() - generationStartMs;
-                const ratio = absoluteProgress / 100;
-                const remainingMs = ratio > 0 ? (generationElapsedMs * (1 - ratio)) / ratio : null;
-                const estimationText = formatRemainingDuration(remainingMs);
-                setInstrumentGenerationState({
-                  instrumentGenerationProgress: Math.round(absoluteProgress),
-                  instrumentGenerationLabel: `Generating note ${index + 1} of ${safeNoteCount}. Estimation: ${estimationText}`,
-                });
-              },
-              abortController.signal,
-            );
-
-            notes.push({
-              alias: `note-${index}`,
-              keyLabel: DEFAULT_KEY_LABELS[index] ?? String(index),
-              keyCode: DEFAULT_KEYBINDS[index] ?? `Digit${index}`,
-              index,
-              frequency: baseFrequency * targetRatio,
-              buffer: result.playingPointBuffer,
-              sampleRate: safeSampleRate,
+          const noteProgress = new Array<number>(safeNoteCount).fill(0);
+          const updateGenerationProgress = () => {
+            const totalProgress = noteProgress.reduce((sum, value) => sum + value, 0);
+            const absoluteProgress = (totalProgress / safeNoteCount) * 100;
+            const generationElapsedMs = performance.now() - generationStartMs;
+            const ratio = absoluteProgress / 100;
+            const remainingMs = ratio > 0 ? (generationElapsedMs * (1 - ratio)) / ratio : null;
+            const estimationText = formatRemainingDuration(remainingMs);
+            const completedNotes = noteProgress.filter((value) => value >= 1).length;
+            setInstrumentGenerationState({
+              instrumentGenerationProgress: Math.round(absoluteProgress),
+              instrumentGenerationLabel: `Generating notes ${completedNotes}/${safeNoteCount} (${workerCount} workers). Estimation: ${estimationText}`,
             });
-          }
+          };
+
+          let nextIndex = 0;
+          const runWorkerLane = async (worker: Worker) => {
+            while (true) {
+              if (abortController.signal.aborted) {
+                throw createAbortError();
+              }
+              const index = nextIndex;
+              nextIndex += 1;
+              if (index >= safeNoteCount) {
+                return;
+              }
+              const targetRatio = ratioForIndex(index);
+              const tunedRatio = targetRatio * calibrationPitchRatio;
+              const noteGraph = scaleGraphForPitchRatio(graph, tunedRatio);
+              noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
+
+              const result = await runSimulationInWorker(
+                noteGraph,
+                {
+                  sampleRate: safeSampleRate,
+                  lengthK,
+                  attenuation: safeAttenuation,
+                  squareAttenuation: safeSquareAttenuation,
+                  method: safeMethod,
+                  playingPoint: noteGraph.playingPoint ?? 0,
+                },
+                "playing-point-only",
+                safeBackend,
+                safePrecision,
+                (completed, total) => {
+                  noteProgress[index] = total > 0 ? completed / total : 0;
+                  updateGenerationProgress();
+                },
+                abortController.signal,
+                worker,
+              );
+
+              noteProgress[index] = 1;
+              updateGenerationProgress();
+              notes[index] = {
+                alias: `note-${index}`,
+                keyLabel: DEFAULT_KEY_LABELS[index] ?? String(index),
+                keyCode: DEFAULT_KEYBINDS[index] ?? `Digit${index}`,
+                index,
+                frequency: baseFrequency * targetRatio,
+                buffer: result.playingPointBuffer,
+                sampleRate: safeSampleRate,
+              };
+            }
+          };
+
+          await Promise.all(generationWorkers.map((worker) => runWorkerLane(worker)));
           setInstrumentNotes(notes);
         } else {
           setInstrumentNotes(createFallbackNotes(safeNoteCount));
@@ -519,6 +567,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
           window.alert(error instanceof Error ? error.message : "Instrument generation failed");
         }
       } finally {
+        generationWorkers.forEach((worker) => worker.terminate());
         if (generationAbortRef.current === abortController) {
           generationAbortRef.current = null;
         }
