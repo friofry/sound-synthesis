@@ -12,6 +12,11 @@ import {
   runSimulationOptimized,
   type RuntimeSimulationStepper as OptimizedRuntimeSimulationStepper,
 } from "./simulationOptimized";
+import {
+  createEdgeListRuntimeStepper,
+  runSimulationEdgeList,
+  type RuntimeSimulationStepper as EdgeListRuntimeSimulationStepper,
+} from "./simulationOptimized2EdgeList";
 
 const DEFAULT_EDGE_FADE_MS = 2;
 
@@ -235,6 +240,9 @@ export function runSimulation(
   if (backend === "optimized") {
     return runSimulationOptimized(graph, params, onProgress, options);
   }
+  if (backend === "edge-list") {
+    return runSimulationEdgeList(graph, params, onProgress, options);
+  }
   return runSimulationLegacy(graph, params, onProgress, options);
 }
 
@@ -245,6 +253,9 @@ export function createRuntimeSimulationStepper(
 ): RuntimeSimulationStepper {
   if (backend === "optimized") {
     return createOptimizedRuntimeStepper(graph, params) as OptimizedRuntimeSimulationStepper;
+  }
+  if (backend === "edge-list") {
+    return createEdgeListRuntimeStepper(graph, params) as EdgeListRuntimeSimulationStepper;
   }
   return createLegacyRuntimeStepper(graph, params);
 }

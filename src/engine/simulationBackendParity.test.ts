@@ -33,6 +33,7 @@ describe("simulation backend parity", () => {
   it("matches legacy in full capture for euler and runge-kutta", () => {
     const graph = buildParityGraphData();
     const methods: SimulationParams["method"][] = ["euler", "runge-kutta"];
+    const comparedBackends = ["optimized", "edge-list"] as const;
 
     for (const method of methods) {
       const params: SimulationParams = {
@@ -45,17 +46,19 @@ describe("simulation backend parity", () => {
       };
 
       const legacy = runSimulation(graph, params, undefined, { capture: "full", backend: "legacy" });
-      const optimized = runSimulation(graph, params, undefined, { capture: "full", backend: "optimized" });
+      for (const backend of comparedBackends) {
+        const actual = runSimulation(graph, params, undefined, { capture: "full", backend });
 
-      expectCloseArray(optimized.playingPointBuffer, legacy.playingPointBuffer, 8);
-      expect(optimized.frames.length).toBe(legacy.frames.length);
-      expect(optimized.allPointBuffers.length).toBe(legacy.allPointBuffers.length);
+        expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, 8);
+        expect(actual.frames.length).toBe(legacy.frames.length);
+        expect(actual.allPointBuffers.length).toBe(legacy.allPointBuffers.length);
 
-      const sampleIndices = [0, Math.floor(legacy.frames.length / 2), legacy.frames.length - 1];
-      for (const sampleIndex of sampleIndices) {
-        const legacyFrame = legacy.frames[sampleIndex];
-        const optimizedFrame = optimized.frames[sampleIndex];
-        expectCloseArray(optimizedFrame, legacyFrame, 8);
+        const sampleIndices = [0, Math.floor(legacy.frames.length / 2), legacy.frames.length - 1];
+        for (const sampleIndex of sampleIndices) {
+          const legacyFrame = legacy.frames[sampleIndex];
+          const actualFrame = actual.frames[sampleIndex];
+          expectCloseArray(actualFrame, legacyFrame, 8);
+        }
       }
     }
   });
@@ -63,6 +66,7 @@ describe("simulation backend parity", () => {
   it("matches legacy in playing-point-only capture for euler and runge-kutta", () => {
     const graph = buildParityGraphData();
     const methods: SimulationParams["method"][] = ["euler", "runge-kutta"];
+    const comparedBackends = ["optimized", "edge-list"] as const;
 
     for (const method of methods) {
       const params: SimulationParams = {
@@ -75,13 +79,14 @@ describe("simulation backend parity", () => {
       };
 
       const legacy = runSimulation(graph, params, undefined, { capture: "playing-point-only", backend: "legacy" });
-      const optimized = runSimulation(graph, params, undefined, { capture: "playing-point-only", backend: "optimized" });
-
       expect(legacy.frames.length).toBe(0);
       expect(legacy.allPointBuffers.length).toBe(0);
-      expect(optimized.frames.length).toBe(0);
-      expect(optimized.allPointBuffers.length).toBe(0);
-      expectCloseArray(optimized.playingPointBuffer, legacy.playingPointBuffer, 8);
+      for (const backend of comparedBackends) {
+        const actual = runSimulation(graph, params, undefined, { capture: "playing-point-only", backend });
+        expect(actual.frames.length).toBe(0);
+        expect(actual.allPointBuffers.length).toBe(0);
+        expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, 8);
+      }
     }
   });
 });
