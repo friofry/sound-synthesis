@@ -59,4 +59,29 @@ describe("simulation backend parity", () => {
       }
     }
   });
+
+  it("matches legacy in playing-point-only capture for euler and runge-kutta", () => {
+    const graph = buildParityGraphData();
+    const methods: SimulationParams["method"][] = ["euler", "runge-kutta"];
+
+    for (const method of methods) {
+      const params: SimulationParams = {
+        sampleRate: 8_000,
+        lengthK: 2,
+        method,
+        attenuation: 4,
+        squareAttenuation: 0.08,
+        playingPoint: graph.playingPoint,
+      };
+
+      const legacy = runSimulation(graph, params, undefined, { capture: "playing-point-only", backend: "legacy" });
+      const optimized = runSimulation(graph, params, undefined, { capture: "playing-point-only", backend: "optimized" });
+
+      expect(legacy.frames.length).toBe(0);
+      expect(legacy.allPointBuffers.length).toBe(0);
+      expect(optimized.frames.length).toBe(0);
+      expect(optimized.allPointBuffers.length).toBe(0);
+      expectCloseArray(optimized.playingPointBuffer, legacy.playingPointBuffer, 8);
+    }
+  });
 });

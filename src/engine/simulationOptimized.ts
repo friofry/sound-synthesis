@@ -199,7 +199,7 @@ function multiplyPackedSparse(
   return result;
 }
 
-function sqrAnnuation(acceleration: Float64Array, velocity: Float64Array, squareAttenuation: number): void {
+function applySquareAttenuation(acceleration: Float64Array, velocity: Float64Array, squareAttenuation: number): void {
   for (let i = 0; i < velocity.length; i += 1) {
     acceleration[i] -= squareAttenuation * Math.abs(velocity[i]) * velocity[i];
   }
@@ -218,7 +218,7 @@ function eulerCramerStepOptimized(
   for (let i = 0; i < u.length; i += 1) {
     spring[i] -= attenuation * v[i];
   }
-  sqrAnnuation(spring, v, squareAttenuation);
+  applySquareAttenuation(spring, v, squareAttenuation);
 
   for (let i = 0; i < u.length; i += 1) {
     v[i] += spring[i] * dt;
@@ -281,7 +281,7 @@ function buildAcceleration(
   for (let i = 0; i < u.length; i += 1) {
     acceleration[i] -= attenuation * v[i];
   }
-  sqrAnnuation(acceleration, v, squareAttenuation);
+  applySquareAttenuation(acceleration, v, squareAttenuation);
   return acceleration;
 }
 

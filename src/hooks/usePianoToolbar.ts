@@ -97,15 +97,11 @@ function runSimulationInWorker(
           resolve({
             frames: [],
             allPointBuffers: [],
-            playingPointBuffer: message.playingPointBuffer ?? new Float32Array(0),
+            playingPointBuffer: message.playingPointBuffer,
           });
           return;
         }
-        if (message.result) {
-          resolve(message.result);
-          return;
-        }
-        reject(new Error("Simulation worker returned no result"));
+        resolve(message.result);
         return;
       }
       worker.terminate();

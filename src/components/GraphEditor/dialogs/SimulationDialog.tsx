@@ -132,7 +132,7 @@ export function SimulationDialog() {
           }
 
           if (message.type === "complete") {
-            if (!message.result) {
+            if (message.outputMode !== "full") {
               setSimulationState({
                 isSimulating: false,
                 simulationProgress: 0,

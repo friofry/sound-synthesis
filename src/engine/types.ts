@@ -130,12 +130,17 @@ export interface SimulationWorkerProgress {
   total: number;
 }
 
-export interface SimulationWorkerComplete {
-  type: "complete";
-  outputMode: SimulationCaptureMode;
-  result?: SimulationResult;
-  playingPointBuffer?: Float32Array;
-}
+export type SimulationWorkerComplete =
+  | {
+      type: "complete";
+      outputMode: "full";
+      result: SimulationResult;
+    }
+  | {
+      type: "complete";
+      outputMode: "playing-point-only";
+      playingPointBuffer: Float32Array;
+    };
 
 export interface SimulationWorkerError {
   type: "error";
