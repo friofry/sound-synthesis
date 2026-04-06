@@ -1,6 +1,8 @@
 import { bench, describe } from "vitest";
 import { generateGraph } from "./gridGenerators";
 import { runSimulation } from "./simulation";
+import { compileGraph, runSimulationCompiled } from "./simulationOptimized4Compiled";
+import { compileGraph as compileGraphFused, runSimulationFusedLoop } from "./simulationOptimized5FusedLoop";
 import type { GraphData, GridParams, SimMethod, SimulationBackend, SimulationParams } from "./types";
 
 const GRID_SIZE = 25;
@@ -31,6 +33,8 @@ const BASE_PARAMS: Omit<SimulationParams, "method"> = {
 };
 
 const graph = buildCenteredImpulseGraph();
+const compiledGraph = compileGraph(graph, BASE_PARAMS);
+const compiledGraphFused = compileGraphFused(graph, BASE_PARAMS);
 
 function buildCenteredImpulseGraph(): GraphData {
   const next = generateGraph("cell", GRID_PARAMS);
@@ -44,6 +48,30 @@ function generateNote(method: SimMethod, backend: SimulationBackend): Float32Arr
     capture: "playing-point-only",
     backend,
   });
+  return result.playingPointBuffer;
+}
+
+function generateNotePrecompiled(method: SimMethod): Float32Array {
+  const result = runSimulationCompiled(
+    compiledGraph,
+    { ...BASE_PARAMS, method },
+    undefined,
+    {
+      capture: "playing-point-only",
+    },
+  );
+  return result.playingPointBuffer;
+}
+
+function generateNoteFusedPrecompiled(method: SimMethod): Float32Array {
+  const result = runSimulationFusedLoop(
+    compiledGraphFused,
+    { ...BASE_PARAMS, method },
+    undefined,
+    {
+      capture: "playing-point-only",
+    },
+  );
   return result.playingPointBuffer;
 }
 
@@ -64,6 +92,22 @@ describe("note generation benchmark", () => {
     generateNote("euler", "edge-types");
   });
 
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (compiled)", () => {
+    generateNote("euler", "compiled");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (compiled-precompiled)", () => {
+    generateNotePrecompiled("euler");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (fused-loop)", () => {
+    generateNote("euler", "fused-loop");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (fused-loop-precompiled)", () => {
+    generateNoteFusedPrecompiled("euler");
+  });
+
   bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (legacy)", () => {
     generateNote("runge-kutta", "legacy");
   });
@@ -78,5 +122,21 @@ describe("note generation benchmark", () => {
 
   bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (edge-types)", () => {
     generateNote("runge-kutta", "edge-types");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (compiled)", () => {
+    generateNote("runge-kutta", "compiled");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (compiled-precompiled)", () => {
+    generateNotePrecompiled("runge-kutta");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (fused-loop)", () => {
+    generateNote("runge-kutta", "fused-loop");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (fused-loop-precompiled)", () => {
+    generateNoteFusedPrecompiled("runge-kutta");
   });
 });

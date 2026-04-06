@@ -22,6 +22,16 @@ import {
   runSimulationEdgeTypes,
   type RuntimeSimulationStepper as EdgeTypesRuntimeSimulationStepper,
 } from "./simulationOptimized3EdgeTypes";
+import {
+  createCompiledRuntimeStepperBackend,
+  runSimulationCompiledBackend,
+  type RuntimeSimulationStepper as CompiledRuntimeSimulationStepper,
+} from "./simulationOptimized4Compiled";
+import {
+  createFusedLoopRuntimeStepperBackend,
+  runSimulationFusedLoopBackend,
+  type RuntimeSimulationStepper as FusedLoopRuntimeSimulationStepper,
+} from "./simulationOptimized5FusedLoop";
 
 const DEFAULT_EDGE_FADE_MS = 2;
 
@@ -251,6 +261,12 @@ export function runSimulation(
   if (backend === "edge-types") {
     return runSimulationEdgeTypes(graph, params, onProgress, options);
   }
+  if (backend === "compiled") {
+    return runSimulationCompiledBackend(graph, params, onProgress, options);
+  }
+  if (backend === "fused-loop") {
+    return runSimulationFusedLoopBackend(graph, params, onProgress, options);
+  }
   return runSimulationLegacy(graph, params, onProgress, options);
 }
 
@@ -267,6 +283,12 @@ export function createRuntimeSimulationStepper(
   }
   if (backend === "edge-types") {
     return createEdgeTypesRuntimeStepper(graph, params) as EdgeTypesRuntimeSimulationStepper;
+  }
+  if (backend === "compiled") {
+    return createCompiledRuntimeStepperBackend(graph, params) as CompiledRuntimeSimulationStepper;
+  }
+  if (backend === "fused-loop") {
+    return createFusedLoopRuntimeStepperBackend(graph, params) as FusedLoopRuntimeSimulationStepper;
   }
   return createLegacyRuntimeStepper(graph, params);
 }
