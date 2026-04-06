@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test:unit": "vitest run --config vitest.unit.config.ts",
+    "test:bench": "vitest bench src/engine/noteGeneration.bench.ts --config vitest.bench.config.ts",
     "test:e2e": "playwright test",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
