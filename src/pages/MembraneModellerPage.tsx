@@ -96,7 +96,23 @@ export function MembraneModellerPage() {
         fixMode: "none",
       },
     });
-  }, []);
+    const preparedGraph = useGraphStore.getState().graph.clone();
+    void handleConfirmGenerateNotes({
+      octaves: 2,
+      attenuation: generateNotesSettings.attenuation,
+      squareAttenuation: generateNotesSettings.squareAttenuation,
+      durationMs: 150,
+      tillSilence: false,
+      sampleRate: 44100,
+      method: "runge-kutta",
+      backend: "wasm-hotloop",
+      precision: 64,
+    }, preparedGraph);
+  }, [
+    generateNotesSettings.attenuation,
+    generateNotesSettings.squareAttenuation,
+    handleConfirmGenerateNotes,
+  ]);
 
   useEffect(() => {
     if (fuzzyGraphInitializedRef.current) {

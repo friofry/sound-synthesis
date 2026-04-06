@@ -126,15 +126,6 @@ export function EditorToolbarView({
             <span className="sr-only">Add hexagonal graph</span>
           </span>
         </button>
-        <button
-          type="button"
-          className="mfc-toolbar-button toolbar-icon-btn"
-          onClick={onReprepareAndGenerate}
-          title="Reprepare graph and generate octaves (2)"
-          aria-label="Reprepare graph and generate octaves (2)"
-        >
-          <span className="mfc-toolbar-button-content">🔄</span>
-        </button>
       </div>
       <MfcToolbar
         items={EXTRA_TOOL_ITEMS}
@@ -177,6 +168,18 @@ export function EditorToolbarView({
           <span className="mfc-toolbar-button-content">
             <span className="toolbar-sprite toolbar3-sprite" style={{ "--sprite-index": 12 } as CSSProperties} aria-hidden />
             <span className="sr-only">Zoom out</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="mfc-toolbar-button toolbar-icon-btn"
+          onClick={onReprepareAndGenerate}
+          title="Random preset + generate octaves (2)"
+          aria-label="Random preset + generate octaves (2)"
+        >
+          <span className="mfc-toolbar-button-content">
+            <span aria-hidden>🎲</span>
+            <span className="sr-only">Random preset + generate octaves (2)</span>
           </span>
         </button>
       </div>
