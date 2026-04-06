@@ -62,6 +62,6 @@ describe("pitch-to-stiffness scaling", () => {
     const octaveFrequency = simulateFundamental(octaveGraph, sampleRate);
     const observedRatio = octaveFrequency / baseFrequency;
 
-    expect(observedRatio).toBeCloseTo(2, 0.15);
+    expect(Math.abs(observedRatio - 2)).toBeLessThan(0.15);
   });
 });
