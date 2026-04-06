@@ -117,7 +117,7 @@ function runSimulationInWorker(
       graph: graph.toGraphData(),
       params,
       outputMode,
-      backend: "optimized",
+      backend: "fused-loop",
     });
   });
 }

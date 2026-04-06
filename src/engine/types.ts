@@ -115,7 +115,15 @@ export interface SimulationResult {
 }
 
 export type SimulationCaptureMode = "full" | "playing-point-only";
-export type SimulationBackend = "legacy" | "optimized" | "edge-list" | "edge-types" | "compiled" | "fused-loop";
+export type SimulationBackend =
+  | "legacy"
+  | "optimized"
+  | "edge-list"
+  | "edge-types"
+  | "compiled"
+  | "fused-loop"
+  | "sorted-edge-csr"
+  | "wasm-hotloop";
 
 export interface SimulationWorkerRequest {
   graph: GraphData;

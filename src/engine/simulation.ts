@@ -32,6 +32,16 @@ import {
   runSimulationFusedLoopBackend,
   type RuntimeSimulationStepper as FusedLoopRuntimeSimulationStepper,
 } from "./simulationOptimized5FusedLoop";
+import {
+  createSortedEdgeCSRRuntimeStepperBackend,
+  runSimulationSortedEdgeCSRBackend,
+  type RuntimeSimulationStepper as SortedEdgeCSRRuntimeSimulationStepper,
+} from "./simulationOptimized6SortedEdgeCSR";
+import {
+  createWasmRuntimeStepperBackend,
+  runSimulationWasmBackend,
+  type RuntimeSimulationStepper as WasmRuntimeSimulationStepper,
+} from "./simulationOptimized7Wasm";
 
 const DEFAULT_EDGE_FADE_MS = 2;
 
@@ -267,6 +277,12 @@ export function runSimulation(
   if (backend === "fused-loop") {
     return runSimulationFusedLoopBackend(graph, params, onProgress, options);
   }
+  if (backend === "sorted-edge-csr") {
+    return runSimulationSortedEdgeCSRBackend(graph, params, onProgress, options);
+  }
+  if (backend === "wasm-hotloop") {
+    return runSimulationWasmBackend(graph, params, onProgress, options);
+  }
   return runSimulationLegacy(graph, params, onProgress, options);
 }
 
@@ -289,6 +305,12 @@ export function createRuntimeSimulationStepper(
   }
   if (backend === "fused-loop") {
     return createFusedLoopRuntimeStepperBackend(graph, params) as FusedLoopRuntimeSimulationStepper;
+  }
+  if (backend === "sorted-edge-csr") {
+    return createSortedEdgeCSRRuntimeStepperBackend(graph, params) as SortedEdgeCSRRuntimeSimulationStepper;
+  }
+  if (backend === "wasm-hotloop") {
+    return createWasmRuntimeStepperBackend(graph, params) as WasmRuntimeSimulationStepper;
   }
   return createLegacyRuntimeStepper(graph, params);
 }

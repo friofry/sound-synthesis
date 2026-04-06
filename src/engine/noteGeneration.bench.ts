@@ -3,6 +3,14 @@ import { generateGraph } from "./gridGenerators";
 import { runSimulation } from "./simulation";
 import { compileGraph, runSimulationCompiled } from "./simulationOptimized4Compiled";
 import { compileGraph as compileGraphFused, runSimulationFusedLoop } from "./simulationOptimized5FusedLoop";
+import {
+  compileGraph as compileGraphSortedEdgeCSR,
+  runSimulationSortedEdgeCSR,
+} from "./simulationOptimized6SortedEdgeCSR";
+import {
+  compileGraph as compileGraphWasm,
+  runSimulationWasm,
+} from "./simulationOptimized7Wasm";
 import type { GraphData, GridParams, SimMethod, SimulationBackend, SimulationParams } from "./types";
 
 const GRID_SIZE = 25;
@@ -35,6 +43,8 @@ const BASE_PARAMS: Omit<SimulationParams, "method"> = {
 const graph = buildCenteredImpulseGraph();
 const compiledGraph = compileGraph(graph, BASE_PARAMS);
 const compiledGraphFused = compileGraphFused(graph, BASE_PARAMS);
+const compiledGraphSortedEdgeCSR = compileGraphSortedEdgeCSR(graph, BASE_PARAMS);
+const compiledGraphWasm = compileGraphWasm(graph, BASE_PARAMS);
 
 function buildCenteredImpulseGraph(): GraphData {
   const next = generateGraph("cell", GRID_PARAMS);
@@ -66,6 +76,30 @@ function generateNotePrecompiled(method: SimMethod): Float32Array {
 function generateNoteFusedPrecompiled(method: SimMethod): Float32Array {
   const result = runSimulationFusedLoop(
     compiledGraphFused,
+    { ...BASE_PARAMS, method },
+    undefined,
+    {
+      capture: "playing-point-only",
+    },
+  );
+  return result.playingPointBuffer;
+}
+
+function generateNoteSortedEdgeCSRPrecompiled(method: SimMethod): Float32Array {
+  const result = runSimulationSortedEdgeCSR(
+    compiledGraphSortedEdgeCSR,
+    { ...BASE_PARAMS, method },
+    undefined,
+    {
+      capture: "playing-point-only",
+    },
+  );
+  return result.playingPointBuffer;
+}
+
+function generateNoteWasmPrecompiled(method: SimMethod): Float32Array {
+  const result = runSimulationWasm(
+    compiledGraphWasm,
     { ...BASE_PARAMS, method },
     undefined,
     {
@@ -108,6 +142,22 @@ describe("note generation benchmark", () => {
     generateNoteFusedPrecompiled("euler");
   });
 
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (sorted-edge-csr)", () => {
+    generateNote("euler", "sorted-edge-csr");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (sorted-edge-csr-precompiled)", () => {
+    generateNoteSortedEdgeCSRPrecompiled("euler");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (wasm-hotloop)", () => {
+    generateNote("euler", "wasm-hotloop");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (wasm-hotloop-precompiled)", () => {
+    generateNoteWasmPrecompiled("euler");
+  });
+
   bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (legacy)", () => {
     generateNote("runge-kutta", "legacy");
   });
@@ -138,5 +188,21 @@ describe("note generation benchmark", () => {
 
   bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (fused-loop-precompiled)", () => {
     generateNoteFusedPrecompiled("runge-kutta");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (sorted-edge-csr)", () => {
+    generateNote("runge-kutta", "sorted-edge-csr");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (sorted-edge-csr-precompiled)", () => {
+    generateNoteSortedEdgeCSRPrecompiled("runge-kutta");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (wasm-hotloop)", () => {
+    generateNote("runge-kutta", "wasm-hotloop");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (wasm-hotloop-precompiled)", () => {
+    generateNoteWasmPrecompiled("runge-kutta");
   });
 });
