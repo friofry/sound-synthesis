@@ -387,7 +387,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   }, [setInstrumentGenerationState]);
 
   const handleConfirmGenerateNotes = useCallback(
-    async (values: GenerateNotesDialogValues) => {
+    async (values: GenerateNotesDialogValues, sourceGraph?: GraphModel) => {
+      const targetGraph = sourceGraph ?? graph;
       const safeOctaves = Math.max(1, Math.min(3, Math.round(values.octaves))) as 1 | 2 | 3;
       const safeAttenuation = Number.isFinite(values.attenuation) ? Math.max(0, values.attenuation) : simulationParams.attenuation;
       const safeSquareAttenuation = Number.isFinite(values.squareAttenuation)
@@ -430,7 +431,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       const generationStartMs = performance.now();
 
       try {
-        if (graph.dots.length > 0) {
+        if (targetGraph.dots.length > 0) {
           const baseIndex = 9;
           const baseFrequency = 440;
           const lengthK = resolveLengthK(safeDurationMs, safeSampleRate, safeTillSilence);
@@ -443,8 +444,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
             instrumentGenerationLabel: "Calibrating first note...",
           });
           const firstTargetRatio = ratioForIndex(0);
-          const calibrationGraph = scaleGraphForPitchRatio(graph, firstTargetRatio);
-          calibrationGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
+          const calibrationGraph = scaleGraphForPitchRatio(targetGraph, firstTargetRatio);
+          calibrationGraph.playingPoint = targetGraph.playingPoint ?? targetGraph.findFirstPlayableDot();
           const calibrationResult = await runSimulationInWorker(
             calibrationGraph,
             {
@@ -495,8 +496,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
               }
               const targetRatio = ratioForIndex(index);
               const tunedRatio = targetRatio * calibrationPitchRatio;
-              const noteGraph = scaleGraphForPitchRatio(graph, tunedRatio);
-              noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
+              const noteGraph = scaleGraphForPitchRatio(targetGraph, tunedRatio);
+              noteGraph.playingPoint = targetGraph.playingPoint ?? targetGraph.findFirstPlayableDot();
 
               const result = await runSimulationInWorker(
                 noteGraph,

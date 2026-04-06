@@ -188,6 +188,14 @@
   image-rendering: pixelated;
 }
 
+.toolbar-selection-rect-icon {
+  width: 16px;
+  height: 12px;
+  border: 1px dashed #50b450;
+  box-sizing: border-box;
+  display: inline-block;
+}
+
 .toolbar3-sprite {
   background-image: url("/legacy-icons/toolbar3.png");
   background-repeat: no-repeat;

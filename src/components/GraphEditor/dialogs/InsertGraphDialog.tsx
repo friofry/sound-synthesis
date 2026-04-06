@@ -39,6 +39,7 @@ export type InsertGraphFormProps = {
     playingPointMode: PlayingPointMode;
     centerGroup: CenterGroupModifyOptions;
     generateOctaves123: boolean;
+    generateOctavesCount: 1 | 2 | 3;
   }) => void;
   onClose: () => void;
 };
@@ -68,6 +69,7 @@ export function InsertGraphForm({
   const [groupStiffness, setGroupStiffness] = useState(defaults.stiffness);
   const [groupStiffnessTouched, setGroupStiffnessTouched] = useState(false);
   const [generateOctaves123, setGenerateOctaves123] = useState(false);
+  const [generateOctavesCount, setGenerateOctavesCount] = useState<1 | 2 | 3>(3);
 
   const effectiveGroupWeight = groupWeightTouched ? groupWeight : weight;
   const effectiveGroupStiffness = groupStiffnessTouched ? groupStiffness : stiffness;
@@ -100,6 +102,7 @@ export function InsertGraphForm({
           fixMode,
         },
         generateOctaves123,
+        generateOctavesCount,
       })}
       width={460}
       actions={
@@ -223,9 +226,27 @@ export function InsertGraphForm({
             </MfcField>
           </>
         ) : null}
-        <MfcCheckbox checked={generateOctaves123} onChange={setGenerateOctaves123}>
-          Generate octaves (1,2,3)
-        </MfcCheckbox>
+        <MfcField label="Generate Octaves" labelWidth={110}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <MfcCheckbox checked={generateOctaves123} onChange={setGenerateOctaves123}>
+              Auto-generate
+            </MfcCheckbox>
+            <MfcSelect
+              value={String(generateOctavesCount)}
+              onChange={(value) => {
+                if (value === "1" || value === "2" || value === "3") {
+                  setGenerateOctavesCount(Number(value) as 1 | 2 | 3);
+                }
+              }}
+              options={[
+                { value: "1", label: "1 octave" },
+                { value: "2", label: "2 octaves" },
+                { value: "3", label: "3 octaves" },
+              ]}
+              disabled={!generateOctaves123}
+            />
+          </div>
+        </MfcField>
       </MfcGroupBox>
     </MfcDialog>
   );
@@ -235,7 +256,7 @@ type InsertGraphDialogProps = {
   open: boolean;
   initialType?: GridType;
   canvasSize: { width: number; height: number };
-  onGenerateOctaves123?: () => void;
+  onGenerateOctaves123?: (octaves: 1 | 2 | 3) => void;
   onClose: () => void;
 };
 
@@ -291,7 +312,7 @@ export function InsertGraphDialog({
           centerGroup: values.centerGroup,
         });
         if (values.generateOctaves123) {
-          onGenerateOctaves123?.();
+          onGenerateOctaves123?.(values.generateOctavesCount);
         }
         onClose();
       }}

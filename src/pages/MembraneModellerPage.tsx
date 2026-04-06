@@ -31,6 +31,8 @@ export function MembraneModellerPage() {
     insertDialog,
     canvasSize,
     closeInsertDialog,
+    createPresetGraph,
+    setDefaults,
   } = useGraphStore();
 
   const {
@@ -61,12 +63,7 @@ export function MembraneModellerPage() {
   } = usePianoToolbar({ graph, simulationParams });
 
   const InitializeFuzzyGraph = useCallback(() => {
-    const graphTypes: GridType[] = ["cell", "triangle", "astra", "hexagon"];
-    const randomGraphType = graphTypes[randomInt(0, graphTypes.length - 1)];
-    const randomSize = randomInt(30, 50);
-    const randomStiffness = randomFloat(0.5, 2.5);
-    const randomAmplitude = randomFloat(0.5, 1);
-    const randomStiffnessType: StiffnessType = Math.random() < 0.5 ? "tetradic" : "isotropic";
+    const randomPreset = createRandomPresetConfig();
 
     const initialState = useGraphStore.getState();
     const width = Math.max(1, initialState.canvasSize.width);
@@ -74,27 +71,27 @@ export function MembraneModellerPage() {
 
     initialState.setDefaults({
       fixedBorder: true,
-      stiffnessType: randomStiffnessType,
-      defaultStiffness: randomStiffness,
+      stiffnessType: randomPreset.stiffnessType,
+      defaultStiffness: randomPreset.stiffness,
     });
 
-    initialState.createPresetGraph(randomGraphType, {
-      n: randomSize,
-      m: randomSize,
-      layers: randomSize,
-      stiffness: randomStiffness,
+    initialState.createPresetGraph(randomPreset.graphType, {
+      n: randomPreset.size,
+      m: randomPreset.size,
+      layers: randomPreset.size,
+      stiffness: randomPreset.stiffness,
       weight: initialState.defaultWeight,
       fixedBorder: true,
-      stiffnessType: randomStiffnessType,
+      stiffnessType: randomPreset.stiffnessType,
       width,
       height,
     }, {
       playingPointMode: "center",
       centerGroup: {
         enabled: true,
-        maxAmplitude: randomAmplitude,
+        maxAmplitude: randomPreset.amplitude,
         maxWeight: initialState.defaultWeight,
-        stiffness: randomStiffness,
+        stiffness: randomPreset.stiffness,
         distribution: "smoothed",
         fixMode: "none",
       },
@@ -109,13 +106,67 @@ export function MembraneModellerPage() {
     InitializeFuzzyGraph();
   }, [InitializeFuzzyGraph]);
 
+  const handleReprepareAndGenerate = useCallback(() => {
+    const randomPreset = createRandomPresetConfig();
+    const currentState = useGraphStore.getState();
+    const width = Math.max(1, currentState.canvasSize.width);
+    const height = Math.max(1, currentState.canvasSize.height);
+
+    setDefaults({
+      fixedBorder: true,
+      stiffnessType: randomPreset.stiffnessType,
+      defaultStiffness: randomPreset.stiffness,
+    });
+
+    createPresetGraph(randomPreset.graphType, {
+      n: randomPreset.size,
+      m: randomPreset.size,
+      layers: randomPreset.size,
+      stiffness: randomPreset.stiffness,
+      weight: currentState.defaultWeight,
+      fixedBorder: true,
+      stiffnessType: randomPreset.stiffnessType,
+      width,
+      height,
+    }, {
+      playingPointMode: "center",
+      centerGroup: {
+        enabled: true,
+        maxAmplitude: randomPreset.amplitude,
+        maxWeight: currentState.defaultWeight,
+        stiffness: randomPreset.stiffness,
+        distribution: "smoothed",
+        fixMode: "none",
+      },
+    });
+
+    const preparedGraph = useGraphStore.getState().graph.clone();
+    void handleConfirmGenerateNotes({
+      octaves: 2,
+      attenuation: generateNotesSettings.attenuation,
+      squareAttenuation: generateNotesSettings.squareAttenuation,
+      durationMs: 150,
+      tillSilence: false,
+      sampleRate: 44100,
+      method: "runge-kutta",
+      backend: "wasm-hotloop",
+      precision: 64,
+    }, preparedGraph);
+  }, [
+    createPresetGraph,
+    generateNotesSettings.attenuation,
+    generateNotesSettings.squareAttenuation,
+    handleConfirmGenerateNotes,
+    setDefaults,
+  ]);
+
   return (
     <section className="workspace-layout">
       <MfcSplitView className="workspace-split-view" defaultRatio={0.5} minPaneSize={280}>
         <section className="graph-pane">
           <section className="graph-pane-inner">
             <aside className="tool-column">
-              <EditorToolbar />
+              <EditorToolbar onReprepareAndGenerate={handleReprepareAndGenerate} />
             </aside>
             <div className="graph-stage">
               <GraphCanvas />
@@ -188,9 +239,9 @@ export function MembraneModellerPage() {
       <InsertGraphDialog
         open={insertDialog.open}
         canvasSize={canvasSize}
-        onGenerateOctaves123={() => {
+        onGenerateOctaves123={(octaves) => {
           void handleConfirmGenerateNotes({
-            octaves: 3,
+            octaves,
             attenuation: generateNotesSettings.attenuation,
             squareAttenuation: generateNotesSettings.squareAttenuation,
             durationMs: 150,
@@ -213,4 +264,21 @@ function randomInt(min: number, max: number): number {
 
 function randomFloat(min: number, max: number): number {
   return min + Math.random() * (max - min);
+}
+
+function createRandomPresetConfig(): {
+  graphType: GridType;
+  size: number;
+  stiffness: number;
+  amplitude: number;
+  stiffnessType: StiffnessType;
+} {
+  const graphTypes: GridType[] = ["cell", "triangle", "astra", "hexagon"];
+  return {
+    graphType: graphTypes[randomInt(0, graphTypes.length - 1)],
+    size: randomInt(30, 50),
+    stiffness: randomFloat(0.5, 2.5),
+    amplitude: randomFloat(0.5, 1),
+    stiffnessType: Math.random() < 0.5 ? "tetradic" : "isotropic",
+  };
 }
