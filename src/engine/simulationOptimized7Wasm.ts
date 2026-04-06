@@ -1,7 +1,9 @@
 import type {
+  FloatArray,
   GraphData,
   SimulationCaptureMode,
   SimulationParams,
+  SimulationPrecision,
   SimulationResult,
   SimulationState,
 } from "./types";
@@ -13,11 +15,13 @@ import {
   type RuntimeSimulationStepper as FusedLoopRuntimeSimulationStepper,
 } from "./simulationOptimized5FusedLoop";
 import { SIM_HOTLOOP_WASM_BASE64 } from "./wasm/sim_hotloop.wasm.base64";
+import { SIM_HOTLOOP_F32_WASM_BASE64 } from "./wasm/sim_hotloop_f32.wasm.base64";
 
 const DEFAULT_EDGE_FADE_MS = 2;
 
 type RunSimulationOptions = {
   capture?: SimulationCaptureMode;
+  precision?: SimulationPrecision;
 };
 
 type WasmExports = {
@@ -36,8 +40,8 @@ type WasmExports = {
 };
 
 type WasmKernel = {
-  u: Float64Array;
-  v: Float64Array;
+  u: FloatArray;
+  v: FloatArray;
   eulerStep: (dt: number, attenuation: number, squareAttenuation: number) => void;
   rk4Step: (dt: number, attenuation: number, squareAttenuation: number) => void;
 };
@@ -49,6 +53,8 @@ export type RuntimeSimulationStepper = {
 
 let cachedWasmModule: WebAssembly.Module | null = null;
 let wasmModuleLoadFailed = false;
+let cachedWasmModuleF32: WebAssembly.Module | null = null;
+let wasmModuleF32LoadFailed = false;
 
 function decodeBase64ToBytes(base64: string): Uint8Array {
   if (typeof Buffer !== "undefined") {
@@ -81,12 +87,25 @@ function getWasmModule(): WebAssembly.Module | null {
   }
 }
 
-function createWasmKernel(compiled: CompiledSimulationGraph): WasmKernel | null {
-  const module = getWasmModule();
-  if (!module) {
+function getWasmModuleF32(): WebAssembly.Module | null {
+  if (cachedWasmModuleF32) {
+    return cachedWasmModuleF32;
+  }
+  if (wasmModuleF32LoadFailed) {
     return null;
   }
 
+  try {
+    const wasmBytes = decodeBase64ToBytes(SIM_HOTLOOP_F32_WASM_BASE64);
+    cachedWasmModuleF32 = new WebAssembly.Module(wasmBytes);
+    return cachedWasmModuleF32;
+  } catch {
+    wasmModuleF32LoadFailed = true;
+    return null;
+  }
+}
+
+function instantiateWasmExports(module: WebAssembly.Module): Partial<WasmExports> | null {
   let instance: WebAssembly.Instance;
   try {
     instance = new WebAssembly.Instance(module, {});
@@ -109,6 +128,20 @@ function createWasmKernel(compiled: CompiledSimulationGraph): WasmKernel | null 
     !exports.get_offset_fixed_index ||
     !exports.get_offset_fixed_k_over_mass
   ) {
+    return null;
+  }
+
+  return exports;
+}
+
+function createWasmKernelF64(compiled: CompiledSimulationGraph): WasmKernel | null {
+  const module = getWasmModule();
+  if (!module) {
+    return null;
+  }
+
+  const exports = instantiateWasmExports(module);
+  if (!exports) {
     return null;
   }
 
@@ -151,6 +184,56 @@ function createWasmKernel(compiled: CompiledSimulationGraph): WasmKernel | null 
   };
 }
 
+function createWasmKernelF32(compiled: CompiledSimulationGraph): WasmKernel | null {
+  const module = getWasmModuleF32();
+  if (!module) {
+    return null;
+  }
+
+  const exports = instantiateWasmExports(module);
+  if (!exports) {
+    return null;
+  }
+
+  const freeFree = compiled.edges.freeFree;
+  const freeFixed = compiled.edges.freeFixed;
+  const initResult = exports.init(
+    compiled.freeCount,
+    freeFree.edgeI.length,
+    freeFixed.freeIndex.length,
+  );
+  if (!initResult) {
+    return null;
+  }
+
+  const buffer = exports.memory.buffer;
+  const u = new Float32Array(buffer, exports.get_offset_u(), compiled.freeCount);
+  const v = new Float32Array(buffer, exports.get_offset_v(), compiled.freeCount);
+  u.set(compiled.initialU);
+  v.set(compiled.initialV);
+
+  const ffEdgeI = new Uint32Array(buffer, exports.get_offset_ff_edge_i(), freeFree.edgeI.length);
+  const ffEdgeJ = new Uint32Array(buffer, exports.get_offset_ff_edge_j(), freeFree.edgeJ.length);
+  const ffKOverMassI = new Float32Array(buffer, exports.get_offset_ff_k_over_mass_i(), freeFree.kOverMassI.length);
+  const ffKOverMassJ = new Float32Array(buffer, exports.get_offset_ff_k_over_mass_j(), freeFree.kOverMassJ.length);
+  const fixedIndex = new Uint32Array(buffer, exports.get_offset_fixed_index(), freeFixed.freeIndex.length);
+  const fixedKOverMass = new Float32Array(buffer, exports.get_offset_fixed_k_over_mass(), freeFixed.kOverMass.length);
+
+  ffEdgeI.set(freeFree.edgeI);
+  ffEdgeJ.set(freeFree.edgeJ);
+  ffKOverMassI.set(freeFree.kOverMassI);
+  ffKOverMassJ.set(freeFree.kOverMassJ);
+  fixedIndex.set(freeFixed.freeIndex);
+  fixedKOverMass.set(freeFixed.kOverMass);
+
+  return {
+    u,
+    v,
+    eulerStep: exports.euler_step,
+    rk4Step: exports.rk4_step,
+  };
+}
+
 export { compileGraph };
 export type { CompiledSimulationGraph };
 
@@ -160,7 +243,8 @@ export function runSimulationWasm(
   onProgress?: (completed: number, total: number) => void,
   options?: RunSimulationOptions,
 ): SimulationResult {
-  const kernel = createWasmKernel(compiled);
+  const precision = options?.precision ?? 64;
+  const kernel = precision === 32 ? createWasmKernelF32(compiled) : createWasmKernelF64(compiled);
   if (!kernel) {
     return runSimulationFusedLoop(compiled, params, onProgress, options);
   }
@@ -170,9 +254,13 @@ export function runSimulationWasm(
   const captureFull = captureMode === "full";
   const dt = 1 / params.sampleRate;
 
-  const frames = captureFull ? new Array<Float64Array>(totalSamples) : [];
+  const frames = captureFull ? new Array<FloatArray>(totalSamples) : [];
   const playingPointBuffer = new Float32Array(totalSamples);
-  const packedHistory = captureFull ? new Float64Array(totalSamples * compiled.totalDots) : null;
+  const packedHistory: FloatArray | null = captureFull
+    ? (precision === 32
+        ? new Float32Array(totalSamples * compiled.totalDots)
+        : new Float64Array(totalSamples * compiled.totalDots))
+    : null;
 
   for (let sample = 0; sample < totalSamples; sample += 1) {
     if (params.method === "runge-kutta") {
@@ -227,7 +315,7 @@ export function runSimulationWasmBackend(
   onProgress?: (completed: number, total: number) => void,
   options?: RunSimulationOptions,
 ): SimulationResult {
-  const compiled = compileGraph(graph, params);
+  const compiled = compileGraph(graph, params, options?.precision ?? 64);
   return runSimulationWasm(compiled, params, onProgress, options);
 }
 
@@ -235,15 +323,16 @@ export function createWasmRuntimeStepper(
   compiled: CompiledSimulationGraph,
   params: SimulationParams,
 ): RuntimeSimulationStepper {
-  const kernel = createWasmKernel(compiled);
+  const precision: SimulationPrecision = compiled.initialU instanceof Float32Array ? 32 : 64;
+  const kernel = precision === 32 ? createWasmKernelF32(compiled) : createWasmKernelF64(compiled);
   if (!kernel) {
     return createFusedLoopRuntimeStepper(compiled, params) as FusedLoopRuntimeSimulationStepper;
   }
 
   const dt = 1 / params.sampleRate;
   const state: SimulationState = {
-    u: new Float64Array(compiled.totalDots),
-    v: new Float64Array(compiled.totalDots),
+    u: precision === 32 ? new Float32Array(compiled.totalDots) : new Float64Array(compiled.totalDots),
+    v: precision === 32 ? new Float32Array(compiled.totalDots) : new Float64Array(compiled.totalDots),
   };
 
   for (let i = 0; i < compiled.freeToGlobal.length; i += 1) {

@@ -12,8 +12,10 @@ import { encodeWavBlob } from "../engine/snc/wavExport";
 import { GraphModel } from "../engine/graph";
 import type {
   RawInstrumentNote,
+  SimulationBackend,
   SimulationCaptureMode,
   SimulationParams,
+  SimulationPrecision,
   SimulationResult,
   SimulationWorkerMessage,
 } from "../engine/types";
@@ -80,6 +82,8 @@ function runSimulationInWorker(
   graph: GraphModel,
   params: SimulationParams,
   outputMode: SimulationCaptureMode = "full",
+  backend: SimulationBackend = "fused-loop",
+  precision: SimulationPrecision = 64,
   onProgress?: (completed: number, total: number) => void,
 ): Promise<SimulationResult> {
   return new Promise((resolve, reject) => {
@@ -117,7 +121,8 @@ function runSimulationInWorker(
       graph: graph.toGraphData(),
       params,
       outputMode,
-      backend: "fused-loop",
+      backend,
+      precision,
     });
   });
 }
@@ -310,6 +315,14 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       const safeDurationMs = Number.isFinite(values.durationMs) ? Math.max(1, Math.round(values.durationMs)) : 150;
       const safeTillSilence = Boolean(values.tillSilence);
       const safeMethod = values.method === "runge-kutta" ? "runge-kutta" : "euler";
+      const safeBackend: SimulationBackend =
+        values.backend === "wasm-hotloop" ||
+        values.backend === "fused-loop" ||
+        values.backend === "compiled" ||
+        values.backend === "optimized"
+          ? values.backend
+          : "wasm-hotloop";
+      const safePrecision: SimulationPrecision = values.precision === 32 ? 32 : 64;
       const safeNoteCount = safeOctaves * 12;
 
       setGenerateNotesSettings({
@@ -320,6 +333,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
         tillSilence: safeTillSilence,
         sampleRate: safeSampleRate,
         method: safeMethod,
+        backend: safeBackend,
+        precision: safePrecision,
       });
       setGenerateNotesDialogOpen(false);
       setInstrumentGenerationState({
@@ -355,6 +370,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
               playingPoint: calibrationGraph.playingPoint ?? 0,
             },
             "playing-point-only",
+            safeBackend,
+            safePrecision,
           );
           const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, safeSampleRate);
           if (measuredFirstFrequency !== null) {
@@ -378,6 +395,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
                 playingPoint: noteGraph.playingPoint ?? 0,
               },
               "playing-point-only",
+              safeBackend,
+              safePrecision,
               (completed, total) => {
                 const insideNote = total > 0 ? completed / total : 0;
                 const absoluteProgress = ((index + insideNote) / safeNoteCount) * 100;

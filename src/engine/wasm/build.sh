@@ -2,9 +2,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INPUT_C="${SCRIPT_DIR}/sim_hotloop.c"
-OUTPUT_WASM="${SCRIPT_DIR}/sim_hotloop.wasm"
-OUTPUT_BASE64_TS="${SCRIPT_DIR}/sim_hotloop.wasm.base64.ts"
+INPUT_C_F64="${SCRIPT_DIR}/sim_hotloop.c"
+OUTPUT_WASM_F64="${SCRIPT_DIR}/sim_hotloop.wasm"
+OUTPUT_BASE64_TS_F64="${SCRIPT_DIR}/sim_hotloop.wasm.base64.ts"
+INPUT_C_F32="${SCRIPT_DIR}/sim_hotloop_f32.c"
+OUTPUT_WASM_F32="${SCRIPT_DIR}/sim_hotloop_f32.wasm"
+OUTPUT_BASE64_TS_F32="${SCRIPT_DIR}/sim_hotloop_f32.wasm.base64.ts"
 
 if [[ -x "/opt/homebrew/opt/emscripten/libexec/llvm/bin/clang" ]]; then
   CLANG="/opt/homebrew/opt/emscripten/libexec/llvm/bin/clang"
@@ -14,7 +17,13 @@ else
   CLANG="clang"
 fi
 
-"${CLANG}" \
+build_wasm() {
+  local input_c="$1"
+  local output_wasm="$2"
+  local output_base64_ts="$3"
+  local const_name="$4"
+
+  "${CLANG}" \
   --target=wasm32 \
   -O3 \
   -ffast-math \
@@ -37,11 +46,15 @@ fi
   -Wl,--max-memory=33554432 \
   -Wl,--import-undefined \
   -Wl,--export=__heap_base \
-  "${INPUT_C}" \
-  -o "${OUTPUT_WASM}"
+  "${input_c}" \
+  -o "${output_wasm}"
 
-{
-  printf "export const SIM_HOTLOOP_WASM_BASE64 = '"
-  base64 < "${OUTPUT_WASM}" | tr -d '\n'
-  printf "';\n"
-} > "${OUTPUT_BASE64_TS}"
+  {
+    printf "export const %s = '" "${const_name}"
+    base64 < "${output_wasm}" | tr -d '\n'
+    printf "';\n"
+  } > "${output_base64_ts}"
+}
+
+build_wasm "${INPUT_C_F64}" "${OUTPUT_WASM_F64}" "${OUTPUT_BASE64_TS_F64}" "SIM_HOTLOOP_WASM_BASE64"
+build_wasm "${INPUT_C_F32}" "${OUTPUT_WASM_F32}" "${OUTPUT_BASE64_TS_F32}" "SIM_HOTLOOP_F32_WASM_BASE64"

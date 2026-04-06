@@ -51,6 +51,17 @@ type MfcButtonProps = {
   className?: string;
 };
 
+type MfcSelectOption<T extends string> = {
+  value: T;
+  label: string;
+};
+
+type MfcSelectProps<T extends string> = Omit<InputHTMLAttributes<HTMLSelectElement>, "value" | "onChange"> & {
+  value: T;
+  options: MfcSelectOption<T>[];
+  onChange: (value: T) => void;
+};
+
 export function MfcDialog({ title, open, onClose, onSubmit, width = 360, children, actions }: MfcDialogProps) {
   useEffect(() => {
     if (!open) {
@@ -210,5 +221,21 @@ export function MfcButton({
     >
       {children}
     </button>
+  );
+}
+
+export function MfcSelect<T extends string>({ value, options, onChange, ...rest }: MfcSelectProps<T>) {
+  return (
+    <select
+      {...rest}
+      value={value}
+      onChange={(event) => onChange(event.target.value as T)}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 }

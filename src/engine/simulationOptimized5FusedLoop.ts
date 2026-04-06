@@ -1,7 +1,9 @@
 import type {
+  FloatArray,
   GraphData,
   SimulationCaptureMode,
   SimulationParams,
+  SimulationPrecision,
   SimulationResult,
   SimulationState,
 } from "./types";
@@ -11,13 +13,13 @@ const DEFAULT_EDGE_FADE_MS = 2;
 type FreeFreeEdges = {
   edgeI: Uint32Array;
   edgeJ: Uint32Array;
-  kOverMassI: Float64Array;
-  kOverMassJ: Float64Array;
+  kOverMassI: FloatArray;
+  kOverMassJ: FloatArray;
 };
 
 type FreeFixedEdges = {
   freeIndex: Uint32Array;
-  kOverMass: Float64Array;
+  kOverMass: FloatArray;
 };
 
 type SplitEdges = {
@@ -28,22 +30,22 @@ type SplitEdges = {
 type FreeNodeMapping = {
   freeToGlobal: Uint32Array;
   globalToFree: Int32Array;
-  initialU: Float64Array;
-  initialV: Float64Array;
+  initialU: FloatArray;
+  initialV: FloatArray;
 };
 
 type RungeKuttaWorkspace = {
-  k1u: Float64Array;
-  k1v: Float64Array;
-  u2: Float64Array;
-  v2: Float64Array;
-  u3: Float64Array;
-  v3: Float64Array;
-  u4: Float64Array;
-  v4: Float64Array;
-  k2v: Float64Array;
-  k3v: Float64Array;
-  k4v: Float64Array;
+  k1u: FloatArray;
+  k1v: FloatArray;
+  u2: FloatArray;
+  v2: FloatArray;
+  u3: FloatArray;
+  v3: FloatArray;
+  u4: FloatArray;
+  v4: FloatArray;
+  k2v: FloatArray;
+  k3v: FloatArray;
+  k4v: FloatArray;
 };
 
 export type RuntimeSimulationStepper = {
@@ -56,8 +58,8 @@ export type CompiledSimulationGraph = {
   freeCount: number;
   freeToGlobal: Uint32Array;
   globalToFree: Int32Array;
-  initialU: Float64Array;
-  initialV: Float64Array;
+  initialU: FloatArray;
+  initialV: FloatArray;
   edges: SplitEdges;
   playingPointGlobal: number;
   playingPointFree: number;
@@ -65,15 +67,25 @@ export type CompiledSimulationGraph = {
 
 type RunSimulationOptions = {
   capture?: SimulationCaptureMode;
+  precision?: SimulationPrecision;
 };
+
+function createFloatArray(length: number, precision: SimulationPrecision): FloatArray {
+  return precision === 32 ? new Float32Array(length) : new Float64Array(length);
+}
+
+function toFloatArray(values: number[], precision: SimulationPrecision): FloatArray {
+  return precision === 32 ? Float32Array.from(values) : Float64Array.from(values);
+}
 
 export function compileGraph(
   graph: GraphData,
   params: Pick<SimulationParams, "playingPoint">,
+  precision: SimulationPrecision = 64,
 ): CompiledSimulationGraph {
   const totalDots = graph.dots.length;
-  const mapping = createFreeNodeMapping(graph);
-  const edges = createSplitEdges(graph, mapping.globalToFree);
+  const mapping = createFreeNodeMapping(graph, precision);
+  const edges = createSplitEdges(graph, mapping.globalToFree, precision);
   const playingPointGlobal = Math.max(0, Math.min(totalDots - 1, graph.playingPoint ?? params.playingPoint));
   const playingPointFree = mapping.globalToFree[playingPointGlobal];
 
@@ -96,6 +108,7 @@ export function runSimulationFusedLoop(
   onProgress?: (completed: number, total: number) => void,
   options?: RunSimulationOptions,
 ): SimulationResult {
+  const precision = options?.precision ?? 64;
   const totalSamples = params.lengthK * 1024;
   const captureMode = options?.capture ?? "full";
   const captureFull = captureMode === "full";
@@ -104,13 +117,13 @@ export function runSimulationFusedLoop(
     u: compiled.initialU.slice(),
     v: compiled.initialV.slice(),
   };
-  const springScratch = new Float64Array(compiled.freeCount);
-  const rk = createRungeKuttaWorkspace(compiled.freeCount);
+  const springScratch = createFloatArray(compiled.freeCount, precision);
+  const rk = createRungeKuttaWorkspace(compiled.freeCount, precision);
   const dt = 1 / params.sampleRate;
 
-  const frames = captureFull ? new Array<Float64Array>(totalSamples) : [];
+  const frames = captureFull ? new Array<FloatArray>(totalSamples) : [];
   const playingPointBuffer = new Float32Array(totalSamples);
-  const packedHistory = captureFull ? new Float64Array(totalSamples * compiled.totalDots) : null;
+  const packedHistory = captureFull ? createFloatArray(totalSamples * compiled.totalDots, precision) : null;
 
   for (let sample = 0; sample < totalSamples; sample += 1) {
     if (params.method === "runge-kutta") {
@@ -165,18 +178,19 @@ export function runSimulationFusedLoopBackend(
   onProgress?: (completed: number, total: number) => void,
   options?: RunSimulationOptions,
 ): SimulationResult {
-  const compiled = compileGraph(graph, params);
+  const compiled = compileGraph(graph, params, options?.precision ?? 64);
   return runSimulationFusedLoop(compiled, params, onProgress, options);
 }
 
 export function createFusedLoopRuntimeStepper(
   compiled: CompiledSimulationGraph,
   params: SimulationParams,
+  precision: SimulationPrecision = 64,
 ): RuntimeSimulationStepper {
   const dt = 1 / params.sampleRate;
   const state: SimulationState = {
-    u: new Float64Array(compiled.totalDots),
-    v: new Float64Array(compiled.totalDots),
+    u: createFloatArray(compiled.totalDots, precision),
+    v: createFloatArray(compiled.totalDots, precision),
   };
   const dynamicState: SimulationState = {
     u: compiled.initialU.slice(),
@@ -189,8 +203,8 @@ export function createFusedLoopRuntimeStepper(
     state.v[globalIndex] = dynamicState.v[i];
   }
 
-  const springScratch = new Float64Array(compiled.freeCount);
-  const rk = createRungeKuttaWorkspace(compiled.freeCount);
+  const springScratch = createFloatArray(compiled.freeCount, precision);
+  const rk = createRungeKuttaWorkspace(compiled.freeCount, precision);
 
   return {
     state,
@@ -230,15 +244,19 @@ export function createFusedLoopRuntimeStepperBackend(
   graph: GraphData,
   params: SimulationParams,
 ): RuntimeSimulationStepper {
-  const compiled = compileGraph(graph, params);
-  return createFusedLoopRuntimeStepper(compiled, params);
+  const compiled = compileGraph(graph, params, 64);
+  return createFusedLoopRuntimeStepper(compiled, params, 64);
 }
 
 // ---------------------------------------------------------------------------
 // Graph compilation helpers
 // ---------------------------------------------------------------------------
 
-function createSplitEdges(graph: GraphData, globalToFree: Int32Array): SplitEdges {
+function createSplitEdges(
+  graph: GraphData,
+  globalToFree: Int32Array,
+  precision: SimulationPrecision,
+): SplitEdges {
   const edgeI: number[] = [];
   const edgeJ: number[] = [];
   const kOverMassI: number[] = [];
@@ -275,17 +293,17 @@ function createSplitEdges(graph: GraphData, globalToFree: Int32Array): SplitEdge
     freeFree: {
       edgeI: Uint32Array.from(edgeI),
       edgeJ: Uint32Array.from(edgeJ),
-      kOverMassI: Float64Array.from(kOverMassI),
-      kOverMassJ: Float64Array.from(kOverMassJ),
+      kOverMassI: toFloatArray(kOverMassI, precision),
+      kOverMassJ: toFloatArray(kOverMassJ, precision),
     },
     freeFixed: {
       freeIndex: Uint32Array.from(freeIndex),
-      kOverMass: Float64Array.from(kOverMass),
+      kOverMass: toFloatArray(kOverMass, precision),
     },
   };
 }
 
-function createFreeNodeMapping(graph: GraphData): FreeNodeMapping {
+function createFreeNodeMapping(graph: GraphData, precision: SimulationPrecision): FreeNodeMapping {
   const globalToFree = new Int32Array(graph.dots.length);
   globalToFree.fill(-1);
   const freeToGlobal: number[] = [];
@@ -306,8 +324,8 @@ function createFreeNodeMapping(graph: GraphData): FreeNodeMapping {
   return {
     freeToGlobal: Uint32Array.from(freeToGlobal),
     globalToFree,
-    initialU: Float64Array.from(initialU),
-    initialV: Float64Array.from(initialV),
+    initialU: toFloatArray(initialU, precision),
+    initialV: toFloatArray(initialV, precision),
   };
 }
 
@@ -315,7 +333,7 @@ function createFreeNodeMapping(graph: GraphData): FreeNodeMapping {
 // Physics: spring acceleration (edge scatter — kept as separate pass)
 // ---------------------------------------------------------------------------
 
-function computeSpringAcceleration(u: Float64Array, edges: SplitEdges, out: Float64Array): void {
+function computeSpringAcceleration(u: FloatArray, edges: SplitEdges, out: FloatArray): void {
   out.fill(0);
   const { freeFree, freeFixed } = edges;
 
@@ -338,12 +356,12 @@ function computeSpringAcceleration(u: Float64Array, edges: SplitEdges, out: Floa
 // ---------------------------------------------------------------------------
 
 function buildAcceleration(
-  u: Float64Array,
-  v: Float64Array,
+  u: FloatArray,
+  v: FloatArray,
   edges: SplitEdges,
   attenuation: number,
   squareAttenuation: number,
-  out: Float64Array,
+  out: FloatArray,
 ): void {
   computeSpringAcceleration(u, edges, out);
   for (let i = 0; i < u.length; i += 1) {
@@ -361,7 +379,7 @@ function eulerCramerStep(
   dt: number,
   attenuation: number,
   squareAttenuation: number,
-  springScratch: Float64Array,
+  springScratch: FloatArray,
 ): void {
   const { u, v } = state;
   computeSpringAcceleration(u, edges, springScratch);
@@ -420,19 +438,19 @@ function rungeKuttaStep(
 // Workspace allocation
 // ---------------------------------------------------------------------------
 
-function createRungeKuttaWorkspace(n: number): RungeKuttaWorkspace {
+function createRungeKuttaWorkspace(n: number, precision: SimulationPrecision): RungeKuttaWorkspace {
   return {
-    k1u: new Float64Array(n),
-    k1v: new Float64Array(n),
-    u2: new Float64Array(n),
-    v2: new Float64Array(n),
-    u3: new Float64Array(n),
-    v3: new Float64Array(n),
-    u4: new Float64Array(n),
-    v4: new Float64Array(n),
-    k2v: new Float64Array(n),
-    k3v: new Float64Array(n),
-    k4v: new Float64Array(n),
+    k1u: createFloatArray(n, precision),
+    k1v: createFloatArray(n, precision),
+    u2: createFloatArray(n, precision),
+    v2: createFloatArray(n, precision),
+    u3: createFloatArray(n, precision),
+    v3: createFloatArray(n, precision),
+    u4: createFloatArray(n, precision),
+    v4: createFloatArray(n, precision),
+    k2v: createFloatArray(n, precision),
+    k3v: createFloatArray(n, precision),
+    k4v: createFloatArray(n, precision),
   };
 }
 

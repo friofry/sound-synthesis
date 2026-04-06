@@ -5,11 +5,11 @@ import type { SimulationWorkerMessage, SimulationWorkerRequest } from "./types";
 
 self.onmessage = (event: MessageEvent<SimulationWorkerRequest>) => {
   try {
-    const { graph, params, outputMode = "full", backend } = event.data;
+    const { graph, params, outputMode = "full", backend, precision } = event.data;
     const result = runSimulation(graph, params, (completed, total) => {
       const progress: SimulationWorkerMessage = { type: "progress", completed, total };
       self.postMessage(progress);
-    }, { capture: outputMode, backend });
+    }, { capture: outputMode, backend, precision });
 
     if (outputMode === "playing-point-only") {
       const transferBuffer = result.playingPointBuffer.buffer;

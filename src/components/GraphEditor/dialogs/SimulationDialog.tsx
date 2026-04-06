@@ -1,8 +1,8 @@
 import { useState } from "react";
-import type { SimMethod } from "../../../engine/types";
+import type { SimMethod, SimulationBackend, SimulationPrecision } from "../../../engine/types";
 import { useGraphStore } from "../../../store/graphStore";
 import { useViewerStore } from "../../../store/viewerStore";
-import { MfcButton, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup } from "../../ui/MfcDialog";
+import { MfcButton, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup, MfcSelect } from "../../ui/MfcDialog";
 
 export type SimulationFormValues = {
   sampleRate: number;
@@ -10,6 +10,8 @@ export type SimulationFormValues = {
   attenuation: number;
   squareAttenuation: number;
   method: SimMethod;
+  backend: SimulationBackend;
+  precision: SimulationPrecision;
 };
 
 export type SimulationFormProps = {
@@ -24,13 +26,15 @@ export function SimulationForm({ initialValues, onSubmit, onClose }: SimulationF
   const [attenuation, setAttenuation] = useState(initialValues.attenuation);
   const [squareAttenuation, setSquareAttenuation] = useState(initialValues.squareAttenuation);
   const [method, setMethod] = useState(initialValues.method);
+  const [backend, setBackend] = useState<SimulationBackend>(initialValues.backend);
+  const [precision, setPrecision] = useState<SimulationPrecision>(initialValues.precision);
 
   return (
     <MfcDialog
       title="Create Buffer Dialog"
       open
       onClose={onClose}
-      onSubmit={() => onSubmit({ sampleRate, lengthK, attenuation, squareAttenuation, method })}
+      onSubmit={() => onSubmit({ sampleRate, lengthK, attenuation, squareAttenuation, method, backend, precision })}
       width={430}
       actions={
         <>
@@ -69,6 +73,37 @@ export function SimulationForm({ initialValues, onSubmit, onClose }: SimulationF
           ]}
         />
       </MfcGroupBox>
+
+      <MfcGroupBox legend="Optimization">
+        <MfcField label="Backend" labelWidth={130}>
+          <MfcSelect
+            value={backend}
+            onChange={(value) => setBackend(value)}
+            options={[
+              { value: "wasm-hotloop", label: "WASM Hotloop" },
+              { value: "fused-loop", label: "Fused Loop" },
+              { value: "compiled", label: "Compiled" },
+              { value: "optimized", label: "Optimized" },
+            ]}
+          />
+        </MfcField>
+        <MfcField label="Precision" labelWidth={130}>
+          <MfcRadioGroup
+            name="simulation-precision"
+            value={String(precision)}
+            onChange={(value) => {
+              if (value === "32" || value === "64") {
+                setPrecision(Number(value) as SimulationPrecision);
+              }
+            }}
+            direction="row"
+            options={[
+              { value: "64", label: "64" },
+              { value: "32", label: "32" },
+            ]}
+          />
+        </MfcField>
+      </MfcGroupBox>
     </MfcDialog>
   );
 }
@@ -98,6 +133,8 @@ export function SimulationDialog() {
         attenuation: simulationParams.attenuation,
         squareAttenuation: simulationParams.squareAttenuation,
         method: simulationParams.method,
+        backend: "wasm-hotloop",
+        precision: 64,
       }}
       onSubmit={(values) => {
         const worker = new Worker(new URL("../../../engine/simulation.worker.ts", import.meta.url), {
@@ -167,7 +204,8 @@ export function SimulationDialog() {
           graph: graph.toGraphData(),
           params: nextParams,
           outputMode: "full",
-          backend: "optimized",
+          backend: values.backend,
+          precision: values.precision,
         });
       }}
       onClose={closeSimulationDialog}

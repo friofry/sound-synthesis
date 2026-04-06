@@ -20,6 +20,8 @@ export const DEFAULT_SQUARE_ATTENUATION = (1 / 50) * DEFAULT_ATTENUATION;
 export type StiffnessType = "isotropic" | "tetradic";
 export type GridType = "cell" | "perimeter" | "empty" | "triangle" | "astra" | "hexagon";
 export type SimMethod = "euler" | "runge-kutta";
+export type SimulationPrecision = 32 | 64;
+export type FloatArray = Float32Array | Float64Array;
 
 export type ToolMode =
   | "add-point-link"
@@ -104,12 +106,12 @@ export interface SimulationParams {
 }
 
 export interface SimulationState {
-  u: Float64Array;
-  v: Float64Array;
+  u: FloatArray;
+  v: FloatArray;
 }
 
 export interface SimulationResult {
-  frames: Float64Array[];
+  frames: FloatArray[];
   playingPointBuffer: Float32Array;
   allPointBuffers: Float32Array[];
 }
@@ -130,6 +132,7 @@ export interface SimulationWorkerRequest {
   params: SimulationParams;
   outputMode?: SimulationCaptureMode;
   backend?: SimulationBackend;
+  precision?: SimulationPrecision;
 }
 
 export interface SimulationWorkerProgress {

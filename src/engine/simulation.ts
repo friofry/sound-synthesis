@@ -4,6 +4,7 @@ import type {
   SimulationBackend,
   SimulationCaptureMode,
   SimulationParams,
+  SimulationPrecision,
   SimulationResult,
   SimulationState,
 } from "./types";
@@ -62,6 +63,7 @@ type RungeKuttaWorkspace = {
 type RunSimulationOptions = {
   capture?: SimulationCaptureMode;
   backend?: SimulationBackend;
+  precision?: SimulationPrecision;
 };
 
 export type RuntimeSimulationStepper = {

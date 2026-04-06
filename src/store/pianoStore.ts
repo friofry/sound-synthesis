@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { RawInstrumentNote, SimMethod } from "../engine/types";
+import type { RawInstrumentNote, SimMethod, SimulationBackend, SimulationPrecision } from "../engine/types";
 
 export type PianoGenerateSettings = {
   octaves: 1 | 2 | 3;
@@ -9,6 +9,8 @@ export type PianoGenerateSettings = {
   tillSilence: boolean;
   sampleRate: 8000 | 22050 | 44100;
   method: SimMethod;
+  backend: SimulationBackend;
+  precision: SimulationPrecision;
 };
 
 type PianoStore = {
@@ -57,6 +59,8 @@ export const usePianoStore = create<PianoStore>((set) => ({
     tillSilence: false,
     sampleRate: 44100,
     method: "euler",
+    backend: "wasm-hotloop",
+    precision: 64,
   },
   isGeneratingInstrument: false,
   instrumentGenerationProgress: 0,
