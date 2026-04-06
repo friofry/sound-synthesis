@@ -19,7 +19,6 @@ type PianoToolbarButton = MfcToolbarItem<PianoActionId> & {
   spriteIndex: number;
   icon?: ReactNode;
   disabled?: boolean;
-  action: () => void;
 };
 
 type PianoToolbarElement = PianoToolbarButton | MfcToolbarSeparator;
@@ -60,14 +59,12 @@ export function PianoToolbar({
       label: "Generate one note",
       title: "Generate one note",
       spriteIndex: 0,
-      action: onGenerateOne,
     },
     {
       id: "generate",
       label: "Generate instrument",
       title: "Generate instrument",
       spriteIndex: 1,
-      action: onGenerateInstrument,
     },
     { kind: "separator", id: "sep-1" },
     {
@@ -77,7 +74,6 @@ export function PianoToolbar({
       spriteIndex: -1,
       icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden><circle cx="12" cy="12" r="8" fill="#cc0000" /></svg>,
       disabled: recording,
-      action: onToggleRecording,
     },
     {
       id: "stop",
@@ -86,7 +82,6 @@ export function PianoToolbar({
       spriteIndex: -1,
       icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="5" y="5" width="14" height="14" fill="#000" /></svg>,
       disabled: !recording,
-      action: onToggleRecording,
     },
     { kind: "separator", id: "sep-2" },
     {
@@ -94,14 +89,12 @@ export function PianoToolbar({
       label: "Save instrument",
       title: "Save instrument",
       spriteIndex: 4,
-      action: onSaveInstrument,
     },
     {
       id: "loadIns",
       label: "Load instrument",
       title: "Load instrument",
       spriteIndex: 5,
-      action: () => instrumentInputRef.current?.click(),
     },
     { kind: "separator", id: "sep-3" },
     {
@@ -109,14 +102,12 @@ export function PianoToolbar({
       label: "Save melody to file",
       title: "Save melody to file",
       spriteIndex: 6,
-      action: onSaveSnc,
     },
     {
       id: "loadSnc",
       label: "Play melody from file (SNC, WAV)",
       title: "Play melody from file (SNC, WAV)",
       spriteIndex: 7,
-      action: () => sncInputRef.current?.click(),
     },
   ];
 
@@ -130,8 +121,32 @@ export function PianoToolbar({
         items={buttonItems}
         selectedId={"none"}
         onSelect={(id) => {
-          const item = items.find((entry): entry is PianoToolbarButton => !("kind" in entry) && entry.id === id);
-          item?.action();
+          switch (id) {
+            case "one":
+              onGenerateOne();
+              return;
+            case "generate":
+              onGenerateInstrument();
+              return;
+            case "record":
+            case "stop":
+              onToggleRecording();
+              return;
+            case "saveIns":
+              onSaveInstrument();
+              return;
+            case "loadIns":
+              instrumentInputRef.current?.click();
+              return;
+            case "saveSnc":
+              onSaveSnc();
+              return;
+            case "loadSnc":
+              sncInputRef.current?.click();
+              return;
+            default:
+              return;
+          }
         }}
         className="piano-toolbar-mfc"
         buttonClassName="toolbar-icon-btn"

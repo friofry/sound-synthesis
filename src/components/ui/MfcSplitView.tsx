@@ -41,6 +41,18 @@ function createInitialRatios(count: number, defaultRatio?: number, defaultRatios
   return Array.from({ length: count }, () => 1 / count);
 }
 
+function resolveRatios(
+  currentRatios: number[],
+  paneCount: number,
+  defaultRatio?: number,
+  defaultRatios?: number[],
+): number[] {
+  if (currentRatios.length === paneCount && currentRatios.length > 0) {
+    return normalizeRatios(currentRatios);
+  }
+  return createInitialRatios(paneCount, defaultRatio, defaultRatios);
+}
+
 function computePaneSizes(availableSize: number, ratios: number[]): number[] {
   if (availableSize <= 0 || ratios.length === 0) {
     return ratios.map(() => 0);
@@ -49,7 +61,7 @@ function computePaneSizes(availableSize: number, ratios: number[]): number[] {
   const normalized = normalizeRatios(ratios);
   const rawSizes = normalized.map((ratio) => ratio * availableSize);
   const baseSizes = rawSizes.map((size) => Math.floor(size));
-  let remainder = availableSize - baseSizes.reduce((sum, size) => sum + size, 0);
+  const remainder = availableSize - baseSizes.reduce((sum, size) => sum + size, 0);
 
   const fractions = rawSizes.map((raw, i) => ({ index: i, frac: raw - baseSizes[i] }));
   fractions.sort((a, b) => b.frac - a.frac);
@@ -79,15 +91,6 @@ export function MfcSplitView({
   const [isDragging, setIsDragging] = useState(false);
   const activePointerIdRef = useRef<number | null>(null);
   const activeSplitterRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    setRatios((currentRatios) => {
-      if (currentRatios.length === paneCount && currentRatios.length > 0) {
-        return normalizeRatios(currentRatios);
-      }
-      return createInitialRatios(paneCount, defaultRatio, defaultRatios);
-    });
-  }, [defaultRatio, defaultRatios, paneCount]);
 
   useEffect(() => {
     const node = hostRef.current;
@@ -122,7 +125,8 @@ export function MfcSplitView({
       const splitterIndex = activeSplitterRef.current;
 
       setRatios((prevRatios) => {
-        const prevSizes = computePaneSizes(availableSize, prevRatios);
+        const effectiveRatios = resolveRatios(prevRatios, paneCount, defaultRatio, defaultRatios);
+        const prevSizes = computePaneSizes(availableSize, effectiveRatios);
         const pairSize = prevSizes[splitterIndex] + prevSizes[splitterIndex + 1];
         const effectiveMinPaneSize = Math.min(minPaneSize, pairSize / 2);
 
@@ -142,7 +146,7 @@ export function MfcSplitView({
         return normalizeRatios(nextSizes);
       });
     },
-    [minPaneSize, orientation, paneCount, splitterSize],
+    [defaultRatio, defaultRatios, minPaneSize, orientation, paneCount, splitterSize],
   );
 
   const onPointerDown = useCallback(
@@ -177,7 +181,11 @@ export function MfcSplitView({
   }, []);
 
   const availableSize = Math.max(0, mainSize - splitterSize * Math.max(0, paneCount - 1));
-  const paneSizes = useMemo(() => computePaneSizes(availableSize, ratios), [availableSize, ratios]);
+  const effectiveRatios = useMemo(
+    () => resolveRatios(ratios, paneCount, defaultRatio, defaultRatios),
+    [defaultRatio, defaultRatios, paneCount, ratios],
+  );
+  const paneSizes = useMemo(() => computePaneSizes(availableSize, effectiveRatios), [availableSize, effectiveRatios]);
   const paneStyles = useMemo<CSSProperties[]>(
     () =>
       paneSizes.map((size) => ({

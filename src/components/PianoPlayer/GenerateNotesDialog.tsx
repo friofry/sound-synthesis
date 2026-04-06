@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MfcButton, MfcCheckbox, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup } from "../ui/MfcDialog";
 import type { SimMethod } from "../../engine/types";
 import "./GenerateNotesDialog.css";
@@ -26,6 +26,26 @@ export function GenerateNotesDialog({
   onClose,
   onSubmit,
 }: GenerateNotesDialogProps) {
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <GenerateNotesDialogForm
+      initialValues={initialValues}
+      onClose={onClose}
+      onSubmit={onSubmit}
+    />
+  );
+}
+
+type GenerateNotesDialogFormProps = {
+  initialValues: GenerateNotesDialogValues;
+  onClose: () => void;
+  onSubmit: (values: GenerateNotesDialogValues) => void;
+};
+
+function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateNotesDialogFormProps) {
   const [octaves, setOctaves] = useState<1 | 2 | 3>(initialValues.octaves);
   const [attenuation, setAttenuation] = useState(initialValues.attenuation);
   const [squareAttenuation, setSquareAttenuation] = useState(initialValues.squareAttenuation);
@@ -34,23 +54,10 @@ export function GenerateNotesDialog({
   const [sampleRate, setSampleRate] = useState<8000 | 22050 | 44100>(initialValues.sampleRate);
   const [method, setMethod] = useState<SimMethod>(initialValues.method);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    setOctaves(initialValues.octaves);
-    setAttenuation(initialValues.attenuation);
-    setSquareAttenuation(initialValues.squareAttenuation);
-    setDurationMs(initialValues.durationMs);
-    setTillSilence(initialValues.tillSilence);
-    setSampleRate(initialValues.sampleRate);
-    setMethod(initialValues.method);
-  }, [open, initialValues]);
-
   return (
     <MfcDialog
       title="Create Piano"
-      open={open}
+      open
       onClose={onClose}
       onSubmit={() =>
         onSubmit({

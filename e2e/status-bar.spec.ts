@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { createPresetGrid, moveOnCanvas, clickCanvas, selectTool, clearGraph } from "./helpers";
+import { createPresetGrid, moveOnCanvas, selectTool, clearGraph } from "./helpers";
+import type { Dot, Line } from "../src/engine/types";
 
 test.describe("Status Bar", () => {
   test.beforeEach(async ({ page }) => {
@@ -59,16 +60,16 @@ test.describe("Status Bar", () => {
     const statusBar = page.locator("footer.status-bar");
 
     // Find the midpoint of a horizontal or vertical line that's far from all dots
-    const linePos = await page.evaluate(() => {
+    const linePos = await page.evaluate<{ x: number; y: number } | null>(() => {
       const { graph } = window.__graphStore.getState();
-      for (const line of graph.lines) {
+      for (const line of graph.lines as Line[]) {
         const d1 = graph.dots[line.dot1];
         const d2 = graph.dots[line.dot2];
         const midX = (d1.x + d2.x) / 2;
         const midY = (d1.y + d2.y) / 2;
         // Check that the midpoint is far from ALL dots
         const tooClose = graph.dots.some(
-          (d: any) => Math.hypot(midX - d.x, midY - d.y) < 15,
+          (dot: Dot) => Math.hypot(midX - dot.x, midY - dot.y) < 15,
         );
         if (!tooClose) {
           return { x: Math.round(midX), y: Math.round(midY) };
