@@ -1,5 +1,5 @@
 import { GraphModel } from "./graph";
-import { scaleGraphStiffness } from "./gridGenerators";
+import { scaleGraphForPitchRatio } from "./gridGenerators";
 import { runSimulation } from "./simulation";
 import type { RawInstrumentNote, SimulationParams } from "./types";
 import { DEFAULT_KEYBINDS, DEFAULT_KEY_LABELS } from "../components/PianoPlayer/KeyboardMapping";
@@ -31,7 +31,7 @@ export function generateInstrumentFromGraph(
   const notes: RawInstrumentNote[] = [];
   for (let index = 0; index < noteCount; index += 1) {
     const ratio = 2 ** ((index - baseIndex) / 12);
-    const noteGraph = scaleGraphStiffness(graph, ratio);
+    const noteGraph = scaleGraphForPitchRatio(graph, ratio);
     noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
     const result = runSimulation(noteGraph.toGraphData(), {
       sampleRate,

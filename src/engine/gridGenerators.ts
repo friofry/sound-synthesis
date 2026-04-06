@@ -35,6 +35,14 @@ export function scaleGraphStiffness(graph: GraphModel, ratio: number): GraphMode
   return next;
 }
 
+export function stiffnessRatioForPitchRatio(pitchRatio: number): number {
+  return pitchRatio ** 2;
+}
+
+export function scaleGraphForPitchRatio(graph: GraphModel, pitchRatio: number): GraphModel {
+  return scaleGraphStiffness(graph, stiffnessRatioForPitchRatio(pitchRatio));
+}
+
 function generateCell(graph: GraphModel, params: GridParams, withLinks: boolean): void {
   const n = Math.max(1, params.n);
   const m = Math.max(1, params.m);

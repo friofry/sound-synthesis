@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AudioEngine } from "../components/PianoPlayer/AudioEngine";
 import { DEFAULT_KEYBINDS, DEFAULT_KEY_LABELS, getNoteIndexByCode } from "../components/PianoPlayer/KeyboardMapping";
 import { generateInstrumentFromGraph } from "../engine/noteGenerator";
-import { scaleGraphStiffness } from "../engine/gridGenerators";
+import { scaleGraphForPitchRatio } from "../engine/gridGenerators";
 import { parseInstrumentFile, serializeInstrumentFile } from "../engine/fileIO/instrumentFile";
 import { SncCreator } from "../engine/snc/sncCreator";
 import { SimpleMixer } from "../engine/snc/simpleMixer";
@@ -319,7 +319,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
 
           for (let index = 0; index < safeNoteCount; index += 1) {
             const ratio = 2 ** ((index - baseIndex) / 12);
-            const noteGraph = scaleGraphStiffness(graph, ratio);
+            const noteGraph = scaleGraphForPitchRatio(graph, ratio);
             noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
 
             const result = await runSimulationInWorker(
