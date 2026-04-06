@@ -1,0 +1,55 @@
+.create-piano-layout {
+  display: grid;
+  grid-template-columns: 1fr 114px;
+  gap: 8px;
+  align-items: start;
+}
+
+.create-piano-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.create-piano-right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.create-piano-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.create-piano-buttons .mfc-button {
+  width: 100%;
+  min-width: 0;
+  padding: 3px 6px;
+}
+
+.create-piano-duration-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.create-piano-duration-row .mfc-field {
+  flex: 1;
+}
+
+.create-piano-duration-row .mfc-checkbox {
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.create-piano-left .mfc-groupbox,
+.create-piano-right .mfc-groupbox {
+  margin: 0;
+  padding-top: 6px;
+}
+
+.create-piano-layout .mfc-radio-group.row {
+  justify-content: space-around;
+}

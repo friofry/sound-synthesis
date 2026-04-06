@@ -1,0 +1,73 @@
+.mfc-toolbar {
+  display: flex;
+  gap: 2px;
+}
+
+.mfc-toolbar.vertical {
+  flex-direction: column;
+}
+
+.mfc-toolbar-button {
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #404040;
+  border-bottom: 1px solid #404040;
+  box-shadow:
+    inset -1px -1px 0 #808080,
+    inset 1px 1px 0 #dfdfdf;
+  background: #ece9d8;
+  color: #000;
+  line-height: 1;
+  padding: 2px;
+  cursor: pointer;
+}
+
+.mfc-toolbar-button:hover:not(:disabled) {
+  background: #f4f1e5;
+}
+
+.mfc-toolbar-button:active:not(:disabled),
+.mfc-toolbar-button.is-selected {
+  border-top: 1px solid #404040;
+  border-left: 1px solid #404040;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  box-shadow:
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #dfdfdf;
+  background: #ddd9ce;
+}
+
+.mfc-toolbar-button-content {
+  display: inline-grid;
+  place-items: center;
+}
+
+.mfc-toolbar-separator {
+  background: #d4d0c8;
+}
+
+.mfc-toolbar.vertical .mfc-toolbar-separator {
+  height: 2px;
+  margin: 2px 1px;
+  border-top: 1px solid #808080;
+  border-bottom: 1px solid #fff;
+}
+
+.mfc-toolbar:not(.vertical) .mfc-toolbar-separator {
+  width: 2px;
+  align-self: stretch;
+  margin: 1px 2px;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+}
+
+.mfc-toolbar-button.is-selected .mfc-toolbar-button-content {
+  transform: translate(1px, 1px);
+}
+
+.mfc-toolbar-button:disabled {
+  color: #7a7a7a;
+  background: #ded9cf;
+  cursor: not-allowed;
+}
