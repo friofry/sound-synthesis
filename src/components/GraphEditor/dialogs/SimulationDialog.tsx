@@ -132,6 +132,16 @@ export function SimulationDialog() {
           }
 
           if (message.type === "complete") {
+            if (!message.result) {
+              setSimulationState({
+                isSimulating: false,
+                simulationProgress: 0,
+                simulationResult: null,
+              });
+              worker.terminate();
+              window.alert("Simulation worker did not return full simulation data");
+              return;
+            }
             setSimulationState({
               isSimulating: false,
               simulationProgress: 100,
@@ -156,6 +166,8 @@ export function SimulationDialog() {
         worker.postMessage({
           graph: graph.toGraphData(),
           params: nextParams,
+          outputMode: "full",
+          backend: "optimized",
         });
       }}
       onClose={closeSimulationDialog}

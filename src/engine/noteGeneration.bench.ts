@@ -1,7 +1,7 @@
 import { bench, describe } from "vitest";
 import { generateGraph } from "./gridGenerators";
 import { runSimulation } from "./simulation";
-import type { GraphData, GridParams, SimMethod, SimulationParams } from "./types";
+import type { GraphData, GridParams, SimMethod, SimulationBackend, SimulationParams } from "./types";
 
 const GRID_SIZE = 25;
 const CENTER_COORD = Math.floor(GRID_SIZE / 2);
@@ -39,17 +39,28 @@ function buildCenteredImpulseGraph(): GraphData {
   return next.toGraphData();
 }
 
-function generateNote(method: SimMethod): Float32Array {
-  const result = runSimulation(graph, { ...BASE_PARAMS, method });
+function generateNote(method: SimMethod, backend: SimulationBackend): Float32Array {
+  const result = runSimulation(graph, { ...BASE_PARAMS, method }, undefined, {
+    capture: "playing-point-only",
+    backend,
+  });
   return result.playingPointBuffer;
 }
 
 describe("note generation benchmark", () => {
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer", () => {
-    generateNote("euler");
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (legacy)", () => {
+    generateNote("euler", "legacy");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta", () => {
-    generateNote("runge-kutta");
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (optimized)", () => {
+    generateNote("euler", "optimized");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (legacy)", () => {
+    generateNote("runge-kutta", "legacy");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (optimized)", () => {
+    generateNote("runge-kutta", "optimized");
   });
 });

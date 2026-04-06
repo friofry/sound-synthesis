@@ -10,7 +10,13 @@ import { executeSncCommands, parseSncText } from "../engine/snc/sncParser";
 import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "../engine/tuning";
 import { encodeWavBlob } from "../engine/snc/wavExport";
 import { GraphModel } from "../engine/graph";
-import type { RawInstrumentNote, SimulationParams, SimulationResult, SimulationWorkerMessage } from "../engine/types";
+import type {
+  RawInstrumentNote,
+  SimulationCaptureMode,
+  SimulationParams,
+  SimulationResult,
+  SimulationWorkerMessage,
+} from "../engine/types";
 import type { GenerateNotesDialogValues } from "../components/PianoPlayer/GenerateNotesDialog";
 import { usePianoStore } from "../store/pianoStore";
 
@@ -73,6 +79,7 @@ function resolveLengthK(durationMs: number, sampleRate: number, tillSilence: boo
 function runSimulationInWorker(
   graph: GraphModel,
   params: SimulationParams,
+  outputMode: SimulationCaptureMode = "full",
   onProgress?: (completed: number, total: number) => void,
 ): Promise<SimulationResult> {
   return new Promise((resolve, reject) => {
@@ -86,7 +93,19 @@ function runSimulationInWorker(
       }
       if (message.type === "complete") {
         worker.terminate();
-        resolve(message.result);
+        if (message.outputMode === "playing-point-only") {
+          resolve({
+            frames: [],
+            allPointBuffers: [],
+            playingPointBuffer: message.playingPointBuffer ?? new Float32Array(0),
+          });
+          return;
+        }
+        if (message.result) {
+          resolve(message.result);
+          return;
+        }
+        reject(new Error("Simulation worker returned no result"));
         return;
       }
       worker.terminate();
@@ -101,6 +120,8 @@ function runSimulationInWorker(
     worker.postMessage({
       graph: graph.toGraphData(),
       params,
+      outputMode,
+      backend: "optimized",
     });
   });
 }
@@ -337,6 +358,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
               method: safeMethod,
               playingPoint: calibrationGraph.playingPoint ?? 0,
             },
+            "playing-point-only",
           );
           const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, safeSampleRate);
           if (measuredFirstFrequency !== null) {
@@ -359,6 +381,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
                 method: safeMethod,
                 playingPoint: noteGraph.playingPoint ?? 0,
               },
+              "playing-point-only",
               (completed, total) => {
                 const insideNote = total > 0 ? completed / total : 0;
                 const absoluteProgress = ((index + insideNote) / safeNoteCount) * 100;
