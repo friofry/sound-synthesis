@@ -22,6 +22,7 @@ type PianoStore = {
   generateNotesDialogOpen: boolean;
   generateNotesSettings: PianoGenerateSettings;
   isGeneratingInstrument: boolean;
+  generationProgressDialogOpen: boolean;
   instrumentGenerationProgress: number;
   instrumentGenerationLabel: string;
   recording: boolean;
@@ -36,6 +37,7 @@ type PianoStore = {
   setGenerateNotesSettings: (settings: PianoGenerateSettings) => void;
   setInstrumentGenerationState: (values: {
     isGeneratingInstrument?: boolean;
+    generationProgressDialogOpen?: boolean;
     instrumentGenerationProgress?: number;
     instrumentGenerationLabel?: string;
   }) => void;
@@ -63,6 +65,7 @@ export const usePianoStore = create<PianoStore>((set) => ({
     precision: 64,
   },
   isGeneratingInstrument: false,
+  generationProgressDialogOpen: false,
   instrumentGenerationProgress: 0,
   instrumentGenerationLabel: "",
   recording: false,
@@ -104,6 +107,7 @@ export const usePianoStore = create<PianoStore>((set) => ({
   setInstrumentGenerationState: (values) =>
     set((state) => ({
       isGeneratingInstrument: values.isGeneratingInstrument ?? state.isGeneratingInstrument,
+      generationProgressDialogOpen: values.generationProgressDialogOpen ?? state.generationProgressDialogOpen,
       instrumentGenerationProgress: values.instrumentGenerationProgress ?? state.instrumentGenerationProgress,
       instrumentGenerationLabel: values.instrumentGenerationLabel ?? state.instrumentGenerationLabel,
     })),

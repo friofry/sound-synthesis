@@ -127,6 +127,7 @@ function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateN
                 value={backend}
                 onChange={(value) => setBackend(value)}
                 options={[
+                  { value: "legacy", label: "Original Simulation" },
                   { value: "wasm-hotloop", label: "WASM Hotloop" },
                   { value: "fused-loop", label: "Fused Loop" },
                   { value: "compiled", label: "Compiled" },

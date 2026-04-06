@@ -24,9 +24,11 @@ export function PianoPlayerPage() {
     generateNotesDialogOpen,
     generateNotesSettings,
     isGeneratingInstrument,
+    generationProgressDialogOpen,
     instrumentGenerationProgress,
     instrumentGenerationLabel,
     closeGenerateNotesDialog,
+    closeGenerationProgressDialog,
     handleConfirmGenerateNotes,
     handleToggleRecording,
     handleSaveInstrument,
@@ -57,9 +59,10 @@ export function PianoPlayerPage() {
         onSubmit={handleConfirmGenerateNotes}
       />
       <GenerationProgressDialog
-        open={isGeneratingInstrument}
+        open={isGeneratingInstrument && generationProgressDialogOpen}
         progress={instrumentGenerationProgress}
         label={instrumentGenerationLabel}
+        onClose={closeGenerationProgressDialog}
       />
       <div className="keyboard-wrap">
         <PianoKeyboard

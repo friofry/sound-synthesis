@@ -48,9 +48,11 @@ export function MembraneModellerPage() {
     generateNotesDialogOpen,
     generateNotesSettings,
     isGeneratingInstrument,
+    generationProgressDialogOpen,
     instrumentGenerationProgress,
     instrumentGenerationLabel,
     closeGenerateNotesDialog,
+    closeGenerationProgressDialog,
     handleConfirmGenerateNotes,
     handleToggleRecording,
     handleSaveInstrument,
@@ -230,9 +232,10 @@ export function MembraneModellerPage() {
               onSubmit={handleConfirmGenerateNotes}
             />
             <GenerationProgressDialog
-              open={isGeneratingInstrument}
+              open={isGeneratingInstrument && generationProgressDialogOpen}
               progress={instrumentGenerationProgress}
               label={instrumentGenerationLabel}
+              onClose={closeGenerationProgressDialog}
             />
             <PianoKeyboard
               noteCount={noteCount}
