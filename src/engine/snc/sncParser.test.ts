@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { executeSncCommands, parseSncText } from "./sncParser";
 import { SimpleMixer } from "./simpleMixer";
+import type { SncCommand } from "./types";
 
 function createConstantStream(value: number) {
   return {
@@ -50,7 +51,7 @@ describe("parseSncText", () => {
 
 describe("executeSncCommands", () => {
   it("mixes active alias chunks on wait and emits callback chunk", () => {
-    const commands = [
+    const commands: SncCommand[] = [
       { type: "alias", name: "a", flag: "a", duration: -1 as const },
       { type: "wait", seconds: 0.5 },
       { type: "alias", name: "a", flag: "r", duration: 0 },

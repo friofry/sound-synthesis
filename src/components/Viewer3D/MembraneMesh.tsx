@@ -9,11 +9,9 @@ import {
 import { useGraphStore } from "../../store/graphStore";
 import { useViewerStore } from "../../store/viewerStore";
 import {
-  createConnectionStructure,
-  eulerCramerStep,
-  rungeKuttaStep,
+  createRuntimeSimulationStepper,
 } from "../../engine/simulation";
-import type { SimulationState } from "../../engine/types";
+import type { RuntimeSimulationStepper } from "../../engine/simulation";
 
 function computeBounds(points: { x: number; y: number }[]) {
   let minX = Number.POSITIVE_INFINITY;
@@ -44,8 +42,7 @@ export function MembraneMesh() {
   const meshRef = useRef<LineSegments>(null);
   const geometryRef = useRef<BufferGeometry | null>(null);
   const positionsRef = useRef<Float32Array | null>(null);
-  const runtimeStateRef = useRef<SimulationState | null>(null);
-  const runtimeCoeffsRef = useRef<ReturnType<typeof createConnectionStructure> | null>(null);
+  const runtimeStepperRef = useRef<RuntimeSimulationStepper | null>(null);
   const prevPlayingRef = useRef(false);
 
   const graph = useGraphStore((s) => s.graph);
@@ -112,8 +109,7 @@ export function MembraneMesh() {
   }, [normalizedDots, graph.lines]);
 
   useEffect(() => {
-    runtimeStateRef.current = null;
-    runtimeCoeffsRef.current = null;
+    runtimeStepperRef.current = null;
     prevPlayingRef.current = false;
   }, [graph, simulationParams]);
 
@@ -173,56 +169,22 @@ export function MembraneMesh() {
     }
 
     const shouldReinitialize = justStarted && frameIndex === 0;
-    if (shouldReinitialize || !runtimeStateRef.current || !runtimeCoeffsRef.current) {
-      const u = new Float64Array(graph.dots.length);
-      const v = new Float64Array(graph.dots.length);
-      for (let i = 0; i < graph.dots.length; i += 1) {
-        const dot = graph.dots[i];
-        u[i] = dot.fixed ? 0 : dot.u;
-        v[i] = dot.fixed ? 0 : dot.v;
-      }
-      runtimeStateRef.current = { u, v };
-      runtimeCoeffsRef.current = createConnectionStructure({
+    if (shouldReinitialize || !runtimeStepperRef.current) {
+      runtimeStepperRef.current = createRuntimeSimulationStepper({
         dots: graph.dots,
         lines: graph.lines,
         playingPoint: graph.playingPoint ?? simulationParams.playingPoint,
-      });
+      }, simulationParams, "optimized");
     }
 
-    const runtimeState = runtimeStateRef.current;
-    const coeffs = runtimeCoeffsRef.current;
-    if (!runtimeState || !coeffs) {
+    const runtimeStepper = runtimeStepperRef.current;
+    if (!runtimeStepper) {
       return;
     }
 
-    const dt = 1 / Math.max(1, simulationParams.sampleRate);
     const steps = Math.max(1, Math.floor(speed));
-    for (let s = 0; s < steps; s += 1) {
-      if (simulationParams.method === "runge-kutta") {
-        rungeKuttaStep(
-          runtimeState,
-          coeffs,
-          dt,
-          simulationParams.attenuation,
-          simulationParams.squareAttenuation,
-        );
-      } else {
-        eulerCramerStep(
-          runtimeState,
-          coeffs,
-          dt,
-          simulationParams.attenuation,
-          simulationParams.squareAttenuation,
-        );
-      }
-
-      for (let i = 0; i < graph.dots.length; i += 1) {
-        if (graph.dots[i].fixed) {
-          runtimeState.u[i] = 0;
-          runtimeState.v[i] = 0;
-        }
-      }
-    }
+    runtimeStepper.step(steps);
+    const runtimeState = runtimeStepper.state;
 
     let cursor = 0;
     for (const line of graph.lines) {

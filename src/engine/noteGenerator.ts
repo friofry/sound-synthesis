@@ -35,14 +35,19 @@ export function generateInstrumentFromGraph(
     const firstTargetRatio = ratioForIndex(0);
     const calibrationGraph = scaleGraphForPitchRatio(graph, firstTargetRatio);
     calibrationGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
-    const calibrationResult = runSimulation(calibrationGraph.toGraphData(), {
-      sampleRate,
-      lengthK,
-      method,
-      attenuation,
-      squareAttenuation,
-      playingPoint: calibrationGraph.playingPoint ?? 0,
-    });
+    const calibrationResult = runSimulation(
+      calibrationGraph.toGraphData(),
+      {
+        sampleRate,
+        lengthK,
+        method,
+        attenuation,
+        squareAttenuation,
+        playingPoint: calibrationGraph.playingPoint ?? 0,
+      },
+      undefined,
+      { capture: "playing-point-only" },
+    );
     const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, sampleRate);
     if (measuredFirstFrequency !== null) {
       calibrationPitchRatio = derivePitchCalibrationRatio(baseFrequency * firstTargetRatio, measuredFirstFrequency);
@@ -62,7 +67,7 @@ export function generateInstrumentFromGraph(
       attenuation,
       squareAttenuation,
       playingPoint: noteGraph.playingPoint ?? 0,
-    });
+    }, undefined, { capture: "playing-point-only" });
 
     notes.push({
       alias: `note-${index}`,

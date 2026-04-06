@@ -114,9 +114,14 @@ export interface SimulationResult {
   allPointBuffers: Float32Array[];
 }
 
+export type SimulationCaptureMode = "full" | "playing-point-only";
+export type SimulationBackend = "legacy" | "optimized";
+
 export interface SimulationWorkerRequest {
   graph: GraphData;
   params: SimulationParams;
+  outputMode?: SimulationCaptureMode;
+  backend?: SimulationBackend;
 }
 
 export interface SimulationWorkerProgress {
@@ -125,10 +130,17 @@ export interface SimulationWorkerProgress {
   total: number;
 }
 
-export interface SimulationWorkerComplete {
-  type: "complete";
-  result: SimulationResult;
-}
+export type SimulationWorkerComplete =
+  | {
+      type: "complete";
+      outputMode: "full";
+      result: SimulationResult;
+    }
+  | {
+      type: "complete";
+      outputMode: "playing-point-only";
+      playingPointBuffer: Float32Array;
+    };
 
 export interface SimulationWorkerError {
   type: "error";
