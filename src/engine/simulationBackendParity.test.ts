@@ -33,7 +33,7 @@ describe("simulation backend parity", () => {
   it("matches legacy in full capture for euler and runge-kutta", () => {
     const graph = buildParityGraphData();
     const methods: SimulationParams["method"][] = ["euler", "runge-kutta"];
-    const comparedBackends = ["optimized", "edge-list"] as const;
+    const comparedBackends = ["optimized", "edge-list", "edge-types"] as const;
 
     for (const method of methods) {
       const params: SimulationParams = {
@@ -66,7 +66,7 @@ describe("simulation backend parity", () => {
   it("matches legacy in playing-point-only capture for euler and runge-kutta", () => {
     const graph = buildParityGraphData();
     const methods: SimulationParams["method"][] = ["euler", "runge-kutta"];
-    const comparedBackends = ["optimized", "edge-list"] as const;
+    const comparedBackends = ["optimized", "edge-list", "edge-types"] as const;
 
     for (const method of methods) {
       const params: SimulationParams = {

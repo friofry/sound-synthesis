@@ -115,7 +115,7 @@ export interface SimulationResult {
 }
 
 export type SimulationCaptureMode = "full" | "playing-point-only";
-export type SimulationBackend = "legacy" | "optimized" | "edge-list";
+export type SimulationBackend = "legacy" | "optimized" | "edge-list" | "edge-types";
 
 export interface SimulationWorkerRequest {
   graph: GraphData;

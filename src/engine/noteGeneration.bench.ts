@@ -60,6 +60,10 @@ describe("note generation benchmark", () => {
     generateNote("euler", "edge-list");
   });
 
+  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (edge-types)", () => {
+    generateNote("euler", "edge-types");
+  });
+
   bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (legacy)", () => {
     generateNote("runge-kutta", "legacy");
   });
@@ -70,5 +74,9 @@ describe("note generation benchmark", () => {
 
   bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (edge-list)", () => {
     generateNote("runge-kutta", "edge-list");
+  });
+
+  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (edge-types)", () => {
+    generateNote("runge-kutta", "edge-types");
   });
 });
