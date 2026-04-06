@@ -38,6 +38,7 @@ export type InsertGraphFormProps = {
     stiffnessType: StiffnessType;
     playingPointMode: PlayingPointMode;
     centerGroup: CenterGroupModifyOptions;
+    generateOctaves123: boolean;
   }) => void;
   onClose: () => void;
 };
@@ -66,6 +67,7 @@ export function InsertGraphForm({
   const [groupWeightTouched, setGroupWeightTouched] = useState(false);
   const [groupStiffness, setGroupStiffness] = useState(defaults.stiffness);
   const [groupStiffnessTouched, setGroupStiffnessTouched] = useState(false);
+  const [generateOctaves123, setGenerateOctaves123] = useState(false);
 
   const effectiveGroupWeight = groupWeightTouched ? groupWeight : weight;
   const effectiveGroupStiffness = groupStiffnessTouched ? groupStiffness : stiffness;
@@ -97,6 +99,7 @@ export function InsertGraphForm({
           distribution,
           fixMode,
         },
+        generateOctaves123,
       })}
       width={460}
       actions={
@@ -220,6 +223,9 @@ export function InsertGraphForm({
             </MfcField>
           </>
         ) : null}
+        <MfcCheckbox checked={generateOctaves123} onChange={setGenerateOctaves123}>
+          Generate octaves (1,2,3)
+        </MfcCheckbox>
       </MfcGroupBox>
     </MfcDialog>
   );
@@ -229,6 +235,7 @@ type InsertGraphDialogProps = {
   open: boolean;
   initialType?: GridType;
   canvasSize: { width: number; height: number };
+  onGenerateOctaves123?: () => void;
   onClose: () => void;
 };
 
@@ -236,6 +243,7 @@ export function InsertGraphDialog({
   open,
   initialType = "hexagon",
   canvasSize,
+  onGenerateOctaves123,
   onClose,
 }: InsertGraphDialogProps) {
   const {
@@ -282,6 +290,9 @@ export function InsertGraphDialog({
           playingPointMode: values.playingPointMode,
           centerGroup: values.centerGroup,
         });
+        if (values.generateOctaves123) {
+          onGenerateOctaves123?.();
+        }
         onClose();
       }}
       onClose={onClose}

@@ -1,4 +1,5 @@
 import type {
+  FloatArray,
   GraphData,
   SimulationCaptureMode,
   SimulationParams,
@@ -328,7 +329,7 @@ function createFreeNodeMapping(graph: GraphData): FreeNodeMapping {
 // Physics: spring acceleration (CSR gather pass)
 // ---------------------------------------------------------------------------
 
-function computeSpringAccelerationCSR(u: Float64Array, csr: CSRGraph, out: Float64Array): void {
+function computeSpringAccelerationCSR(u: FloatArray, csr: CSRGraph, out: FloatArray): void {
   const { freeCount, rowPtr, col, coeff, diag } = csr;
   for (let i = 0; i < freeCount; i += 1) {
     let acc = diag[i] * u[i];
@@ -345,12 +346,12 @@ function computeSpringAccelerationCSR(u: Float64Array, csr: CSRGraph, out: Float
 // ---------------------------------------------------------------------------
 
 function buildAcceleration(
-  u: Float64Array,
-  v: Float64Array,
+  u: FloatArray,
+  v: FloatArray,
   csr: CSRGraph,
   attenuation: number,
   squareAttenuation: number,
-  out: Float64Array,
+  out: FloatArray,
 ): void {
   computeSpringAccelerationCSR(u, csr, out);
   for (let i = 0; i < u.length; i += 1) {
@@ -368,7 +369,7 @@ function eulerCramerStep(
   dt: number,
   attenuation: number,
   squareAttenuation: number,
-  springScratch: Float64Array,
+  springScratch: FloatArray,
 ): void {
   const { u, v } = state;
   computeSpringAccelerationCSR(u, csr, springScratch);

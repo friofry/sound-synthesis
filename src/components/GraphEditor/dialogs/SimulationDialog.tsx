@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { SimMethod, SimulationBackend, SimulationPrecision } from "../../../engine/types";
+import { SIMULATION_BACKEND_OPTIONS, type SimMethod, type SimulationBackend, type SimulationPrecision } from "../../../engine/types";
 import { useGraphStore } from "../../../store/graphStore";
 import { useViewerStore } from "../../../store/viewerStore";
 import { MfcButton, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup, MfcSelect } from "../../ui/MfcDialog";
@@ -79,12 +79,7 @@ export function SimulationForm({ initialValues, onSubmit, onClose }: SimulationF
           <MfcSelect
             value={backend}
             onChange={(value) => setBackend(value)}
-            options={[
-              { value: "wasm-hotloop", label: "WASM Hotloop" },
-              { value: "fused-loop", label: "Fused Loop" },
-              { value: "compiled", label: "Compiled" },
-              { value: "optimized", label: "Optimized" },
-            ]}
+            options={[...SIMULATION_BACKEND_OPTIONS]}
           />
         </MfcField>
         <MfcField label="Precision" labelWidth={130}>

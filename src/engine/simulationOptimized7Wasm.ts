@@ -51,11 +51,6 @@ export type RuntimeSimulationStepper = {
   step: (steps?: number) => void;
 };
 
-let cachedWasmModule: WebAssembly.Module | null = null;
-let wasmModuleLoadFailed = false;
-let cachedWasmModuleF32: WebAssembly.Module | null = null;
-let wasmModuleF32LoadFailed = false;
-
 function decodeBase64ToBytes(base64: string): Uint8Array {
   if (typeof Buffer !== "undefined") {
     return Uint8Array.from(Buffer.from(base64, "base64"));
@@ -69,43 +64,32 @@ function decodeBase64ToBytes(base64: string): Uint8Array {
   return bytes;
 }
 
-function getWasmModule(): WebAssembly.Module | null {
-  if (cachedWasmModule) {
-    return cachedWasmModule;
-  }
-  if (wasmModuleLoadFailed) {
-    return null;
-  }
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return Uint8Array.from(bytes).buffer;
+}
 
+function compileWasmModule(wasmBytes: ArrayBuffer): WebAssembly.Module | null {
   try {
-    const wasmBytes = decodeBase64ToBytes(SIM_HOTLOOP_WASM_BASE64);
-    cachedWasmModule = new WebAssembly.Module(wasmBytes);
-    return cachedWasmModule;
+    return new WebAssembly.Module(wasmBytes);
   } catch {
-    wasmModuleLoadFailed = true;
     return null;
   }
+}
+
+const cachedWasmModule = compileWasmModule(toArrayBuffer(decodeBase64ToBytes(SIM_HOTLOOP_WASM_BASE64)));
+const cachedWasmModuleF32 = compileWasmModule(
+  toArrayBuffer(decodeBase64ToBytes(SIM_HOTLOOP_F32_WASM_BASE64)),
+);
+
+function getWasmModule(): WebAssembly.Module | null {
+  return cachedWasmModule;
 }
 
 function getWasmModuleF32(): WebAssembly.Module | null {
-  if (cachedWasmModuleF32) {
-    return cachedWasmModuleF32;
-  }
-  if (wasmModuleF32LoadFailed) {
-    return null;
-  }
-
-  try {
-    const wasmBytes = decodeBase64ToBytes(SIM_HOTLOOP_F32_WASM_BASE64);
-    cachedWasmModuleF32 = new WebAssembly.Module(wasmBytes);
-    return cachedWasmModuleF32;
-  } catch {
-    wasmModuleF32LoadFailed = true;
-    return null;
-  }
+  return cachedWasmModuleF32;
 }
 
-function instantiateWasmExports(module: WebAssembly.Module): Partial<WasmExports> | null {
+function instantiateWasmExports(module: WebAssembly.Module): WasmExports | null {
   let instance: WebAssembly.Instance;
   try {
     instance = new WebAssembly.Instance(module, {});
@@ -131,7 +115,7 @@ function instantiateWasmExports(module: WebAssembly.Module): Partial<WasmExports
     return null;
   }
 
-  return exports;
+  return exports as WasmExports;
 }
 
 function createWasmKernelF64(compiled: CompiledSimulationGraph): WasmKernel | null {

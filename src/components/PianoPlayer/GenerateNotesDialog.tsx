@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MfcButton, MfcCheckbox, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup, MfcSelect } from "../ui/MfcDialog";
-import type { SimMethod, SimulationBackend, SimulationPrecision } from "../../engine/types";
+import { SIMULATION_BACKEND_OPTIONS, type SimMethod, type SimulationBackend, type SimulationPrecision } from "../../engine/types";
 import "./GenerateNotesDialog.css";
 
 export type GenerateNotesDialogValues = {
@@ -126,13 +126,7 @@ function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateN
               <MfcSelect
                 value={backend}
                 onChange={(value) => setBackend(value)}
-                options={[
-                  { value: "legacy", label: "Original Simulation" },
-                  { value: "wasm-hotloop", label: "WASM Hotloop" },
-                  { value: "fused-loop", label: "Fused Loop" },
-                  { value: "compiled", label: "Compiled" },
-                  { value: "optimized", label: "Optimized" },
-                ]}
+                options={[...SIMULATION_BACKEND_OPTIONS]}
               />
             </MfcField>
             <MfcField label="Precision" labelWidth={58}>

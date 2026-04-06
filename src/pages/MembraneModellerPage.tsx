@@ -185,7 +185,24 @@ export function MembraneModellerPage() {
       <GroupModifyDialog />
       <CellTemplateDialog />
       <HexTemplateDialog />
-      <InsertGraphDialog open={insertDialog.open} canvasSize={canvasSize} onClose={closeInsertDialog} />
+      <InsertGraphDialog
+        open={insertDialog.open}
+        canvasSize={canvasSize}
+        onGenerateOctaves123={() => {
+          void handleConfirmGenerateNotes({
+            octaves: 3,
+            attenuation: generateNotesSettings.attenuation,
+            squareAttenuation: generateNotesSettings.squareAttenuation,
+            durationMs: 150,
+            tillSilence: false,
+            sampleRate: 44100,
+            method: "runge-kutta",
+            backend: "wasm-hotloop",
+            precision: 64,
+          });
+        }}
+        onClose={closeInsertDialog}
+      />
     </section>
   );
 }

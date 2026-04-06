@@ -397,14 +397,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       const safeDurationMs = Number.isFinite(values.durationMs) ? Math.max(1, Math.round(values.durationMs)) : 150;
       const safeTillSilence = Boolean(values.tillSilence);
       const safeMethod = values.method === "runge-kutta" ? "runge-kutta" : "euler";
-      const safeBackend: SimulationBackend =
-        values.backend === "legacy" ||
-        values.backend === "wasm-hotloop" ||
-        values.backend === "fused-loop" ||
-        values.backend === "compiled" ||
-        values.backend === "optimized"
-          ? values.backend
-          : "wasm-hotloop";
+      const safeBackend: SimulationBackend = values.backend;
       const safePrecision: SimulationPrecision = values.precision === 32 ? 32 : 64;
       const safeNoteCount = safeOctaves * 12;
 

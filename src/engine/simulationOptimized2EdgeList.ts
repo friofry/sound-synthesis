@@ -1,4 +1,5 @@
 import type {
+  FloatArray,
   GraphData,
   SimulationCaptureMode,
   SimulationParams,
@@ -188,7 +189,7 @@ function collectFixedIndices(graph: GraphData): number[] {
   return fixed;
 }
 
-function computeSpringAcceleration(u: Float64Array, edges: EdgeList, out: Float64Array): Float64Array {
+function computeSpringAcceleration(u: FloatArray, edges: EdgeList, out: FloatArray): FloatArray {
   out.fill(0);
 
   for (let e = 0; e < edges.edgeI.length; e += 1) {
@@ -207,7 +208,7 @@ function computeSpringAcceleration(u: Float64Array, edges: EdgeList, out: Float6
   return out;
 }
 
-function applySquareAttenuation(acceleration: Float64Array, velocity: Float64Array, squareAttenuation: number): void {
+function applySquareAttenuation(acceleration: FloatArray, velocity: FloatArray, squareAttenuation: number): void {
   for (let i = 0; i < velocity.length; i += 1) {
     acceleration[i] -= squareAttenuation * Math.abs(velocity[i]) * velocity[i];
   }
@@ -219,7 +220,7 @@ function eulerCramerStepEdgeList(
   dt: number,
   attenuation: number,
   squareAttenuation: number,
-  springScratch: Float64Array,
+  springScratch: FloatArray,
 ): void {
   const { u, v } = state;
   const spring = computeSpringAcceleration(u, edges, springScratch);
@@ -278,13 +279,13 @@ function rungeKuttaStepEdgeList(
 }
 
 function buildAcceleration(
-  u: Float64Array,
-  v: Float64Array,
+  u: FloatArray,
+  v: FloatArray,
   edges: EdgeList,
   attenuation: number,
   squareAttenuation: number,
-  out: Float64Array,
-): Float64Array {
+  out: FloatArray,
+): FloatArray {
   const acceleration = computeSpringAcceleration(u, edges, out);
   for (let i = 0; i < u.length; i += 1) {
     acceleration[i] -= attenuation * v[i];

@@ -1,4 +1,5 @@
 import type {
+  FloatArray,
   GraphData,
   KoeffStr,
   SimulationBackend,
@@ -108,11 +109,16 @@ export function createConnectionStructure(graph: GraphData): KoeffStr[] {
 
 export function multiplySparse(
   n: number,
-  vector: Float64Array,
+  vector: FloatArray,
   coeffs: KoeffStr[],
-  out?: Float64Array,
-): Float64Array {
-  const result = out && out.length === n ? out : new Float64Array(n);
+  out?: FloatArray,
+): FloatArray {
+  const result =
+    out && out.length === n
+      ? out
+      : vector instanceof Float32Array
+        ? new Float32Array(n)
+        : new Float64Array(n);
   result.fill(0);
   for (const coeff of coeffs) {
     result[coeff.i] += coeff.value * vector[coeff.j];
@@ -120,7 +126,7 @@ export function multiplySparse(
   return result;
 }
 
-export function sqrAnnuation(acceleration: Float64Array, velocity: Float64Array, squareAttenuation: number): void {
+export function sqrAnnuation(acceleration: FloatArray, velocity: FloatArray, squareAttenuation: number): void {
   for (let i = 0; i < velocity.length; i += 1) {
     acceleration[i] -= squareAttenuation * Math.abs(velocity[i]) * velocity[i];
   }
@@ -132,7 +138,7 @@ export function eulerCramerStep(
   dt: number,
   attenuation: number,
   squareAttenuation = 0,
-  springScratch?: Float64Array,
+  springScratch?: FloatArray,
 ): void {
   const { u, v } = state;
   const spring = multiplySparse(u.length, u, coeffs, springScratch);
@@ -193,13 +199,13 @@ export function rungeKuttaStep(
 }
 
 function buildAcceleration(
-  u: Float64Array,
-  v: Float64Array,
+  u: FloatArray,
+  v: FloatArray,
   coeffs: KoeffStr[],
   attenuation: number,
   squareAttenuation: number,
-  out?: Float64Array,
-): Float64Array {
+  out?: FloatArray,
+): FloatArray {
   const acceleration = multiplySparse(u.length, u, coeffs, out);
   for (let i = 0; i < u.length; i += 1) {
     acceleration[i] -= attenuation * v[i];

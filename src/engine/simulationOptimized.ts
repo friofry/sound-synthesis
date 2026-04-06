@@ -1,4 +1,5 @@
 import type {
+  FloatArray,
   GraphData,
   SimulationCaptureMode,
   SimulationParams,
@@ -187,10 +188,10 @@ function collectFixedIndices(graph: GraphData): number[] {
 
 function multiplyPackedSparse(
   n: number,
-  vector: Float64Array,
+  vector: FloatArray,
   matrix: PackedSparseMatrix,
-  out: Float64Array,
-): Float64Array {
+  out: FloatArray,
+): FloatArray {
   const result = out.length === n ? out : new Float64Array(n);
   result.fill(0);
   for (let i = 0; i < matrix.value.length; i += 1) {
@@ -199,7 +200,7 @@ function multiplyPackedSparse(
   return result;
 }
 
-function applySquareAttenuation(acceleration: Float64Array, velocity: Float64Array, squareAttenuation: number): void {
+function applySquareAttenuation(acceleration: FloatArray, velocity: FloatArray, squareAttenuation: number): void {
   for (let i = 0; i < velocity.length; i += 1) {
     acceleration[i] -= squareAttenuation * Math.abs(velocity[i]) * velocity[i];
   }
@@ -211,7 +212,7 @@ function eulerCramerStepOptimized(
   dt: number,
   attenuation: number,
   squareAttenuation: number,
-  springScratch: Float64Array,
+  springScratch: FloatArray,
 ): void {
   const { u, v } = state;
   const spring = multiplyPackedSparse(u.length, u, matrix, springScratch);
@@ -270,13 +271,13 @@ function rungeKuttaStepOptimized(
 }
 
 function buildAcceleration(
-  u: Float64Array,
-  v: Float64Array,
+  u: FloatArray,
+  v: FloatArray,
   matrix: PackedSparseMatrix,
   attenuation: number,
   squareAttenuation: number,
-  out: Float64Array,
-): Float64Array {
+  out: FloatArray,
+): FloatArray {
   const acceleration = multiplyPackedSparse(u.length, u, matrix, out);
   for (let i = 0; i < u.length; i += 1) {
     acceleration[i] -= attenuation * v[i];

@@ -127,6 +127,22 @@ export type SimulationBackend =
   | "sorted-edge-csr"
   | "wasm-hotloop";
 
+export type SimulationBackendOption = {
+  value: SimulationBackend;
+  label: string;
+};
+
+export const SIMULATION_BACKEND_OPTIONS = [
+  { value: "legacy", label: "Original Simulation" },
+  { value: "optimized", label: "Optimized" },
+  { value: "edge-list", label: "Edge List" },
+  { value: "edge-types", label: "Edge Types" },
+  { value: "compiled", label: "Compiled" },
+  { value: "fused-loop", label: "Fused Loop" },
+  { value: "sorted-edge-csr", label: "Sorted Edge CSR" },
+  { value: "wasm-hotloop", label: "WASM Hotloop" },
+] as const satisfies readonly SimulationBackendOption[];
+
 export interface SimulationWorkerRequest {
   graph: GraphData;
   params: SimulationParams;
