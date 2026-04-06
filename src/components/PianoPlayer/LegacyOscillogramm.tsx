@@ -9,7 +9,6 @@ type LegacyOscillogrammProps = {
   sampleRate: number;
   analyser: AnalyserNode | null;
   fallbackSpectrumBuffer?: Float32Array | null;
-  fallbackSpectrumSampleRate?: number;
   compact?: boolean;
 };
 
@@ -17,7 +16,7 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-function buildFallbackSpectrum(buffer: Float32Array | null, _sampleRate: number): number[] {
+function buildFallbackSpectrum(buffer: Float32Array | null): number[] {
   if (!buffer || buffer.length < 64) {
     return [];
   }
@@ -46,7 +45,6 @@ export function LegacyOscillogramm({
   sampleRate,
   analyser,
   fallbackSpectrumBuffer,
-  fallbackSpectrumSampleRate,
   compact = false,
 }: LegacyOscillogrammProps) {
   const waveformCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -57,10 +55,9 @@ export function LegacyOscillogramm({
   const lastLiveSpectrumAtRef = useRef(0);
 
   const fallbackSpectrumData = fallbackSpectrumBuffer ?? buffer;
-  const fallbackSpectrumRate = fallbackSpectrumSampleRate ?? sampleRate;
   const fallbackSpectrum = useMemo(
-    () => buildFallbackSpectrum(fallbackSpectrumData, fallbackSpectrumRate),
-    [fallbackSpectrumData, fallbackSpectrumRate],
+    () => buildFallbackSpectrum(fallbackSpectrumData),
+    [fallbackSpectrumData],
   );
 
   const maxPosition = useMemo(() => {
@@ -299,7 +296,7 @@ export function LegacyOscillogramm({
 
     render();
     return () => window.cancelAnimationFrame(frameId);
-  }, [analyser, fallbackSpectrum]);
+  }, [analyser, fallbackSpectrum, sampleRate]);
 
   const nudgeLeft = () => {
     const canvas = waveformCanvasRef.current;

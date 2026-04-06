@@ -297,7 +297,8 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
 }));
 
 if (import.meta.env.DEV) {
-  (window as any).__graphStore = useGraphStore;
+  const graphWindow = window as Window & { __graphStore?: typeof useGraphStore };
+  graphWindow.__graphStore = useGraphStore;
 }
 
 function clamp(value: number, min: number, max: number): number {

@@ -1,16 +1,65 @@
 import type { Page } from "@playwright/test";
+import type { Dot, Line } from "../src/engine/types";
+
+type GraphStoreSnapshot = {
+  tool: string;
+  viewportScale: number;
+  viewportOffset: { x: number; y: number };
+  cursor: { x: number; y: number };
+  selectedDotA: number | null;
+  selectedDotB: number | null;
+  selectedLineIndex: number | null;
+  hoveredDot: number | null;
+  hoveredLineIndex: number | null;
+  playingPoint: number | null;
+  isSimulating: boolean;
+  simulationDialogOpen: boolean;
+  cellTemplateDialog: { open: boolean };
+  hexTemplateDialog: { open: boolean };
+  dotDialog: { open: boolean };
+  lineDialog: { open: boolean };
+  groupDialog: { open: boolean };
+};
+
+type GraphStateSnapshot = {
+  dotsCount: number;
+  linesCount: number;
+  dots: Array<Pick<Dot, "x" | "y" | "fixed" | "weight" | "u" | "v">>;
+  lines: Array<Pick<Line, "dot1" | "dot2" | "k">>;
+};
 
 declare global {
   interface Window {
     __graphStore: {
-      getState: () => any;
-      setState: (partial: any) => void;
+      getState: () => {
+        tool: string;
+        viewportScale: number;
+        viewportOffset: { x: number; y: number };
+        cursor: { x: number; y: number };
+        selectedDotA: number | null;
+        selectedDotB: number | null;
+        selectedLineIndex: number | null;
+        hoveredDot: number | null;
+        hoveredLineIndex: number | null;
+        playingPoint: number | null;
+        isSimulating: boolean;
+        simulationDialogOpen: boolean;
+        cellTemplateDialog: { open: boolean };
+        hexTemplateDialog: { open: boolean };
+        dotDialog: { open: boolean };
+        lineDialog: { open: boolean };
+        groupDialog: { open: boolean };
+        graph: { dots: Dot[]; lines: Line[] };
+        createPresetGraph: (type: string, params: Record<string, unknown>) => void;
+        clearGraph: () => void;
+      };
+      setState: (partial: unknown) => void;
     };
   }
 }
 
-export async function getStoreState(page: Page): Promise<any> {
-  return page.evaluate(() => {
+export async function getStoreState(page: Page): Promise<GraphStoreSnapshot> {
+  return page.evaluate<GraphStoreSnapshot>(() => {
     const state = window.__graphStore.getState();
     return {
       tool: state.tool,
@@ -34,14 +83,14 @@ export async function getStoreState(page: Page): Promise<any> {
   });
 }
 
-export async function getGraphState(page: Page): Promise<{ dotsCount: number; linesCount: number; dots: any[]; lines: any[] }> {
-  return page.evaluate(() => {
+export async function getGraphState(page: Page): Promise<GraphStateSnapshot> {
+  return page.evaluate<GraphStateSnapshot>(() => {
     const { graph } = window.__graphStore.getState();
     return {
       dotsCount: graph.dots.length,
       linesCount: graph.lines.length,
-      dots: graph.dots.map((d: any) => ({ x: d.x, y: d.y, fixed: d.fixed, weight: d.weight, u: d.u, v: d.v })),
-      lines: graph.lines.map((l: any) => ({ dot1: l.dot1, dot2: l.dot2, k: l.k })),
+      dots: graph.dots.map((dot) => ({ x: dot.x, y: dot.y, fixed: dot.fixed, weight: dot.weight, u: dot.u, v: dot.v })),
+      lines: graph.lines.map((line) => ({ dot1: line.dot1, dot2: line.dot2, k: line.k })),
     };
   });
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useGraphStore } from "../../../store/graphStore";
 import { MfcButton, MfcCheckbox, MfcDialog, MfcField, MfcNumberInput } from "../../ui/MfcDialog";
 
@@ -62,21 +62,12 @@ export function HexTemplateDialog() {
     canvasSize,
   } = useGraphStore();
 
-  const [resetKey, setResetKey] = useState(0);
-
-  useEffect(() => {
-    if (hexTemplateDialog.open) {
-      setResetKey((k) => k + 1);
-    }
-  }, [hexTemplateDialog.open]);
-
   if (!hexTemplateDialog.open) {
     return null;
   }
 
   return (
     <HexTemplateForm
-      key={resetKey}
       onApply={(values) => {
         const safeLayers = Number.isFinite(values.layers) ? Math.max(1, Math.floor(values.layers)) : 1;
         const safeStiffness = Number.isFinite(values.stiffness) ? values.stiffness : 1;

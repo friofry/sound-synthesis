@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useGraphStore } from "../../../store/graphStore";
 import { MfcButton, MfcCheckbox, MfcDialog, MfcField, MfcNumberInput } from "../../ui/MfcDialog";
 
@@ -67,21 +67,12 @@ export function CellTemplateDialog() {
     canvasSize,
   } = useGraphStore();
 
-  const [resetKey, setResetKey] = useState(0);
-
-  useEffect(() => {
-    if (cellTemplateDialog.open) {
-      setResetKey((k) => k + 1);
-    }
-  }, [cellTemplateDialog.open]);
-
   if (!cellTemplateDialog.open) {
     return null;
   }
 
   return (
     <CellTemplateForm
-      key={resetKey}
       onApply={(values) => {
         const n = Number.isFinite(values.heightPoints) ? Math.max(1, Math.floor(values.heightPoints)) : 1;
         const m = Number.isFinite(values.widthPoints) ? Math.max(1, Math.floor(values.widthPoints)) : 1;

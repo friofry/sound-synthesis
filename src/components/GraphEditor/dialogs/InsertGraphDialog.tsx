@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { GridType, StiffnessType } from "../../../engine/types";
 import { useGraphStore } from "../../../store/graphStore";
 import { MfcButton, MfcCheckbox, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup } from "../../ui/MfcDialog";
@@ -33,25 +33,13 @@ export function InsertGraphForm({
   onClose,
 }: InsertGraphFormProps) {
   const [type, setType] = useState<GridType>(initialType);
-  const [n, setN] = useState(6);
-  const [m, setM] = useState(6);
+  const [n, setN] = useState(25);
+  const [m, setM] = useState(25);
   const [layers, setLayers] = useState(5);
   const [weight, setWeight] = useState(defaults.weight);
   const [stiffness, setStiffness] = useState(defaults.stiffness);
-  const [border, setBorder] = useState(defaults.fixedBorder);
-  const [stiffType, setStiffType] = useState<StiffnessType>(defaults.stiffnessType);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    setType("hexagon");
-    setN(25);
-    setM(25);
-    setBorder(true);
-    setStiffType("tetradic");
-  }, [open]);
+  const [border, setBorder] = useState(true);
+  const [stiffType, setStiffType] = useState<StiffnessType>("tetradic");
 
   if (!open) {
     return null;
