@@ -6,6 +6,8 @@ import type {
   SimulationState,
 } from "./types";
 
+const START_FADE_IN_MS = 2;
+
 export function createConnectionStructure(graph: GraphData): KoeffStr[] {
   const coeffs: KoeffStr[] = [];
 
@@ -140,6 +142,29 @@ function buildAcceleration(
   return acceleration;
 }
 
+function applyStartFadeIn(buffer: Float32Array, sampleRate: number, fadeInMs = START_FADE_IN_MS): void {
+  if (buffer.length === 0 || sampleRate <= 0 || fadeInMs <= 0) {
+    return;
+  }
+
+  const fadeSamples = Math.min(buffer.length, Math.max(1, Math.round((sampleRate * fadeInMs) / 1000)));
+  for (let i = 0; i < fadeSamples; i += 1) {
+    buffer[i] *= i / fadeSamples;
+  }
+}
+
+function applyEndFadeOut(buffer: Float32Array, sampleRate: number, fadeOutMs = START_FADE_IN_MS): void {
+  if (buffer.length === 0 || sampleRate <= 0 || fadeOutMs <= 0) {
+    return;
+  }
+
+  const fadeSamples = Math.min(buffer.length, Math.max(1, Math.round((sampleRate * fadeOutMs) / 1000)));
+  const start = buffer.length - fadeSamples;
+  for (let i = 0; i < fadeSamples; i += 1) {
+    buffer[start + i] *= (fadeSamples - 1 - i) / fadeSamples;
+  }
+}
+
 export function runSimulation(
   graph: GraphData,
   params: SimulationParams,
@@ -189,6 +214,9 @@ export function runSimulation(
       onProgress(sample + 1, totalSamples);
     }
   }
+
+  applyStartFadeIn(playingPointBuffer, params.sampleRate);
+  applyEndFadeOut(playingPointBuffer, params.sampleRate);
 
   return { frames, playingPointBuffer, allPointBuffers };
 }
