@@ -1,6 +1,7 @@
 import { GenerationProgressDialog } from "../components/PianoPlayer/GenerationProgressDialog";
 import { GenerateNotesDialog } from "../components/PianoPlayer/GenerateNotesDialog";
-import { LegacyOscillogramm } from "../components/PianoPlayer/LegacyOscillogramm";
+import { FrequencyAnalyzer } from "../components/PianoPlayer/FrequencyAnalyzer";
+import { OscillogramView } from "../components/PianoPlayer/OscillogramView";
 import { PianoKeyboard } from "../components/PianoPlayer/PianoKeyboard";
 import { PianoToolbar } from "../components/PianoPlayer/PianoToolbar";
 import { useGraphStore } from "../store/graphStore";
@@ -40,7 +41,17 @@ export function PianoPlayerPage() {
   return (
     <div className="piano-page">
       <div className="oscilloscope-panel">
-        <LegacyOscillogramm buffer={activeBuffer} sampleRate={activeSampleRate} analyser={audioEngine.analyser} />
+        <OscillogramView
+          buffer={activeBuffer}
+          sampleRate={activeSampleRate || simulationParams.sampleRate}
+        />
+      </div>
+      <div className="spectrum-panel">
+        <FrequencyAnalyzer
+          analyser={audioEngine.analyser}
+          buffer={activeBuffer}
+          sampleRate={activeSampleRate || simulationParams.sampleRate}
+        />
       </div>
       <PianoToolbar
         recording={recording}

@@ -15,8 +15,8 @@ import { GenerationProgressDialog } from "../components/PianoPlayer/GenerationPr
 import { GenerateNotesDialog } from "../components/PianoPlayer/GenerateNotesDialog";
 import { PianoKeyboard } from "../components/PianoPlayer/PianoKeyboard";
 import { PianoToolbar } from "../components/PianoPlayer/PianoToolbar";
-import { OscillogramView } from "../components/PianoPlayer/OscillogramView";
-import { FrequencyAnalyzer } from "../components/PianoPlayer/FrequencyAnalyzer";
+import { LegacyOscillogrammWaveform } from "../components/PianoPlayer/LegacyOscillogrammWaveform";
+import { LegacyOscillogrammSpectrum } from "../components/PianoPlayer/LegacyOscillogrammSpectrum";
 import { MfcSplitView } from "../components/ui/MfcSplitView";
 import type { GridType, StiffnessType } from "../engine/types";
 import { useGraphStore } from "../store/graphStore";
@@ -201,17 +201,17 @@ export function MembraneModellerPage() {
             <MembraneViewer />
           </section>
           <section className="right-panel oscill-panel">
-            <OscillogramView
+            <LegacyOscillogrammWaveform
               buffer={activeBuffer ?? simulationResult?.playingPointBuffer ?? null}
               sampleRate={activeSampleRate || simulationParams.sampleRate}
-              compact
             />
           </section>
           <section className="right-panel frequency-panel">
-            <FrequencyAnalyzer
+            <LegacyOscillogrammSpectrum
               analyser={audioEngine.analyser}
               buffer={activeBuffer ?? simulationResult?.playingPointBuffer ?? null}
               sampleRate={activeSampleRate || simulationParams.sampleRate}
+              compact
             />
           </section>
           <section className="right-panel piano-panel">
