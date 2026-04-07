@@ -17,7 +17,7 @@ const GRID_SIZE = 25;
 const CENTER_COORD = Math.floor(GRID_SIZE / 2);
 const CENTER_INDEX = CENTER_COORD * GRID_SIZE + CENTER_COORD;
 const SAMPLE_RATE = 44_100;
-const DURATION_MS = 150;
+const DURATION_MS = 20;
 
 const GRID_PARAMS: GridParams = {
   n: GRID_SIZE,
@@ -117,131 +117,131 @@ function generateNoteWasmPrecompiled(method: SimMethod, precision: SimulationPre
 }
 
 describe("note generation benchmark", () => {
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (legacy)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (legacy)", () => {
     generateNote("euler", "legacy");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (optimized)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (optimized)", () => {
     generateNote("euler", "optimized");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (edge-list)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (edge-list)", () => {
     generateNote("euler", "edge-list");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (edge-types)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (edge-types)", () => {
     generateNote("euler", "edge-types");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (compiled)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (compiled)", () => {
     generateNote("euler", "compiled");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (compiled-precompiled)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (compiled-precompiled)", () => {
     generateNotePrecompiled("euler");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (fused-loop)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (fused-loop)", () => {
     generateNote("euler", "fused-loop");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (fused-loop-precompiled)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (fused-loop-precompiled)", () => {
     generateNoteFusedPrecompiled("euler");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (fused-loop-f32)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (fused-loop-f32)", () => {
     generateNote("euler", "fused-loop", 32);
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (fused-loop-precompiled-f32)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (fused-loop-precompiled-f32)", () => {
     generateNoteFusedPrecompiled("euler", 32);
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (sorted-edge-csr)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (sorted-edge-csr)", () => {
     generateNote("euler", "sorted-edge-csr");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (sorted-edge-csr-precompiled)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (sorted-edge-csr-precompiled)", () => {
     generateNoteSortedEdgeCSRPrecompiled("euler");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (wasm-hotloop)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop)", () => {
     generateNote("euler", "wasm-hotloop");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (wasm-hotloop-precompiled)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-precompiled)", () => {
     generateNoteWasmPrecompiled("euler");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (wasm-hotloop-f32)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-f32)", () => {
     generateNote("euler", "wasm-hotloop", 32);
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Euler-Cramer (wasm-hotloop-precompiled-f32)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-precompiled-f32)", () => {
     generateNoteWasmPrecompiled("euler", 32);
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (legacy)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (legacy)", () => {
     generateNote("runge-kutta", "legacy");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (optimized)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (optimized)", () => {
     generateNote("runge-kutta", "optimized");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (edge-list)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (edge-list)", () => {
     generateNote("runge-kutta", "edge-list");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (edge-types)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (edge-types)", () => {
     generateNote("runge-kutta", "edge-types");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (compiled)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (compiled)", () => {
     generateNote("runge-kutta", "compiled");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (compiled-precompiled)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (compiled-precompiled)", () => {
     generateNotePrecompiled("runge-kutta");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (fused-loop)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (fused-loop)", () => {
     generateNote("runge-kutta", "fused-loop");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (fused-loop-precompiled)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (fused-loop-precompiled)", () => {
     generateNoteFusedPrecompiled("runge-kutta");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (fused-loop-f32)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (fused-loop-f32)", () => {
     generateNote("runge-kutta", "fused-loop", 32);
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (fused-loop-precompiled-f32)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (fused-loop-precompiled-f32)", () => {
     generateNoteFusedPrecompiled("runge-kutta", 32);
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (sorted-edge-csr)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (sorted-edge-csr)", () => {
     generateNote("runge-kutta", "sorted-edge-csr");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (sorted-edge-csr-precompiled)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (sorted-edge-csr-precompiled)", () => {
     generateNoteSortedEdgeCSRPrecompiled("runge-kutta");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (wasm-hotloop)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop)", () => {
     generateNote("runge-kutta", "wasm-hotloop");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (wasm-hotloop-precompiled)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-precompiled)", () => {
     generateNoteWasmPrecompiled("runge-kutta");
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (wasm-hotloop-f32)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-f32)", () => {
     generateNote("runge-kutta", "wasm-hotloop", 32);
   });
 
-  bench("25x25 grid, center impulse, center read, 150ms, Runge-Kutta (wasm-hotloop-precompiled-f32)", () => {
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-precompiled-f32)", () => {
     generateNoteWasmPrecompiled("runge-kutta", 32);
   });
 });
