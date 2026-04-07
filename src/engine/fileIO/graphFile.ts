@@ -1,4 +1,4 @@
-import type { Dot, Line, SerializedGraph } from "./types";
+import type { Line, SerializedDot, SerializedGraph } from "./types";
 
 const INT32_SIZE = 4;
 const FLOAT64_SIZE = 8;
@@ -41,7 +41,7 @@ export function graphToBinary(graph: SerializedGraph): ArrayBuffer {
   for (const dot of graph.dots) {
     const name = normalizeInputFile(dot.inputFile);
     const nameBytes = textEncoder.encode(name);
-    totalBytes += INT32_SIZE * 4 + FLOAT64_SIZE * 3 + INT32_SIZE + nameBytes.length + 1;
+    totalBytes += INT32_SIZE * 4 + FLOAT64_SIZE * 3 + nameBytes.length + 1;
   }
 
   for (const edges of adjacency) {
@@ -126,7 +126,7 @@ export function graphFromBinary(buffer: ArrayBuffer): SerializedGraph {
     throw new Error("Invalid .gph dot count");
   }
 
-  const dots: Dot[] = [];
+  const dots: SerializedDot[] = [];
   for (let i = 0; i < n; i += 1) {
     ensure(INT32_SIZE * 4 + FLOAT64_SIZE * 3);
     const x = view.getInt32(offset, true);

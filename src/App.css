@@ -267,13 +267,15 @@
 
 .oscill-toolbar-sprite {
   width: 15px;
-  height: 13px;
+  height: 15px;
   background-image: url("/legacy-icons/oscill_toolbar.png");
   background-repeat: no-repeat;
   background-position: calc(-15px * var(--sprite-index)) 0;
 }
 
 .piano-toolbar-sprite {
+  width: 24px;
+  height: 32px;
   background-image: url("/legacy-icons/piano_toolbar.png");
   background-repeat: no-repeat;
   background-position: calc(-24px * var(--sprite-index)) 0;
@@ -541,13 +543,13 @@
 }
 
 .legacy-oscillogramm-waveform-view .oscillogram-toolbar {
-  min-height: 40px;
-  padding: 1px 3px;
+  min-height: 20px;
+  padding: 0 2px;
 }
 
 .legacy-oscillogramm-waveform-view .osc-btn.osc-icon-btn {
-  width: 51px;
-  height: 38px;
+  width: 32px;
+  height: 18px;
   border: 0;
   padding: 0;
   background: #d6d6d6;
@@ -567,24 +569,40 @@
 }
 
 .oscillogram-toolbar {
-  min-height: 24px;
+  min-height: 20px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 4px;
+  gap: 1px;
+  padding: 0 2px;
   border-bottom: 1px solid #000;
   background: #d6d6d6;
 }
 
+.oscillogram-toolbar .osc-btn:nth-child(2n + 3) {
+  margin-left: 6px;
+}
+
+.oscillogram-toolbar .osc-btn:nth-child(2n + 3)::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  background: #8b8b8b;
+  box-shadow: 1px 0 0 #f0f0f0;
+}
+
 .osc-btn {
   width: 28px;
-  height: 20px;
+  height: 18px;
   border: 1px solid #555;
   background: linear-gradient(#efefef, #c7c7c7);
   color: #000;
   font-size: 12px;
   line-height: 1;
   padding: 0;
+  position: relative;
   cursor: pointer;
 }
 
@@ -592,6 +610,18 @@
   width: 24px;
   display: grid;
   place-items: center;
+}
+
+.osc-btn:hover:not(:disabled) {
+  background: rgb(0 0 0 / 6%);
+}
+
+.osc-btn:active:not(:disabled) {
+  background: rgb(0 0 0 / 10%);
+}
+
+.legacy-oscillogramm-waveform-view .osc-btn.osc-icon-btn:hover:not(:disabled) {
+  background: rgb(0 0 0 / 6%);
 }
 
 .oscillogram-canvas,

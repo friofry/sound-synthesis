@@ -83,9 +83,82 @@ test.describe("Editor Toolbar", () => {
     await expect(dialog).toBeVisible();
   });
 
+  test("Load graph button imports legacy .gph files", async ({ page }) => {
+    const fileBytes = createLegacyGphBuffer();
+    await page.setInputFiles('input[accept=".gph,application/octet-stream"]', {
+      name: "legacy.gph",
+      mimeType: "application/octet-stream",
+      buffer: Buffer.from(fileBytes),
+    });
+
+    const state = await page.evaluate(() => window.__graphStore.getState().serializeGraph());
+    expect(state).toEqual({
+      dots: [
+        { x: 12, y: 34, u: 1.25, v: -2.5, weight: 0.5, fixed: false, inputFile: "old.wav" },
+        { x: 56, y: 78, u: 3.5, v: 4.75, weight: 1.5, fixed: true, inputFile: null },
+      ],
+      lines: [{ dot1: 0, dot2: 1, k: 9.25 }],
+      playingPoint: null,
+    });
+  });
+
   test("selected tool button has is-selected class", async ({ page }) => {
     await selectTool(page, "Add point/link");
     const btn = page.locator('button[aria-label="Add point/link"]');
     await expect(btn).toHaveClass(/is-selected/);
   });
 });
+
+function createLegacyGphBuffer(): Uint8Array {
+  const totalBytes = 4 + (40 + 8) + (40 + 1) + (4 + 12) + (4 + 12);
+  const bytes = new Uint8Array(totalBytes);
+  const view = new DataView(bytes.buffer);
+  let offset = 0;
+
+  view.setInt32(offset, 2, true);
+  offset += 4;
+
+  offset = writeDot(bytes, view, offset, { x: 12, y: 34, weight: 0.5, v: -2.5, u: 1.25, fixed: false, inputFile: "old.wav" });
+  offset = writeDot(bytes, view, offset, { x: 56, y: 78, weight: 1.5, v: 4.75, u: 3.5, fixed: true, inputFile: "" });
+
+  view.setInt32(offset, 1, true);
+  offset += 4;
+  view.setInt32(offset, 1, true);
+  offset += 4;
+  view.setFloat64(offset, 9.25, true);
+  offset += 8;
+
+  view.setInt32(offset, 1, true);
+  offset += 4;
+  view.setInt32(offset, 0, true);
+  offset += 4;
+  view.setFloat64(offset, 9.25, true);
+
+  return bytes;
+}
+
+function writeDot(
+  bytes: Uint8Array,
+  view: DataView,
+  offset: number,
+  dot: { x: number; y: number; weight: number; v: number; u: number; fixed: boolean; inputFile: string },
+): number {
+  const nameBytes = Buffer.from(`${dot.inputFile}\0`, "binary");
+  view.setInt32(offset, dot.x, true);
+  offset += 4;
+  view.setInt32(offset, dot.y, true);
+  offset += 4;
+  view.setFloat64(offset, dot.weight, true);
+  offset += 8;
+  view.setFloat64(offset, dot.v, true);
+  offset += 8;
+  view.setFloat64(offset, dot.u, true);
+  offset += 8;
+  view.setInt32(offset, dot.fixed ? 1 : 0, true);
+  offset += 4;
+  view.setInt32(offset, nameBytes.length, true);
+  offset += 4;
+  bytes.set(nameBytes, offset);
+  offset += nameBytes.length;
+  return offset;
+}

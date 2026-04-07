@@ -226,19 +226,19 @@ export function LegacyOscillogrammWaveform({ buffer, sampleRate, compact = false
             <span className="sr-only">Scroll right</span>
           </button>
           <button type="button" className="osc-btn osc-icon-btn" onClick={zoomIn} title="Zoom in (x1)">
-            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 3 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 2 } as CSSProperties} aria-hidden />
             <span className="sr-only">Zoom in</span>
           </button>
           <button type="button" className="osc-btn osc-icon-btn" onClick={zoomOut} title="Zoom out (x2)">
-            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 2 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 3 } as CSSProperties} aria-hidden />
             <span className="sr-only">Zoom out</span>
           </button>
           <button type="button" className="osc-btn osc-icon-btn" onClick={compressY} title="Compress Y (x2)">
-            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 4 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 5 } as CSSProperties} aria-hidden />
             <span className="sr-only">Compress Y</span>
           </button>
           <button type="button" className="osc-btn osc-icon-btn" onClick={expandY} title="Expand Y (x1)">
-            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 5 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 4 } as CSSProperties} aria-hidden />
             <span className="sr-only">Expand Y</span>
           </button>
         </div>

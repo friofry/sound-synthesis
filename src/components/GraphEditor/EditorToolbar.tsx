@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+import { useRef, type ChangeEvent, type CSSProperties } from "react";
+import { graphFromBinary, graphToBinary } from "../../engine/fileIO/graphFile";
 import type { ToolMode } from "../../engine/types";
 import { useGraphStore } from "../../store/graphStore";
 import { MfcToolbar, type MfcToolbarItem, type MfcToolbarSeparator } from "../ui/MfcToolbar";
@@ -64,6 +65,9 @@ export type EditorToolbarViewProps = {
   onAddCellGraph: () => void;
   onAddHexGraph: () => void;
   onReprepareAndGenerate: () => void;
+  onNewGraph: () => void;
+  onLoadGraphFile: (file: File) => void | Promise<void>;
+  onSaveGraph: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
 };
@@ -74,9 +78,22 @@ export function EditorToolbarView({
   onAddCellGraph,
   onAddHexGraph,
   onReprepareAndGenerate,
+  onNewGraph,
+  onLoadGraphFile,
+  onSaveGraph,
   onZoomIn,
   onZoomOut,
 }: EditorToolbarViewProps) {
+  const graphInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleGraphChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const [file] = Array.from(event.target.files ?? []);
+    if (file) {
+      await onLoadGraphFile(file);
+    }
+    event.target.value = "";
+  };
+
   return (
     <header className="toolbar">
       <MfcToolbar
@@ -169,6 +186,42 @@ export function EditorToolbarView({
         <button
           type="button"
           className="mfc-toolbar-button toolbar-icon-btn"
+          onClick={onNewGraph}
+          title="New: Clears the editor screen."
+          aria-label="New graph"
+        >
+          <span className="mfc-toolbar-button-content">
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 15 } as CSSProperties} aria-hidden />
+            <span className="sr-only">New graph</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="mfc-toolbar-button toolbar-icon-btn"
+          onClick={() => graphInputRef.current?.click()}
+          title="Load graph file (.gph)"
+          aria-label="Load graph"
+        >
+          <span className="mfc-toolbar-button-content">
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 16 } as CSSProperties} aria-hidden />
+            <span className="sr-only">Load graph</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="mfc-toolbar-button toolbar-icon-btn"
+          onClick={onSaveGraph}
+          title="Save graph file (.gph)"
+          aria-label="Save graph"
+        >
+          <span className="mfc-toolbar-button-content">
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 17 } as CSSProperties} aria-hidden />
+            <span className="sr-only">Save graph</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="mfc-toolbar-button toolbar-icon-btn"
           onClick={onReprepareAndGenerate}
           title="Random preset + generate octaves (2)"
           aria-label="Random preset + generate octaves (2)"
@@ -179,6 +232,13 @@ export function EditorToolbarView({
           </span>
         </button>
       </div>
+      <input
+        ref={graphInputRef}
+        type="file"
+        accept=".gph,application/octet-stream"
+        className="hidden-input"
+        onChange={handleGraphChange}
+      />
     </header>
   );
 }
@@ -188,7 +248,30 @@ type EditorToolbarProps = {
 };
 
 export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
-  const { tool, setTool, openCellTemplateDialog, openHexTemplateDialog, zoomViewport } = useGraphStore();
+  const { tool, setTool, openCellTemplateDialog, openHexTemplateDialog, zoomViewport, clearGraph, serializeGraph, loadGraph } =
+    useGraphStore();
+
+  const handleNewGraph = () => {
+    clearGraph();
+  };
+
+  const handleLoadGraphFile = async (file: File) => {
+    try {
+      const buffer = await file.arrayBuffer();
+      loadGraph(graphFromBinary(buffer));
+    } catch (error) {
+      window.alert(`Failed to load graph file: ${(error as Error).message}`);
+    }
+  };
+
+  const handleSaveGraph = () => {
+    try {
+      const serializedGraph = serializeGraph();
+      downloadGraphFile("graph.gph", graphToBinary(serializedGraph));
+    } catch (error) {
+      window.alert(`Failed to save graph file: ${(error as Error).message}`);
+    }
+  };
 
   return (
     <EditorToolbarView
@@ -197,6 +280,9 @@ export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
       onAddCellGraph={openCellTemplateDialog}
       onAddHexGraph={openHexTemplateDialog}
       onReprepareAndGenerate={onReprepareAndGenerate ?? (() => {})}
+      onNewGraph={handleNewGraph}
+      onLoadGraphFile={handleLoadGraphFile}
+      onSaveGraph={handleSaveGraph}
       onZoomIn={() => zoomViewport(1.25)}
       onZoomOut={() => zoomViewport(1 / 1.25)}
     />
@@ -205,4 +291,16 @@ export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
 
 function isSeparator(entry: ToolEntry | MfcToolbarSeparator): entry is MfcToolbarSeparator {
   return "kind" in entry && entry.kind === "separator";
+}
+
+function downloadGraphFile(filename: string, buffer: ArrayBuffer): void {
+  const blob = new Blob([buffer], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
 }
