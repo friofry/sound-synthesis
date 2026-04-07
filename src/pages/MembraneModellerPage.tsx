@@ -25,6 +25,7 @@ import { useGraphStore } from "../store/graphStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
 
 export function MembraneModellerPage() {
+  const skipAutoRandomInit = import.meta.env.VITE_E2E === "1";
   const fuzzyGraphInitializedRef = useRef(false);
   const {
     simulationResult,
@@ -121,12 +122,15 @@ export function MembraneModellerPage() {
   ]);
 
   useEffect(() => {
+    if (skipAutoRandomInit) {
+      return;
+    }
     if (fuzzyGraphInitializedRef.current) {
       return;
     }
     fuzzyGraphInitializedRef.current = true;
     InitializeFuzzyGraph();
-  }, [InitializeFuzzyGraph]);
+  }, [InitializeFuzzyGraph, skipAutoRandomInit]);
 
   const handleReprepareAndGenerate = useCallback(() => {
     const randomPreset = createRandomPresetConfig();
