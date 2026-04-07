@@ -3,6 +3,7 @@ import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { useMemo } from "react";
 import { Vector3 } from "three";
 import { MembraneMesh } from "./MembraneMesh";
+import { ViewerToolbar } from "./ViewerToolbar";
 import { useGraphStore } from "../../store/graphStore";
 
 function computeBounds(points: { x: number; y: number }[]) {
@@ -77,19 +78,22 @@ export function MembraneViewer() {
   };
 
   return (
-    <div className="viewer-canvas-wrap">
-      <Canvas
-        camera={{ position: [0, 2.5, 5.5], fov: 50 }}
-        onCreated={({ gl }) => {
-          gl.setClearColor("#020202");
-          gl.domElement.oncontextmenu = (e) => e.preventDefault();
-        }}
-      >
-        <group onPointerDown={onPointerDown}>
-          <MembraneMesh />
-        </group>
-        <OrbitControls enableDamping dampingFactor={0.08} />
-      </Canvas>
-    </div>
+    <>
+      <ViewerToolbar />
+      <div className="viewer-canvas-wrap">
+        <Canvas
+          camera={{ position: [0, 2.5, 5.5], fov: 50 }}
+          onCreated={({ gl }) => {
+            gl.setClearColor("#020202");
+            gl.domElement.oncontextmenu = (e) => e.preventDefault();
+          }}
+        >
+          <group onPointerDown={onPointerDown}>
+            <MembraneMesh />
+          </group>
+          <OrbitControls enableDamping dampingFactor={0.08} />
+        </Canvas>
+      </div>
+    </>
   );
 }

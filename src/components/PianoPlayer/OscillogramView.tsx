@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { OscillogramToolbar } from "./OscillogramToolbar";
 
 const TICK_COUNT = 50;
 const VIEW_HEIGHT = 82;
@@ -257,24 +258,7 @@ export function OscillogramView({ buffer, sampleRate, compact = false }: Oscillo
   return (
     <div className={`oscillogram-container${compact ? " compact" : ""}`}>
       {!compact && (
-        <div className="oscillogram-toolbar">
-          <button type="button" className="osc-btn osc-icon-btn" onClick={nudgeLeft} title="Scroll left">
-            <span className="toolbar-sprite bitmap5-sprite" style={{ "--sprite-index": 0 } as CSSProperties} aria-hidden />
-            <span className="sr-only">Scroll left</span>
-          </button>
-          <button type="button" className="osc-btn osc-icon-btn" onClick={nudgeRight} title="Scroll right">
-            <span className="toolbar-sprite bitmap5-sprite" style={{ "--sprite-index": 1 } as CSSProperties} aria-hidden />
-            <span className="sr-only">Scroll right</span>
-          </button>
-          <button type="button" className="osc-btn osc-icon-btn" onClick={zoomIn} title="Zoom in (x1)">
-            <span className="toolbar-sprite bitmap5-sprite" style={{ "--sprite-index": 3 } as CSSProperties} aria-hidden />
-            <span className="sr-only">Zoom in</span>
-          </button>
-          <button type="button" className="osc-btn osc-icon-btn" onClick={zoomOut} title="Zoom out (x2)">
-            <span className="toolbar-sprite bitmap5-sprite" style={{ "--sprite-index": 2 } as CSSProperties} aria-hidden />
-            <span className="sr-only">Zoom out</span>
-          </button>
-        </div>
+        <OscillogramToolbar onNudgeLeft={nudgeLeft} onNudgeRight={nudgeRight} onZoomIn={zoomIn} onZoomOut={zoomOut} />
       )}
       <canvas ref={canvasRef} className="oscillogram-canvas" style={{ height: compact ? "100%" : VIEW_HEIGHT }} />
       {!compact && (

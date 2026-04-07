@@ -11,18 +11,18 @@ type ToolEntry = MfcToolbarItem<ToolMode> & {
 
 const TOOLS: Array<ToolEntry | MfcToolbarSeparator> = [
   { id: "move-group", spriteIndex: 0, label: "Move group", implemented: true },
-  { id: "drag-point", spriteIndex: 0, label: "Drag point", implemented: true },
-  { id: "drag-viewport", spriteIndex: 1, label: "Drag viewport", implemented: true },
+  { id: "drag-point", spriteIndex: 1, label: "Drag point", implemented: true },
+  { id: "drag-viewport", spriteIndex: 2, label: "Drag viewport", implemented: true },
   { kind: "separator", id: "sep-1" },
-  { id: "modify-point", spriteIndex: 2, label: "Modify point", implemented: true },
-  { id: "modify-link", spriteIndex: 3, label: "Modify link", implemented: true },
+  { id: "modify-point", spriteIndex: 3, label: "Modify point", implemented: true },
+  { id: "modify-link", spriteIndex: 4, label: "Modify link", implemented: true },
   { kind: "separator", id: "sep-2" },
-  { id: "delete-point", spriteIndex: 4, label: "Delete point", implemented: true },
-  { id: "delete-link", spriteIndex: 5, label: "Delete link", implemented: true },
+  { id: "delete-point", spriteIndex: 5, label: "Delete point", implemented: true },
+  { id: "delete-link", spriteIndex: 6, label: "Delete link", implemented: true },
   { kind: "separator", id: "sep-3" },
   {
     id: "add-point-link",
-    spriteIndex: 6,
+    spriteIndex: 7,
     label: "Add point/link",
     implemented: true,
     description:
@@ -32,8 +32,8 @@ const TOOLS: Array<ToolEntry | MfcToolbarSeparator> = [
 ];
 
 const EXTRA_TOOLS: Array<ToolEntry | MfcToolbarSeparator> = [
-  { id: "playing-point", spriteIndex: 9, label: "Playing point", implemented: true },
-  { id: "modify-group", spriteIndex: 10, label: "Modify group", implemented: true },
+  { id: "playing-point", spriteIndex: 10, label: "Playing point", implemented: true },
+  { id: "modify-group", spriteIndex: 11, label: "Modify group", implemented: true },
 ];
 
 const TOOL_ITEMS = TOOLS.map((entry) =>
@@ -88,15 +88,11 @@ export function EditorToolbarView({
         buttonClassName="toolbar-icon-btn"
         renderItem={(entry) => (
           <>
-            {entry.id === "move-group" ? (
-              <span className="toolbar-selection-rect-icon" aria-hidden />
-            ) : (
-              <span
-                className="toolbar-sprite toolbar3-sprite"
-                style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
-                aria-hidden
-              />
-            )}
+            <span
+              className="toolbar-sprite editor-toolbar-sprite"
+              style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
+              aria-hidden
+            />
             <span className="sr-only">{entry.label}</span>
           </>
         )}
@@ -110,7 +106,7 @@ export function EditorToolbarView({
           aria-label="Add cell graph"
         >
           <span className="mfc-toolbar-button-content">
-            <span className="toolbar-sprite toolbar3-sprite" style={{ "--sprite-index": 7 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 8 } as CSSProperties} aria-hidden />
             <span className="sr-only">Add cell graph</span>
           </span>
         </button>
@@ -122,7 +118,7 @@ export function EditorToolbarView({
           aria-label="Add hexagonal graph"
         >
           <span className="mfc-toolbar-button-content">
-            <span className="toolbar-sprite toolbar3-sprite" style={{ "--sprite-index": 8 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 9 } as CSSProperties} aria-hidden />
             <span className="sr-only">Add hexagonal graph</span>
           </span>
         </button>
@@ -137,7 +133,7 @@ export function EditorToolbarView({
         renderItem={(entry) => (
           <>
             <span
-              className="toolbar-sprite toolbar3-sprite"
+              className="toolbar-sprite editor-toolbar-sprite"
               style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
               aria-hidden
             />
@@ -154,7 +150,7 @@ export function EditorToolbarView({
           aria-label="Zoom in"
         >
           <span className="mfc-toolbar-button-content">
-            <span className="toolbar-sprite toolbar3-sprite" style={{ "--sprite-index": 11 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 13 } as CSSProperties} aria-hidden />
             <span className="sr-only">Zoom in</span>
           </span>
         </button>
@@ -166,7 +162,7 @@ export function EditorToolbarView({
           aria-label="Zoom out"
         >
           <span className="mfc-toolbar-button-content">
-            <span className="toolbar-sprite toolbar3-sprite" style={{ "--sprite-index": 12 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 14 } as CSSProperties} aria-hidden />
             <span className="sr-only">Zoom out</span>
           </span>
         </button>

@@ -122,6 +122,28 @@
   cursor: pointer;
 }
 
+.viewer-btn {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  color: #111;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.viewer-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.viewer-btn:hover:not(:disabled) {
+  background: rgb(0 0 0 / 6%);
+}
+
 .toolbar-icon-btn {
   width: 32px;
   height: 32px;
@@ -189,14 +211,6 @@
   image-rendering: pixelated;
 }
 
-.toolbar-selection-rect-icon {
-  width: 16px;
-  height: 12px;
-  border: 1px dashed #50b450;
-  box-sizing: border-box;
-  display: inline-block;
-}
-
 .toolbar-dice-xp-icon {
   width: 16px;
   height: 16px;
@@ -231,10 +245,12 @@
   left: 3px;
 }
 
-.toolbar3-sprite {
-  background-image: url("/legacy-icons/toolbar3.png");
+.editor-toolbar-sprite {
+  width: 28px;
+  height: 27px;
+  background-image: url("/legacy-icons/editor_toolbar.png");
   background-repeat: no-repeat;
-  background-position: calc(-24px * var(--sprite-index)) 0;
+  background-position: calc(-28px * var(--sprite-index)) 0;
 }
 
 .toolbar1-sprite {
@@ -249,10 +265,26 @@
   background-position: calc(-16px * var(--sprite-index)) 0;
 }
 
+.oscill-toolbar-sprite {
+  width: 15px;
+  height: 13px;
+  background-image: url("/legacy-icons/oscill_toolbar.png");
+  background-repeat: no-repeat;
+  background-position: calc(-15px * var(--sprite-index)) 0;
+}
+
 .piano-toolbar-sprite {
   background-image: url("/legacy-icons/piano_toolbar.png");
   background-repeat: no-repeat;
   background-position: calc(-24px * var(--sprite-index)) 0;
+}
+
+.viewer-toolbar-sprite {
+  width: 16px;
+  height: 16px;
+  background-image: url("/legacy-icons/viewer_toolbar.png");
+  background-repeat: no-repeat;
+  background-position: calc(-16px * var(--sprite-index)) 0;
 }
 
 .sr-only {
@@ -506,6 +538,19 @@
 
 .legacy-oscillogramm-waveform-view.compact {
   display: block;
+}
+
+.legacy-oscillogramm-waveform-view .oscillogram-toolbar {
+  min-height: 40px;
+  padding: 1px 3px;
+}
+
+.legacy-oscillogramm-waveform-view .osc-btn.osc-icon-btn {
+  width: 51px;
+  height: 38px;
+  border: 0;
+  padding: 0;
+  background: #d6d6d6;
 }
 
 .legacy-oscillogramm-waveform {

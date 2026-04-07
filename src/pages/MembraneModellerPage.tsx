@@ -10,7 +10,6 @@ import { InsertGraphDialog } from "../components/GraphEditor/dialogs/InsertGraph
 import { LinePropertiesDialog } from "../components/GraphEditor/dialogs/LinePropertiesDialog";
 import { SimulationDialog } from "../components/GraphEditor/dialogs/SimulationDialog";
 import { MembraneViewer } from "../components/Viewer3D/MembraneViewer";
-import { ViewerControls } from "../components/Viewer3D/ViewerControls";
 import { GenerationProgressDialog } from "../components/PianoPlayer/GenerationProgressDialog";
 import { GenerateNotesDialog } from "../components/PianoPlayer/GenerateNotesDialog";
 import { PianoKeyboard } from "../components/PianoPlayer/PianoKeyboard";
@@ -197,7 +196,6 @@ export function MembraneModellerPage() {
           minPaneSize={80}
         >
           <section className="right-panel viewer-panel">
-            <ViewerControls />
             <MembraneViewer />
           </section>
           <section className="right-panel oscill-panel">

@@ -18,6 +18,7 @@ const meta = {
     onSelectTool: fn(),
     onAddCellGraph: fn(),
     onAddHexGraph: fn(),
+    onReprepareAndGenerate: fn(),
     onZoomIn: fn(),
     onZoomOut: fn(),
   },

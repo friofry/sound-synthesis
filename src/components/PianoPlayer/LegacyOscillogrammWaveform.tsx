@@ -17,6 +17,7 @@ export function LegacyOscillogrammWaveform({ buffer, sampleRate, compact = false
   const waveformCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const positionRef = useRef(0);
   const shagRef = useRef(1);
+  const yZoomRef = useRef(1);
   const lastBufferRef = useRef<Float32Array | null>(null);
 
   const maxPosition = useMemo(() => {
@@ -90,7 +91,8 @@ export function LegacyOscillogrammWaveform({ buffer, sampleRate, compact = false
     const start = positionRef.current;
     const step = shagRef.current;
     const minVisible = Math.min(cssWidth, Math.floor((buffer.length - start) / step));
-    const scaleY = cssHeight / 2;
+    const yScale = Math.max(1, yZoomRef.current);
+    const scaleY = (cssHeight / 2) / yScale;
 
     ctx.strokeStyle = "#ff2a2a";
     ctx.lineWidth = 1;
@@ -126,6 +128,7 @@ export function LegacyOscillogrammWaveform({ buffer, sampleRate, compact = false
     if (lastBufferRef.current !== buffer) {
       positionRef.current = 0;
       shagRef.current = 1;
+      yZoomRef.current = 1;
       lastBufferRef.current = buffer;
       redrawWaveform();
     }
@@ -174,6 +177,19 @@ export function LegacyOscillogrammWaveform({ buffer, sampleRate, compact = false
     redrawWaveform();
   };
 
+  const compressY = () => {
+    yZoomRef.current <<= 1;
+    redrawWaveform();
+  };
+
+  const expandY = () => {
+    yZoomRef.current >>= 1;
+    if (yZoomRef.current < 1) {
+      yZoomRef.current = 1;
+    }
+    redrawWaveform();
+  };
+
   const handleWaveformContextMenu: MouseEventHandler<HTMLCanvasElement> = (event) => {
     event.preventDefault();
     const mode = window.prompt("Go to position mode: enter 'ms' or 'sample'", "ms");
@@ -202,20 +218,28 @@ export function LegacyOscillogrammWaveform({ buffer, sampleRate, compact = false
       {!compact && (
         <div className="oscillogram-toolbar">
           <button type="button" className="osc-btn osc-icon-btn" onClick={nudgeLeft} title="Scroll left">
-            <span className="toolbar-sprite bitmap5-sprite" style={{ "--sprite-index": 0 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 0 } as CSSProperties} aria-hidden />
             <span className="sr-only">Scroll left</span>
           </button>
           <button type="button" className="osc-btn osc-icon-btn" onClick={nudgeRight} title="Scroll right">
-            <span className="toolbar-sprite bitmap5-sprite" style={{ "--sprite-index": 1 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 1 } as CSSProperties} aria-hidden />
             <span className="sr-only">Scroll right</span>
           </button>
           <button type="button" className="osc-btn osc-icon-btn" onClick={zoomIn} title="Zoom in (x1)">
-            <span className="toolbar-sprite bitmap5-sprite" style={{ "--sprite-index": 3 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 3 } as CSSProperties} aria-hidden />
             <span className="sr-only">Zoom in</span>
           </button>
           <button type="button" className="osc-btn osc-icon-btn" onClick={zoomOut} title="Zoom out (x2)">
-            <span className="toolbar-sprite bitmap5-sprite" style={{ "--sprite-index": 2 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 2 } as CSSProperties} aria-hidden />
             <span className="sr-only">Zoom out</span>
+          </button>
+          <button type="button" className="osc-btn osc-icon-btn" onClick={compressY} title="Compress Y (x2)">
+            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 4 } as CSSProperties} aria-hidden />
+            <span className="sr-only">Compress Y</span>
+          </button>
+          <button type="button" className="osc-btn osc-icon-btn" onClick={expandY} title="Expand Y (x1)">
+            <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 5 } as CSSProperties} aria-hidden />
+            <span className="sr-only">Expand Y</span>
           </button>
         </div>
       )}
