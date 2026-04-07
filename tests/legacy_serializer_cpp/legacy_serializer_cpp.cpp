@@ -24,7 +24,7 @@ struct Dot {
 struct Graph {
   std::vector<Dot> dots;
 
-  void addDot(int x, int y, double u, double v, double weight, int fixed, const char* inputFile) {
+  void addDot(int x, int y, double u, double v, double weight, int fixed, const std::string& inputFile) {
     Dot dot;
     dot.x = x;
     dot.y = y;
@@ -32,9 +32,7 @@ struct Graph {
     dot.v = v;
     dot.weight = weight;
     dot.fixed = fixed;
-    if (inputFile != nullptr) {
-      dot.inputFile = inputFile;
-    }
+    dot.inputFile = inputFile;
     dots.push_back(dot);
   }
 
@@ -97,7 +95,8 @@ bool graphFromFileCpp(Graph& graph, const std::filesystem::path& filePath, std::
       }
     }
 
-    graph.addDot(x, y, u, v, weight, fixed, nameBuffer.empty() ? "" : nameBuffer.data());
+    const std::string inputFile = nameBuffer.empty() ? std::string() : std::string(nameBuffer.data(), nameBuffer.size());
+    graph.addDot(x, y, u, v, weight, fixed, inputFile);
   }
 
   int k = 0;

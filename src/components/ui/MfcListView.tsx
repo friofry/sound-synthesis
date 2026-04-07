@@ -31,7 +31,7 @@ export function MfcListView<TId extends string = string>({
   }
 
   return (
-    <div className={rootClassName} role="listbox" aria-label="List view">
+    <div className={rootClassName} aria-label="List view">
       {items.map((item) => {
         const isSelected = selectedId === item.id;
         const itemClassName = ["mfc-list-view-item", isSelected ? "is-selected" : ""].filter(Boolean).join(" ");
@@ -41,7 +41,7 @@ export function MfcListView<TId extends string = string>({
             type="button"
             className={itemClassName}
             disabled={item.disabled}
-            aria-selected={isSelected}
+            aria-pressed={isSelected}
             onClick={() => onSelect(item.id)}
           >
             {renderItem ? renderItem(item) : item.label}

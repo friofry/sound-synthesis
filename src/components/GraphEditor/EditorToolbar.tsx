@@ -62,7 +62,7 @@ const EXTRA_TOOL_ITEMS = EXTRA_TOOLS.map((entry) =>
 export type EditorToolbarViewProps = {
   tool: ToolMode;
   onSelectTool: (tool: ToolMode) => void;
-  onToggleHammerTool: () => void;
+  onSelectHammerTool: () => void;
   onAddCellGraph: () => void;
   onAddHexGraph: () => void;
   onReprepareAndGenerate: () => void;
@@ -76,7 +76,7 @@ export type EditorToolbarViewProps = {
 export function EditorToolbarView({
   tool,
   onSelectTool,
-  onToggleHammerTool,
+  onSelectHammerTool,
   onAddCellGraph,
   onAddHexGraph,
   onReprepareAndGenerate,
@@ -224,7 +224,7 @@ export function EditorToolbarView({
         <button
           type="button"
           className={`mfc-toolbar-button toolbar-icon-btn ${tool === "hammer" ? "is-selected" : ""}`.trim()}
-          onClick={onToggleHammerTool}
+          onClick={onSelectHammerTool}
           title="Hammer tool"
           aria-label="Hammer tool"
           aria-pressed={tool === "hammer"}
@@ -306,7 +306,7 @@ export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
           openHammerDialog();
         }
       }}
-      onToggleHammerTool={() => {
+      onSelectHammerTool={() => {
         setTool("hammer");
         openHammerDialog();
       }}

@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { SerializedGraph } from "../types";
 import { graphFromBinary, graphToBinary } from "./graphFile";
@@ -145,6 +146,7 @@ function readArrayBuffer(url: URL): ArrayBuffer {
 
 function collectGraphFiles(root: URL): URL[] {
   const files: URL[] = [];
+  const rootPath = fileURLToPath(root);
   const walk = (directory: string) => {
     for (const entry of readdirSync(directory)) {
       const fullPath = join(directory, entry);
@@ -154,11 +156,11 @@ function collectGraphFiles(root: URL): URL[] {
         continue;
       }
       if (fullPath.endsWith(".gph")) {
-        files.push(new URL(`file://${fullPath}`));
+        files.push(pathToFileURL(fullPath));
       }
     }
   };
 
-  walk(root.pathname);
+  walk(rootPath);
   return files;
 }
