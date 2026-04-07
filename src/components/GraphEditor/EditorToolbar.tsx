@@ -62,6 +62,7 @@ const EXTRA_TOOL_ITEMS = EXTRA_TOOLS.map((entry) =>
 export type EditorToolbarViewProps = {
   tool: ToolMode;
   onSelectTool: (tool: ToolMode) => void;
+  onToggleHammerTool: () => void;
   onAddCellGraph: () => void;
   onAddHexGraph: () => void;
   onReprepareAndGenerate: () => void;
@@ -75,6 +76,7 @@ export type EditorToolbarViewProps = {
 export function EditorToolbarView({
   tool,
   onSelectTool,
+  onToggleHammerTool,
   onAddCellGraph,
   onAddHexGraph,
   onReprepareAndGenerate,
@@ -221,6 +223,19 @@ export function EditorToolbarView({
         </button>
         <button
           type="button"
+          className={`mfc-toolbar-button toolbar-icon-btn ${tool === "hammer" ? "is-selected" : ""}`.trim()}
+          onClick={onToggleHammerTool}
+          title="Hammer tool"
+          aria-label="Hammer tool"
+          aria-pressed={tool === "hammer"}
+        >
+          <span className="mfc-toolbar-button-content">
+            <span aria-hidden>🔨</span>
+            <span className="sr-only">Hammer tool</span>
+          </span>
+        </button>
+        <button
+          type="button"
           className="mfc-toolbar-button toolbar-icon-btn"
           onClick={onReprepareAndGenerate}
           title="Random preset + generate octaves (2)"
@@ -248,8 +263,17 @@ type EditorToolbarProps = {
 };
 
 export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
-  const { tool, setTool, openCellTemplateDialog, openHexTemplateDialog, zoomViewport, clearGraph, serializeGraph, loadGraph } =
-    useGraphStore();
+  const {
+    tool,
+    setTool,
+    openCellTemplateDialog,
+    openHexTemplateDialog,
+    openHammerDialog,
+    zoomViewport,
+    clearGraph,
+    serializeGraph,
+    loadGraph,
+  } = useGraphStore();
 
   const handleNewGraph = () => {
     clearGraph();
@@ -276,7 +300,16 @@ export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
   return (
     <EditorToolbarView
       tool={tool}
-      onSelectTool={setTool}
+      onSelectTool={(nextTool) => {
+        setTool(nextTool);
+        if (nextTool === "hammer") {
+          openHammerDialog();
+        }
+      }}
+      onToggleHammerTool={() => {
+        setTool("hammer");
+        openHammerDialog();
+      }}
       onAddCellGraph={openCellTemplateDialog}
       onAddHexGraph={openHexTemplateDialog}
       onReprepareAndGenerate={onReprepareAndGenerate ?? (() => {})}

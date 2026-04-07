@@ -32,6 +32,7 @@ export type ToolMode =
   | "drag-viewport"
   | "move-group"
   | "playing-point"
+  | "hammer"
   | "modify-point"
   | "modify-link"
   | "modify-group"

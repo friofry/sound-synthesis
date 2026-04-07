@@ -10,6 +10,7 @@ import { InsertGraphDialog } from "../components/GraphEditor/dialogs/InsertGraph
 import { LinePropertiesDialog } from "../components/GraphEditor/dialogs/LinePropertiesDialog";
 import { SimulationDialog } from "../components/GraphEditor/dialogs/SimulationDialog";
 import { CommunityGraphsDialog } from "../components/GraphEditor/dialogs/CommunityGraphsDialog";
+import { HammerDialog } from "../components/GraphEditor/dialogs/HammerDialog";
 import { MembraneViewer } from "../components/Viewer3D/MembraneViewer";
 import { GenerationProgressDialog } from "../components/PianoPlayer/GenerationProgressDialog";
 import { GenerateNotesDialog } from "../components/PianoPlayer/GenerateNotesDialog";
@@ -49,6 +50,7 @@ export function MembraneModellerPage() {
     handlePressKey,
     handleReleaseKey,
     handleGenerateOne,
+    handlePlayPreviewBuffer,
     generateInstrument,
     generateNotesDialogOpen,
     generateNotesSettings,
@@ -202,7 +204,7 @@ export function MembraneModellerPage() {
               <EditorToolbar onReprepareAndGenerate={handleReprepareAndGenerate} />
             </aside>
             <div className="graph-stage">
-              <GraphCanvas />
+              <GraphCanvas onHammerPreview={handlePlayPreviewBuffer} />
               <StatusBar />
             </div>
           </section>
@@ -266,6 +268,7 @@ export function MembraneModellerPage() {
       <DotPropertiesDialog />
       <LinePropertiesDialog />
       <GroupModifyDialog />
+      <HammerDialog />
       <CellTemplateDialog />
       <HexTemplateDialog />
       <InsertGraphDialog

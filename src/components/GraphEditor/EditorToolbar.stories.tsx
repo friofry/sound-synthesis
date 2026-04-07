@@ -16,11 +16,12 @@ const meta = {
   ],
   args: {
     onSelectTool: fn(),
+    onToggleHammerTool: fn(),
     onAddCellGraph: fn(),
     onAddHexGraph: fn(),
     onReprepareAndGenerate: fn(),
     onNewGraph: fn(),
-    onLoadGraph: fn(),
+    onLoadGraphFile: fn(),
     onSaveGraph: fn(),
     onZoomIn: fn(),
     onZoomOut: fn(),

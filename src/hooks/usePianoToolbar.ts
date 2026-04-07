@@ -611,6 +611,25 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     setActiveBuffer(note.buffer, note.sampleRate);
   }, [audioEngine, graph, simulationParams, setActiveBuffer]);
 
+  const handlePlayPreviewBuffer = useCallback(
+    async (buffer: Float32Array, sampleRate: number) => {
+      const alias = "__hammer-preview__";
+      const note: RawInstrumentNote = {
+        alias,
+        keyLabel: "hammer",
+        keyCode: "hammer",
+        index: -1,
+        frequency: 0,
+        buffer,
+        sampleRate,
+      };
+      audioEngine.setNote(note);
+      setActiveBuffer(buffer, sampleRate);
+      await audioEngine.playNote(alias);
+    },
+    [audioEngine, setActiveBuffer],
+  );
+
   const handleToggleRecording = useCallback(() => {
     const recorder = recorderRef.current;
     if (!recorder) return;
@@ -774,6 +793,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     handlePressKey,
     handleReleaseKey,
     handleGenerateOne,
+    handlePlayPreviewBuffer,
     generateInstrument,
     generateNotesDialogOpen,
     generateNotesSettings,
