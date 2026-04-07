@@ -9,29 +9,35 @@ import { HexTemplateDialog } from "../components/GraphEditor/dialogs/HexTemplate
 import { InsertGraphDialog } from "../components/GraphEditor/dialogs/InsertGraphDialog";
 import { LinePropertiesDialog } from "../components/GraphEditor/dialogs/LinePropertiesDialog";
 import { SimulationDialog } from "../components/GraphEditor/dialogs/SimulationDialog";
+import { CommunityGraphsDialog } from "../components/GraphEditor/dialogs/CommunityGraphsDialog";
+import { HammerDialog } from "../components/GraphEditor/dialogs/HammerDialog";
 import { MembraneViewer } from "../components/Viewer3D/MembraneViewer";
-import { ViewerControls } from "../components/Viewer3D/ViewerControls";
 import { GenerationProgressDialog } from "../components/PianoPlayer/GenerationProgressDialog";
 import { GenerateNotesDialog } from "../components/PianoPlayer/GenerateNotesDialog";
 import { PianoKeyboard } from "../components/PianoPlayer/PianoKeyboard";
 import { PianoToolbar } from "../components/PianoPlayer/PianoToolbar";
-import { OscillogramView } from "../components/PianoPlayer/OscillogramView";
-import { FrequencyAnalyzer } from "../components/PianoPlayer/FrequencyAnalyzer";
+import { LegacyOscillogrammWaveform } from "../components/PianoPlayer/LegacyOscillogrammWaveform";
+import { LegacyOscillogrammSpectrum } from "../components/PianoPlayer/LegacyOscillogrammSpectrum";
 import { MfcSplitView } from "../components/ui/MfcSplitView";
+import { graphFromBinary } from "../engine/fileIO/graphFile";
 import type { GridType, StiffnessType } from "../engine/types";
 import { useGraphStore } from "../store/graphStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
 
 export function MembraneModellerPage() {
+  const skipAutoRandomInit = import.meta.env.VITE_E2E === "1";
   const fuzzyGraphInitializedRef = useRef(false);
   const {
     simulationResult,
     simulationParams,
     graph,
     insertDialog,
+    communityGraphsDialog,
     canvasSize,
     closeInsertDialog,
+    closeCommunityGraphsDialog,
     createPresetGraph,
+    loadGraph,
     setDefaults,
   } = useGraphStore();
 
@@ -45,6 +51,7 @@ export function MembraneModellerPage() {
     handlePressKey,
     handleReleaseKey,
     handleGenerateOne,
+    handlePlayPreviewBuffer,
     generateInstrument,
     generateNotesDialogOpen,
     generateNotesSettings,
@@ -115,12 +122,15 @@ export function MembraneModellerPage() {
   ]);
 
   useEffect(() => {
+    if (skipAutoRandomInit) {
+      return;
+    }
     if (fuzzyGraphInitializedRef.current) {
       return;
     }
     fuzzyGraphInitializedRef.current = true;
     InitializeFuzzyGraph();
-  }, [InitializeFuzzyGraph]);
+  }, [InitializeFuzzyGraph, skipAutoRandomInit]);
 
   const handleReprepareAndGenerate = useCallback(() => {
     const randomPreset = createRandomPresetConfig();
@@ -176,6 +186,19 @@ export function MembraneModellerPage() {
     setDefaults,
   ]);
 
+  const handleOpenCommunityGraph = useCallback(async (graphPath: string) => {
+    const encodedPath = graphPath
+      .split("/")
+      .map((segment) => encodeURIComponent(segment))
+      .join("/");
+    const response = await fetch(`/graphs/${encodedPath}`, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const buffer = await response.arrayBuffer();
+    loadGraph(graphFromBinary(buffer));
+  }, [loadGraph]);
+
   return (
     <section className="workspace-layout">
       <MfcSplitView className="workspace-split-view" defaultRatio={0.5} minPaneSize={280}>
@@ -185,7 +208,7 @@ export function MembraneModellerPage() {
               <EditorToolbar onReprepareAndGenerate={handleReprepareAndGenerate} />
             </aside>
             <div className="graph-stage">
-              <GraphCanvas />
+              <GraphCanvas onHammerPreview={handlePlayPreviewBuffer} />
               <StatusBar />
             </div>
           </section>
@@ -197,21 +220,20 @@ export function MembraneModellerPage() {
           minPaneSize={80}
         >
           <section className="right-panel viewer-panel">
-            <ViewerControls />
             <MembraneViewer />
           </section>
           <section className="right-panel oscill-panel">
-            <OscillogramView
+            <LegacyOscillogrammWaveform
               buffer={activeBuffer ?? simulationResult?.playingPointBuffer ?? null}
               sampleRate={activeSampleRate || simulationParams.sampleRate}
-              compact
             />
           </section>
           <section className="right-panel frequency-panel">
-            <FrequencyAnalyzer
+            <LegacyOscillogrammSpectrum
               analyser={audioEngine.analyser}
               buffer={activeBuffer ?? simulationResult?.playingPointBuffer ?? null}
               sampleRate={activeSampleRate || simulationParams.sampleRate}
+              compact
             />
           </section>
           <section className="right-panel piano-panel">
@@ -250,6 +272,7 @@ export function MembraneModellerPage() {
       <DotPropertiesDialog />
       <LinePropertiesDialog />
       <GroupModifyDialog />
+      <HammerDialog />
       <CellTemplateDialog />
       <HexTemplateDialog />
       <InsertGraphDialog
@@ -269,6 +292,11 @@ export function MembraneModellerPage() {
           });
         }}
         onClose={closeInsertDialog}
+      />
+      <CommunityGraphsDialog
+        open={communityGraphsDialog.open}
+        onClose={closeCommunityGraphsDialog}
+        onOpenGraph={handleOpenCommunityGraph}
       />
     </section>
   );

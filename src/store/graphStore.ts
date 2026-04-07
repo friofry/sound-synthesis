@@ -26,6 +26,20 @@ interface DialogState<T> {
   payload: T | null;
 }
 
+export type HammerDistributionMode = "equivalent" | "smoothed";
+export type HammerPlayingPointMode = "impact-point" | "graph-center";
+
+export type HammerSettings = {
+  distribution: HammerDistributionMode;
+  weight: number;
+  amplitude: number;
+  velocity: number;
+  attenuation: number;
+  squareAttenuation: number;
+  radius: number;
+  playingPointMode: HammerPlayingPointMode;
+};
+
 interface GraphStore {
   graph: GraphModel;
   canvasSize: { width: number; height: number };
@@ -52,6 +66,11 @@ interface GraphStore {
   dotDialog: DialogState<{ dotIndex: number }>;
   lineDialog: DialogState<{ lineIndex: number }>;
   groupDialog: DialogState<{ rect: Rect }>;
+  hammerDialog: DialogState<null>;
+  communityGraphsDialog: DialogState<null>;
+  hammerSettings: HammerSettings;
+  hammerPreviewPoint: { x: number; y: number } | null;
+  hammerCharge: number;
   simulationDialogOpen: boolean;
   simulationParams: SimulationParams;
   isSimulating: boolean;
@@ -87,6 +106,13 @@ interface GraphStore {
   closeLineDialog: () => void;
   openGroupDialog: (rect: Rect) => void;
   closeGroupDialog: () => void;
+  openHammerDialog: () => void;
+  closeHammerDialog: () => void;
+  setHammerSettings: (values: Partial<HammerSettings>) => void;
+  setHammerPreviewPoint: (point: { x: number; y: number } | null) => void;
+  setHammerCharge: (value: number) => void;
+  openCommunityGraphsDialog: () => void;
+  closeCommunityGraphsDialog: () => void;
   openSimulationDialog: () => void;
   closeSimulationDialog: () => void;
   setDefaults: (values: {
@@ -108,6 +134,17 @@ const defaultSimulationParams: SimulationParams = {
   attenuation: DEFAULT_ATTENUATION,
   squareAttenuation: DEFAULT_SQUARE_ATTENUATION,
   playingPoint: 0,
+};
+
+const defaultHammerSettings: HammerSettings = {
+  distribution: "smoothed",
+  weight: 0.000001,
+  amplitude: 0.8,
+  velocity: 0.35,
+  attenuation: DEFAULT_ATTENUATION,
+  squareAttenuation: DEFAULT_SQUARE_ATTENUATION,
+  radius: 36,
+  playingPointMode: "impact-point",
 };
 
 const DEFAULT_VIEWPORT_SCALE = 1;
@@ -140,6 +177,11 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   dotDialog: { open: false, payload: null },
   lineDialog: { open: false, payload: null },
   groupDialog: { open: false, payload: null },
+  hammerDialog: { open: false, payload: null },
+  communityGraphsDialog: { open: false, payload: null },
+  hammerSettings: defaultHammerSettings,
+  hammerPreviewPoint: null,
+  hammerCharge: 0,
   simulationDialogOpen: false,
   simulationParams: defaultSimulationParams,
   isSimulating: false,
@@ -255,6 +297,16 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   closeLineDialog: () => set({ lineDialog: { open: false, payload: null } }),
   openGroupDialog: (rect) => set({ groupDialog: { open: true, payload: { rect } } }),
   closeGroupDialog: () => set({ groupDialog: { open: false, payload: null } }),
+  openHammerDialog: () => set({ hammerDialog: { open: true, payload: null } }),
+  closeHammerDialog: () => set({ hammerDialog: { open: false, payload: null } }),
+  setHammerSettings: (values) =>
+    set((state) => ({
+      hammerSettings: { ...state.hammerSettings, ...values },
+    })),
+  setHammerPreviewPoint: (point) => set({ hammerPreviewPoint: point }),
+  setHammerCharge: (value) => set({ hammerCharge: clamp(value, 0, 1) }),
+  openCommunityGraphsDialog: () => set({ communityGraphsDialog: { open: true, payload: null } }),
+  closeCommunityGraphsDialog: () => set({ communityGraphsDialog: { open: false, payload: null } }),
   openSimulationDialog: () => set({ simulationDialogOpen: true }),
   closeSimulationDialog: () => set({ simulationDialogOpen: false }),
   setDefaults: (values) =>

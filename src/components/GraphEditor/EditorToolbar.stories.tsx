@@ -16,8 +16,13 @@ const meta = {
   ],
   args: {
     onSelectTool: fn(),
+    onSelectHammerTool: fn(),
     onAddCellGraph: fn(),
     onAddHexGraph: fn(),
+    onReprepareAndGenerate: fn(),
+    onNewGraph: fn(),
+    onLoadGraphFile: fn(),
+    onSaveGraph: fn(),
     onZoomIn: fn(),
     onZoomOut: fn(),
   },

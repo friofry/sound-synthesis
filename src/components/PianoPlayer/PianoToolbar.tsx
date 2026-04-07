@@ -1,4 +1,4 @@
-import { useRef, type ChangeEvent, type CSSProperties, type ReactNode } from "react";
+import { useRef, type ChangeEvent, type CSSProperties } from "react";
 import { MfcToolbar, type MfcToolbarItem, type MfcToolbarSeparator } from "../ui/MfcToolbar";
 
 type PianoToolbarProps = {
@@ -17,7 +17,6 @@ type PianoActionId = "none" | "one" | "generate" | "record" | "stop" | "saveIns"
 
 type PianoToolbarButton = MfcToolbarItem<PianoActionId> & {
   spriteIndex: number;
-  icon?: ReactNode;
   disabled?: boolean;
 };
 
@@ -71,16 +70,14 @@ export function PianoToolbar({
       id: "record",
       label: "Record",
       title: "Record",
-      spriteIndex: -1,
-      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden><circle cx="12" cy="12" r="8" fill="#cc0000" /></svg>,
+      spriteIndex: 2,
       disabled: recording,
     },
     {
       id: "stop",
       label: "Stop",
       title: "Stop",
-      spriteIndex: -1,
-      icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden><rect x="5" y="5" width="14" height="14" fill="#000" /></svg>,
+      spriteIndex: 3,
       disabled: !recording,
     },
     { kind: "separator", id: "sep-2" },
@@ -152,13 +149,11 @@ export function PianoToolbar({
         buttonClassName="toolbar-icon-btn"
         renderItem={(entry) => (
           <>
-            {entry.icon ?? (
-              <span
-                className="toolbar-sprite piano-toolbar-sprite"
-                style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
-                aria-hidden
-              />
-            )}
+            <span
+              className="toolbar-sprite piano-toolbar-sprite"
+              style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
+              aria-hidden
+            />
             <span className="sr-only">{entry.label}</span>
           </>
         )}

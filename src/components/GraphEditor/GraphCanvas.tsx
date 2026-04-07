@@ -1,17 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DOT_RADIUS, GRAPH_COLORS, IGNORE_RADIUS } from "../../engine/types";
 import { useGraphStore, type Rect } from "../../store/graphStore";
+import { generateHammerOneShot } from "./hammerOneShot";
 
 const MIN_GROUP_SIZE = 8;
 const LINE_HIT_THRESHOLD = 10;
+const HAMMER_CHARGE_MS = 1200;
+const HAMMER_CURSOR =
+  'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%271%27 y=%2718%27 font-size=%2718%27%3E%F0%9F%94%A8%3C/text%3E%3C/svg%3E") 4 20, crosshair';
 
-export function GraphCanvas() {
+type GraphCanvasProps = {
+  onHammerPreview?: (buffer: Float32Array, sampleRate: number) => void;
+};
+
+export function GraphCanvas({ onHammerPreview }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [size, setSize] = useState({ width: 1200, height: 700 });
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [groupMoveBase, setGroupMoveBase] = useState<Rect | null>(null);
   const [groupMoveSnapshot, setGroupMoveSnapshot] = useState<Array<{ x: number; y: number }> | null>(null);
+  const hammerPressStartRef = useRef<number | null>(null);
 
   const {
     graph,
@@ -25,6 +34,9 @@ export function GraphCanvas() {
     dragDotIndex,
     pendingGroupRect,
     dragGroupRect,
+    hammerSettings,
+    hammerPreviewPoint,
+    hammerCharge,
     defaultWeight,
     defaultStiffness,
     viewportScale,
@@ -41,12 +53,36 @@ export function GraphCanvas() {
     setDragDotIndex,
     setPendingGroupRect,
     setDragGroupRect,
+    setHammerPreviewPoint,
+    setHammerCharge,
     updateGraph,
     openDotDialog,
     openLineDialog,
     openGroupDialog,
     setTool,
   } = useGraphStore();
+
+  useEffect(() => {
+    if (tool !== "hammer") {
+      hammerPressStartRef.current = null;
+      setHammerPreviewPoint(null);
+      setHammerCharge(0);
+    }
+  }, [setHammerCharge, setHammerPreviewPoint, tool]);
+
+  useEffect(() => {
+    if (tool !== "hammer") {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      if (hammerPressStartRef.current === null) {
+        return;
+      }
+      const charge = clamp((performance.now() - hammerPressStartRef.current) / HAMMER_CHARGE_MS, 0, 1);
+      setHammerCharge(charge);
+    }, 50);
+    return () => window.clearInterval(timer);
+  }, [setHammerCharge, tool]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -116,10 +152,20 @@ export function GraphCanvas() {
     if (dragGroupRect) {
       drawRect(ctx, dragGroupRect, GRAPH_COLORS.playing, viewportScale);
     }
+    if (tool === "hammer" && hammerPreviewPoint) {
+      const liveCharge =
+        hammerPressStartRef.current === null
+          ? hammerCharge
+          : clamp((performance.now() - hammerPressStartRef.current) / HAMMER_CHARGE_MS, 0, 1);
+      drawHammerPreview(ctx, hammerPreviewPoint, Math.max(1, hammerSettings.radius), liveCharge, viewportScale);
+    }
     ctx.restore();
   }, [
     dragGroupRect,
     graph,
+    hammerCharge,
+    hammerPreviewPoint,
+    hammerSettings.radius,
     hoveredDot,
     hoveredLineIndex,
     pendingGroupRect,
@@ -129,6 +175,7 @@ export function GraphCanvas() {
     selectedLineIndex,
     size.height,
     size.width,
+    tool,
     viewportOffset.x,
     viewportOffset.y,
     viewportScale,
@@ -145,6 +192,7 @@ export function GraphCanvas() {
         "drag-viewport": dragStart ? "grabbing" : "grab",
         "move-group": "move",
         "playing-point": "cell",
+        hammer: HAMMER_CURSOR,
         "modify-point": "context-menu",
         "modify-link": "context-menu",
         "modify-group": "crosshair",
@@ -183,6 +231,13 @@ export function GraphCanvas() {
 
     const lineIndex = graph.getLineIndexNearPoint(point.x, point.y, LINE_HIT_THRESHOLD / viewportScale);
     setHoveredLine(lineIndex >= 0 ? lineIndex : null);
+
+    if (tool === "hammer") {
+      setHammerPreviewPoint(point);
+      if (hammerPressStartRef.current !== null) {
+        setHammerCharge(clamp((performance.now() - hammerPressStartRef.current) / HAMMER_CHARGE_MS, 0, 1));
+      }
+    }
 
     if (dragDotIndex !== null && (tool === "drag-point" || tool === "select")) {
       updateGraph((next) => next.moveDot(dragDotIndex, point.x, point.y));
@@ -307,6 +362,13 @@ export function GraphCanvas() {
       return;
     }
 
+    if (tool === "hammer") {
+      setHammerPreviewPoint(point);
+      hammerPressStartRef.current = performance.now();
+      setHammerCharge(0);
+      return;
+    }
+
     if (tool === "add-point-link") {
       if (dot >= 0) {
         if (selectedDotA === null) {
@@ -428,6 +490,34 @@ export function GraphCanvas() {
       return;
     }
 
+    if (tool === "hammer") {
+      const charge =
+        hammerPressStartRef.current === null
+          ? hammerCharge
+          : clamp((performance.now() - hammerPressStartRef.current) / HAMMER_CHARGE_MS, 0, 1);
+      hammerPressStartRef.current = null;
+      setHammerCharge(0);
+      setHammerPreviewPoint(point);
+      if (graph.dots.length === 0 || charge <= 0) {
+        return;
+      }
+      void generateHammerOneShot({
+        graph,
+        impactX: point.x,
+        impactY: point.y,
+        charge,
+        settings: hammerSettings,
+        sampleRate: 44_100,
+      })
+        .then((result) => {
+          onHammerPreview?.(result.buffer, result.sampleRate);
+        })
+        .catch((error) => {
+          window.alert(error instanceof Error ? error.message : "Hammer one-shot generation failed");
+        });
+      return;
+    }
+
     if (tool === "select" && !event.shiftKey) {
       setCursor(point.x, point.y);
     }
@@ -479,6 +569,9 @@ export function GraphCanvas() {
           setHoveredLine(null);
           setDragDotIndex(null);
           setDragStart(null);
+          setHammerPreviewPoint(null);
+          setHammerCharge(0);
+          hammerPressStartRef.current = null;
         }}
         style={{ cursor: cursorMap[tool] ?? "default" }}
       />
@@ -508,4 +601,28 @@ function drawRect(ctx: CanvasRenderingContext2D, rect: Rect, color: string, scal
   ctx.setLineDash([5 / scale, 4 / scale]);
   ctx.strokeRect(n.x1, n.y1, n.x2 - n.x1, n.y2 - n.y1);
   ctx.restore();
+}
+
+function drawHammerPreview(
+  ctx: CanvasRenderingContext2D,
+  center: { x: number; y: number },
+  radius: number,
+  charge: number,
+  scale = 1,
+): void {
+  const alpha = 0.15 + clamp(charge, 0, 1) * 0.35;
+  ctx.save();
+  ctx.setLineDash([]);
+  ctx.lineWidth = 1.5 / scale;
+  ctx.strokeStyle = `rgba(220, 20, 60, ${0.45 + alpha})`;
+  ctx.fillStyle = `rgba(220, 20, 60, ${alpha})`;
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, Math.max(1, radius), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }

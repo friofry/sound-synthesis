@@ -9,6 +9,9 @@ export default defineConfig({
   },
   webServer: {
     command: "npm run dev",
+    env: {
+      VITE_E2E: "1",
+    },
     port: 5173,
     reuseExistingServer: !process.env.CI,
   },

@@ -12,6 +12,7 @@ function App() {
   const openInsertDialog = useGraphStore((s) => s.openInsertDialog);
   const openCellTemplateDialog = useGraphStore((s) => s.openCellTemplateDialog);
   const openHexTemplateDialog = useGraphStore((s) => s.openHexTemplateDialog);
+  const openCommunityGraphsDialog = useGraphStore((s) => s.openCommunityGraphsDialog);
   const zoomViewport = useGraphStore((s) => s.zoomViewport);
   const resetViewport = useGraphStore((s) => s.resetViewport);
 
@@ -72,6 +73,7 @@ function App() {
         label: "Graph",
         items: [
           { id: "insert-graph", label: "Insert Graph...", onClick: openInsertDialog },
+          { id: "browse-community-graphs", label: "Community graphs...", onClick: openCommunityGraphsDialog },
           { kind: "separator", id: "graph-sep-1" },
           { id: "cell-template", label: "Cell Template...", onClick: openCellTemplateDialog },
           { id: "hex-template", label: "Hex Template...", onClick: openHexTemplateDialog },
@@ -97,7 +99,7 @@ function App() {
         ],
       },
     ],
-    [openCellTemplateDialog, openHexTemplateDialog, openInsertDialog, resetViewport, tab, zoomViewport],
+    [openCellTemplateDialog, openCommunityGraphsDialog, openHexTemplateDialog, openInsertDialog, resetViewport, tab, zoomViewport],
   );
 
   return (

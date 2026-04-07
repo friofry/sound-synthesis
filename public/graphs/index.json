@@ -1,0 +1,25 @@
+{
+  "graphs": [
+    "air_singing.gph",
+    "booms.gph",
+    "chinese_arph.gph",
+    "deep_metal_sound.gph",
+    "drum.gph",
+    "ethereal3.gph",
+    "exotic_usage_examples/2waves_added.gph",
+    "exotic_usage_examples/can_we_hear_the_shape_of_drum.gph",
+    "exotic_usage_examples/drum_try.gph",
+    "exotic_usage_examples/guitar.gph",
+    "exotic_usage_examples/interference1.gph",
+    "exotic_usage_examples/interference2.gph",
+    "exotic_usage_examples/interference3.gph",
+    "exotic_usage_examples/room.gph",
+    "metal_drum.gph",
+    "onemoredrum.gph",
+    "real_drum.gph",
+    "steel_box.gph",
+    "t_style.gph",
+    "waveguides/horn.gph",
+    "waveguides/overdrive.gph"
+  ]
+}

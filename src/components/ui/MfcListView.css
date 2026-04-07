@@ -1,0 +1,41 @@
+.mfc-list-view {
+  border: 1px solid #8a8680;
+  background: #fff;
+  max-height: 280px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  font: 12px "Tahoma", "MS Sans Serif", "Segoe UI", sans-serif;
+}
+
+.mfc-list-view-item {
+  border: 0;
+  border-bottom: 1px solid #d6d6d6;
+  background: #fff;
+  text-align: left;
+  font: inherit;
+  color: #111;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.mfc-list-view-item:last-child {
+  border-bottom: 0;
+}
+
+.mfc-list-view-item:hover:not(:disabled),
+.mfc-list-view-item:focus-visible:not(:disabled) {
+  outline: none;
+  background: #316ac5;
+  color: #fff;
+}
+
+.mfc-list-view-item.is-selected {
+  background: #316ac5;
+  color: #fff;
+}
+
+.mfc-list-view-item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

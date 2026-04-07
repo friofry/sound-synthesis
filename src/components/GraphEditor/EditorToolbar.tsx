@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+import { useRef, type ChangeEvent, type CSSProperties } from "react";
+import { graphFromBinary, graphToBinary } from "../../engine/fileIO/graphFile";
 import type { ToolMode } from "../../engine/types";
 import { useGraphStore } from "../../store/graphStore";
 import { MfcToolbar, type MfcToolbarItem, type MfcToolbarSeparator } from "../ui/MfcToolbar";
@@ -11,18 +12,18 @@ type ToolEntry = MfcToolbarItem<ToolMode> & {
 
 const TOOLS: Array<ToolEntry | MfcToolbarSeparator> = [
   { id: "move-group", spriteIndex: 0, label: "Move group", implemented: true },
-  { id: "drag-point", spriteIndex: 0, label: "Drag point", implemented: true },
-  { id: "drag-viewport", spriteIndex: 1, label: "Drag viewport", implemented: true },
+  { id: "drag-point", spriteIndex: 1, label: "Drag point", implemented: true },
+  { id: "drag-viewport", spriteIndex: 2, label: "Drag viewport", implemented: true },
   { kind: "separator", id: "sep-1" },
-  { id: "modify-point", spriteIndex: 2, label: "Modify point", implemented: true },
-  { id: "modify-link", spriteIndex: 3, label: "Modify link", implemented: true },
+  { id: "modify-point", spriteIndex: 3, label: "Modify point", implemented: true },
+  { id: "modify-link", spriteIndex: 4, label: "Modify link", implemented: true },
   { kind: "separator", id: "sep-2" },
-  { id: "delete-point", spriteIndex: 4, label: "Delete point", implemented: true },
-  { id: "delete-link", spriteIndex: 5, label: "Delete link", implemented: true },
+  { id: "delete-point", spriteIndex: 5, label: "Delete point", implemented: true },
+  { id: "delete-link", spriteIndex: 6, label: "Delete link", implemented: true },
   { kind: "separator", id: "sep-3" },
   {
     id: "add-point-link",
-    spriteIndex: 6,
+    spriteIndex: 7,
     label: "Add point/link",
     implemented: true,
     description:
@@ -32,8 +33,8 @@ const TOOLS: Array<ToolEntry | MfcToolbarSeparator> = [
 ];
 
 const EXTRA_TOOLS: Array<ToolEntry | MfcToolbarSeparator> = [
-  { id: "playing-point", spriteIndex: 9, label: "Playing point", implemented: true },
-  { id: "modify-group", spriteIndex: 10, label: "Modify group", implemented: true },
+  { id: "playing-point", spriteIndex: 10, label: "Playing point", implemented: true },
+  { id: "modify-group", spriteIndex: 11, label: "Modify group", implemented: true },
 ];
 
 const TOOL_ITEMS = TOOLS.map((entry) =>
@@ -61,9 +62,13 @@ const EXTRA_TOOL_ITEMS = EXTRA_TOOLS.map((entry) =>
 export type EditorToolbarViewProps = {
   tool: ToolMode;
   onSelectTool: (tool: ToolMode) => void;
+  onSelectHammerTool: () => void;
   onAddCellGraph: () => void;
   onAddHexGraph: () => void;
   onReprepareAndGenerate: () => void;
+  onNewGraph: () => void;
+  onLoadGraphFile: (file: File) => void | Promise<void>;
+  onSaveGraph: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
 };
@@ -71,12 +76,26 @@ export type EditorToolbarViewProps = {
 export function EditorToolbarView({
   tool,
   onSelectTool,
+  onSelectHammerTool,
   onAddCellGraph,
   onAddHexGraph,
   onReprepareAndGenerate,
+  onNewGraph,
+  onLoadGraphFile,
+  onSaveGraph,
   onZoomIn,
   onZoomOut,
 }: EditorToolbarViewProps) {
+  const graphInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleGraphChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const [file] = Array.from(event.target.files ?? []);
+    if (file) {
+      await onLoadGraphFile(file);
+    }
+    event.target.value = "";
+  };
+
   return (
     <header className="toolbar">
       <MfcToolbar
@@ -88,15 +107,11 @@ export function EditorToolbarView({
         buttonClassName="toolbar-icon-btn"
         renderItem={(entry) => (
           <>
-            {entry.id === "move-group" ? (
-              <span className="toolbar-selection-rect-icon" aria-hidden />
-            ) : (
-              <span
-                className="toolbar-sprite toolbar3-sprite"
-                style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
-                aria-hidden
-              />
-            )}
+            <span
+              className="toolbar-sprite editor-toolbar-sprite"
+              style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
+              aria-hidden
+            />
             <span className="sr-only">{entry.label}</span>
           </>
         )}
@@ -110,7 +125,7 @@ export function EditorToolbarView({
           aria-label="Add cell graph"
         >
           <span className="mfc-toolbar-button-content">
-            <span className="toolbar-sprite toolbar3-sprite" style={{ "--sprite-index": 7 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 8 } as CSSProperties} aria-hidden />
             <span className="sr-only">Add cell graph</span>
           </span>
         </button>
@@ -122,7 +137,7 @@ export function EditorToolbarView({
           aria-label="Add hexagonal graph"
         >
           <span className="mfc-toolbar-button-content">
-            <span className="toolbar-sprite toolbar3-sprite" style={{ "--sprite-index": 8 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 9 } as CSSProperties} aria-hidden />
             <span className="sr-only">Add hexagonal graph</span>
           </span>
         </button>
@@ -137,7 +152,7 @@ export function EditorToolbarView({
         renderItem={(entry) => (
           <>
             <span
-              className="toolbar-sprite toolbar3-sprite"
+              className="toolbar-sprite editor-toolbar-sprite"
               style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
               aria-hidden
             />
@@ -154,7 +169,7 @@ export function EditorToolbarView({
           aria-label="Zoom in"
         >
           <span className="mfc-toolbar-button-content">
-            <span className="toolbar-sprite toolbar3-sprite" style={{ "--sprite-index": 11 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 13 } as CSSProperties} aria-hidden />
             <span className="sr-only">Zoom in</span>
           </span>
         </button>
@@ -166,8 +181,57 @@ export function EditorToolbarView({
           aria-label="Zoom out"
         >
           <span className="mfc-toolbar-button-content">
-            <span className="toolbar-sprite toolbar3-sprite" style={{ "--sprite-index": 12 } as CSSProperties} aria-hidden />
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 14 } as CSSProperties} aria-hidden />
             <span className="sr-only">Zoom out</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="mfc-toolbar-button toolbar-icon-btn"
+          onClick={onNewGraph}
+          title="New: Clears the editor screen."
+          aria-label="New graph"
+        >
+          <span className="mfc-toolbar-button-content">
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 15 } as CSSProperties} aria-hidden />
+            <span className="sr-only">New graph</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="mfc-toolbar-button toolbar-icon-btn"
+          onClick={() => graphInputRef.current?.click()}
+          title="Load graph file (.gph)"
+          aria-label="Load graph"
+        >
+          <span className="mfc-toolbar-button-content">
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 16 } as CSSProperties} aria-hidden />
+            <span className="sr-only">Load graph</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="mfc-toolbar-button toolbar-icon-btn"
+          onClick={onSaveGraph}
+          title="Save graph file (.gph)"
+          aria-label="Save graph"
+        >
+          <span className="mfc-toolbar-button-content">
+            <span className="toolbar-sprite editor-toolbar-sprite" style={{ "--sprite-index": 17 } as CSSProperties} aria-hidden />
+            <span className="sr-only">Save graph</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className={`mfc-toolbar-button toolbar-icon-btn ${tool === "hammer" ? "is-selected" : ""}`.trim()}
+          onClick={onSelectHammerTool}
+          title="Hammer tool"
+          aria-label="Hammer tool"
+          aria-pressed={tool === "hammer"}
+        >
+          <span className="mfc-toolbar-button-content">
+            <span aria-hidden>🔨</span>
+            <span className="sr-only">Hammer tool</span>
           </span>
         </button>
         <button
@@ -183,6 +247,13 @@ export function EditorToolbarView({
           </span>
         </button>
       </div>
+      <input
+        ref={graphInputRef}
+        type="file"
+        accept=".gph,application/octet-stream"
+        className="hidden-input"
+        onChange={handleGraphChange}
+      />
     </header>
   );
 }
@@ -192,15 +263,59 @@ type EditorToolbarProps = {
 };
 
 export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
-  const { tool, setTool, openCellTemplateDialog, openHexTemplateDialog, zoomViewport } = useGraphStore();
+  const {
+    tool,
+    setTool,
+    openCellTemplateDialog,
+    openHexTemplateDialog,
+    openHammerDialog,
+    zoomViewport,
+    clearGraph,
+    serializeGraph,
+    loadGraph,
+  } = useGraphStore();
+
+  const handleNewGraph = () => {
+    clearGraph();
+  };
+
+  const handleLoadGraphFile = async (file: File) => {
+    try {
+      const buffer = await file.arrayBuffer();
+      loadGraph(graphFromBinary(buffer));
+    } catch (error) {
+      window.alert(`Failed to load graph file: ${(error as Error).message}`);
+    }
+  };
+
+  const handleSaveGraph = () => {
+    try {
+      const serializedGraph = serializeGraph();
+      downloadGraphFile("graph.gph", graphToBinary(serializedGraph));
+    } catch (error) {
+      window.alert(`Failed to save graph file: ${(error as Error).message}`);
+    }
+  };
 
   return (
     <EditorToolbarView
       tool={tool}
-      onSelectTool={setTool}
+      onSelectTool={(nextTool) => {
+        setTool(nextTool);
+        if (nextTool === "hammer") {
+          openHammerDialog();
+        }
+      }}
+      onSelectHammerTool={() => {
+        setTool("hammer");
+        openHammerDialog();
+      }}
       onAddCellGraph={openCellTemplateDialog}
       onAddHexGraph={openHexTemplateDialog}
       onReprepareAndGenerate={onReprepareAndGenerate ?? (() => {})}
+      onNewGraph={handleNewGraph}
+      onLoadGraphFile={handleLoadGraphFile}
+      onSaveGraph={handleSaveGraph}
       onZoomIn={() => zoomViewport(1.25)}
       onZoomOut={() => zoomViewport(1 / 1.25)}
     />
@@ -209,4 +324,16 @@ export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
 
 function isSeparator(entry: ToolEntry | MfcToolbarSeparator): entry is MfcToolbarSeparator {
   return "kind" in entry && entry.kind === "separator";
+}
+
+function downloadGraphFile(filename: string, buffer: ArrayBuffer): void {
+  const blob = new Blob([buffer], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
 }

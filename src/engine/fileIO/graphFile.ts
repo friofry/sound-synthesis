@@ -1,4 +1,4 @@
-import type { Dot, Line, SerializedGraph } from "./types";
+import { START_U, START_V, type Line, type SerializedDot, type SerializedGraph } from "../types";
 
 const INT32_SIZE = 4;
 const FLOAT64_SIZE = 8;
@@ -41,7 +41,7 @@ export function graphToBinary(graph: SerializedGraph): ArrayBuffer {
   for (const dot of graph.dots) {
     const name = normalizeInputFile(dot.inputFile);
     const nameBytes = textEncoder.encode(name);
-    totalBytes += INT32_SIZE * 4 + FLOAT64_SIZE * 3 + INT32_SIZE + nameBytes.length + 1;
+    totalBytes += INT32_SIZE * 4 + FLOAT64_SIZE * 3 + nameBytes.length + 1;
   }
 
   for (const edges of adjacency) {
@@ -109,6 +109,22 @@ function orderedKey(a: number, b: number): string {
 }
 
 export function graphFromBinary(buffer: ArrayBuffer): SerializedGraph {
+  try {
+    return graphFromClassicBinary(buffer);
+  } catch (classicError) {
+    try {
+      return graphFromWin32LegacyBinary(buffer);
+    } catch (legacyError) {
+      throw new Error(
+        `Unsupported .gph buffer. Classic parser: ${(classicError as Error).message}. Win32 legacy parser: ${
+          (legacyError as Error).message
+        }`,
+      );
+    }
+  }
+}
+
+function graphFromClassicBinary(buffer: ArrayBuffer): SerializedGraph {
   const view = new DataView(buffer);
   const bytes = new Uint8Array(buffer);
   let offset = 0;
@@ -126,7 +142,7 @@ export function graphFromBinary(buffer: ArrayBuffer): SerializedGraph {
     throw new Error("Invalid .gph dot count");
   }
 
-  const dots: Dot[] = [];
+  const dots: SerializedDot[] = [];
   for (let i = 0; i < n; i += 1) {
     ensure(INT32_SIZE * 4 + FLOAT64_SIZE * 3);
     const x = view.getInt32(offset, true);
@@ -176,6 +192,84 @@ export function graphFromBinary(buffer: ArrayBuffer): SerializedGraph {
     for (let j = 0; j < k; j += 1) {
       ensure(INT32_SIZE + FLOAT64_SIZE);
       const ni = view.getInt32(offset, true);
+      offset += INT32_SIZE;
+      const ki = view.getFloat64(offset, true);
+      offset += FLOAT64_SIZE;
+
+      if (ni < 0 || ni >= n || ni === i) {
+        continue;
+      }
+      const key = orderedKey(i, ni);
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      lines.push({ dot1: Math.min(i, ni), dot2: Math.max(i, ni), k: ki });
+    }
+  }
+
+  return { dots, lines };
+}
+
+function graphFromWin32LegacyBinary(buffer: ArrayBuffer): SerializedGraph {
+  const view = new DataView(buffer);
+  let offset = 0;
+
+  const ensure = (count: number): void => {
+    if (offset + count > buffer.byteLength) {
+      throw new Error("Unexpected end of Win32 legacy .gph buffer");
+    }
+  };
+
+  ensure(INT32_SIZE);
+  const n = view.getInt32(offset, true);
+  offset += INT32_SIZE;
+  if (n < 0) {
+    throw new Error("Invalid Win32 legacy .gph dot count");
+  }
+
+  const dots: SerializedDot[] = [];
+  const lines: Line[] = [];
+  const seen = new Set<string>();
+
+  for (let i = 0; i < n; i += 1) {
+    // Some 32-bit community graphs encode each point as:
+    // [uint8 fixed][double weight][double legacyA][double legacyB][double x][double y][double legacyExtra][int32 k]
+    ensure(1 + FLOAT64_SIZE * 6 + INT32_SIZE);
+    const fixedRaw = view.getUint8(offset);
+    offset += 1;
+    const weight = view.getFloat64(offset, true);
+    offset += FLOAT64_SIZE;
+    offset += FLOAT64_SIZE;
+    offset += FLOAT64_SIZE;
+    const x = view.getFloat64(offset, true) * 100;
+    offset += FLOAT64_SIZE;
+    const y = view.getFloat64(offset, true) * 100;
+    offset += FLOAT64_SIZE;
+    offset += FLOAT64_SIZE;
+
+    const k = view.getInt32(offset, true);
+    offset += INT32_SIZE;
+    if (k < 0) {
+      throw new Error(`Invalid Win32 legacy adjacency size at dot ${i}`);
+    }
+
+    dots.push({
+      x,
+      y,
+      u: START_U,
+      v: START_V,
+      weight,
+      fixed: fixedRaw !== 0,
+      inputFile: null,
+    });
+
+    for (let j = 0; j < k; j += 1) {
+      // Connections are serialized with Win32 struct padding:
+      // [int32 neighbor][int32 sourceIndex/padding][double stiffness]
+      ensure(INT32_SIZE * 2 + FLOAT64_SIZE);
+      const ni = view.getInt32(offset, true);
+      offset += INT32_SIZE;
       offset += INT32_SIZE;
       const ki = view.getFloat64(offset, true);
       offset += FLOAT64_SIZE;
