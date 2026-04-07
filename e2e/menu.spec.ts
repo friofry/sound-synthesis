@@ -51,10 +51,10 @@ test.describe("MfcMenu", () => {
     expect(graph.dots.some((dot) => dot.u > 0)).toBe(true);
   });
 
-  test("Graph > Browse community graphs opens dialog with entries", async ({ page }) => {
+  test("Graph > Community graphs opens dialog with entries", async ({ page }) => {
     await page.click(".mfc-menu-root-button:text('Graph')");
     const dropdown = page.locator(".mfc-menu-dropdown").first();
-    const browseItem = dropdown.getByRole("menuitem", { name: "Browse community graphs..." });
+    const browseItem = dropdown.getByRole("menuitem", { name: "Community graphs..." });
     await expect(browseItem).toBeVisible();
     await browseItem.click();
 
@@ -65,5 +65,27 @@ test.describe("MfcMenu", () => {
 
     await dialog.locator("button:text('Close')").click();
     await expect(dialog).not.toBeVisible();
+  });
+
+  test("Graph > Community graphs loads a legacy community graph", async ({ page }) => {
+    await page.click(".mfc-menu-root-button:text('Graph')");
+    const dropdown = page.locator(".mfc-menu-dropdown").first();
+    const browseItem = dropdown.getByRole("menuitem", { name: "Community graphs..." });
+    await expect(browseItem).toBeVisible();
+    await browseItem.click();
+
+    const dialog = page.locator(".mfc-window");
+    await expect(dialog).toBeVisible();
+
+    const drumItem = dialog.locator(".mfc-list-view-item", { hasText: "drum.gph" }).first();
+    await expect(drumItem).toBeVisible();
+    await drumItem.click();
+    await expect(dialog).not.toBeVisible();
+
+    const graph = await getGraphState(page);
+    expect(graph.dotsCount).toBe(49);
+    expect(graph.linesCount).toBeGreaterThan(0);
+    expect(graph.dots.some((dot) => dot.fixed)).toBe(true);
+    expect(graph.dots.every((dot) => Number.isFinite(dot.x) && Number.isFinite(dot.y))).toBe(true);
   });
 });

@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { SerializedGraph } from "../types";
 import { graphFromBinary, graphToBinary } from "./graphFile";
@@ -44,6 +46,32 @@ describe("graphFile legacy .gph compatibility", () => {
         { dot1: 1, dot2: 2, k: 10.5 },
       ],
     });
+  });
+
+  it("loads Win32 legacy community graph files", () => {
+    const parsed = graphFromBinary(readArrayBuffer(new URL("../../../public/graphs/drum.gph", import.meta.url)));
+
+    expect(parsed.dots).toHaveLength(49);
+    expect(parsed.lines.length).toBeGreaterThan(0);
+    expect(parsed.dots.every((dot) => Number.isFinite(dot.x) && Number.isFinite(dot.y))).toBe(true);
+    expect(parsed.dots.some((dot) => dot.fixed)).toBe(true);
+  });
+
+  it("parses every bundled community graph without throwing", () => {
+    const root = new URL("../../../public/graphs", import.meta.url);
+    const files = collectGraphFiles(root);
+
+    expect(files.length).toBeGreaterThan(0);
+
+    for (const file of files) {
+      const parsed = graphFromBinary(readArrayBuffer(file));
+      expect(parsed.dots.length, file.pathname).toBeGreaterThan(0);
+      expect(parsed.lines.length, file.pathname).toBeGreaterThan(0);
+      expect(
+        parsed.dots.every((dot) => Number.isFinite(dot.x) && Number.isFinite(dot.y) && Number.isFinite(dot.weight)),
+        file.pathname,
+      ).toBe(true);
+    }
   });
 });
 
@@ -108,4 +136,29 @@ function legacyCString(inputFile: string | null): Uint8Array {
   }
   bytes[text.length] = 0;
   return bytes;
+}
+
+function readArrayBuffer(url: URL): ArrayBuffer {
+  const bytes = readFileSync(url);
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+}
+
+function collectGraphFiles(root: URL): URL[] {
+  const files: URL[] = [];
+  const walk = (directory: string) => {
+    for (const entry of readdirSync(directory)) {
+      const fullPath = join(directory, entry);
+      const stats = statSync(fullPath);
+      if (stats.isDirectory()) {
+        walk(fullPath);
+        continue;
+      }
+      if (fullPath.endsWith(".gph")) {
+        files.push(new URL(`file://${fullPath}`));
+      }
+    }
+  };
+
+  walk(root.pathname);
+  return files;
 }
