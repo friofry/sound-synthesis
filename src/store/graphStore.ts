@@ -52,6 +52,7 @@ interface GraphStore {
   dotDialog: DialogState<{ dotIndex: number }>;
   lineDialog: DialogState<{ lineIndex: number }>;
   groupDialog: DialogState<{ rect: Rect }>;
+  communityGraphsDialog: DialogState<null>;
   simulationDialogOpen: boolean;
   simulationParams: SimulationParams;
   isSimulating: boolean;
@@ -87,6 +88,8 @@ interface GraphStore {
   closeLineDialog: () => void;
   openGroupDialog: (rect: Rect) => void;
   closeGroupDialog: () => void;
+  openCommunityGraphsDialog: () => void;
+  closeCommunityGraphsDialog: () => void;
   openSimulationDialog: () => void;
   closeSimulationDialog: () => void;
   setDefaults: (values: {
@@ -140,6 +143,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   dotDialog: { open: false, payload: null },
   lineDialog: { open: false, payload: null },
   groupDialog: { open: false, payload: null },
+  communityGraphsDialog: { open: false, payload: null },
   simulationDialogOpen: false,
   simulationParams: defaultSimulationParams,
   isSimulating: false,
@@ -255,6 +259,8 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   closeLineDialog: () => set({ lineDialog: { open: false, payload: null } }),
   openGroupDialog: (rect) => set({ groupDialog: { open: true, payload: { rect } } }),
   closeGroupDialog: () => set({ groupDialog: { open: false, payload: null } }),
+  openCommunityGraphsDialog: () => set({ communityGraphsDialog: { open: true, payload: null } }),
+  closeCommunityGraphsDialog: () => set({ communityGraphsDialog: { open: false, payload: null } }),
   openSimulationDialog: () => set({ simulationDialogOpen: true }),
   closeSimulationDialog: () => set({ simulationDialogOpen: false }),
   setDefaults: (values) =>

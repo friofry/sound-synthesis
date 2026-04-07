@@ -9,6 +9,7 @@ import { HexTemplateDialog } from "../components/GraphEditor/dialogs/HexTemplate
 import { InsertGraphDialog } from "../components/GraphEditor/dialogs/InsertGraphDialog";
 import { LinePropertiesDialog } from "../components/GraphEditor/dialogs/LinePropertiesDialog";
 import { SimulationDialog } from "../components/GraphEditor/dialogs/SimulationDialog";
+import { CommunityGraphsDialog } from "../components/GraphEditor/dialogs/CommunityGraphsDialog";
 import { MembraneViewer } from "../components/Viewer3D/MembraneViewer";
 import { GenerationProgressDialog } from "../components/PianoPlayer/GenerationProgressDialog";
 import { GenerateNotesDialog } from "../components/PianoPlayer/GenerateNotesDialog";
@@ -17,6 +18,7 @@ import { PianoToolbar } from "../components/PianoPlayer/PianoToolbar";
 import { LegacyOscillogrammWaveform } from "../components/PianoPlayer/LegacyOscillogrammWaveform";
 import { LegacyOscillogrammSpectrum } from "../components/PianoPlayer/LegacyOscillogrammSpectrum";
 import { MfcSplitView } from "../components/ui/MfcSplitView";
+import { graphFromBinary } from "../engine/fileIO/graphFile";
 import type { GridType, StiffnessType } from "../engine/types";
 import { useGraphStore } from "../store/graphStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
@@ -28,9 +30,12 @@ export function MembraneModellerPage() {
     simulationParams,
     graph,
     insertDialog,
+    communityGraphsDialog,
     canvasSize,
     closeInsertDialog,
+    closeCommunityGraphsDialog,
     createPresetGraph,
+    loadGraph,
     setDefaults,
   } = useGraphStore();
 
@@ -175,6 +180,19 @@ export function MembraneModellerPage() {
     setDefaults,
   ]);
 
+  const handleOpenCommunityGraph = useCallback(async (graphPath: string) => {
+    const encodedPath = graphPath
+      .split("/")
+      .map((segment) => encodeURIComponent(segment))
+      .join("/");
+    const response = await fetch(`/graphs/${encodedPath}`, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const buffer = await response.arrayBuffer();
+    loadGraph(graphFromBinary(buffer));
+  }, [loadGraph]);
+
   return (
     <section className="workspace-layout">
       <MfcSplitView className="workspace-split-view" defaultRatio={0.5} minPaneSize={280}>
@@ -267,6 +285,11 @@ export function MembraneModellerPage() {
           });
         }}
         onClose={closeInsertDialog}
+      />
+      <CommunityGraphsDialog
+        open={communityGraphsDialog.open}
+        onClose={closeCommunityGraphsDialog}
+        onOpenGraph={handleOpenCommunityGraph}
       />
     </section>
   );

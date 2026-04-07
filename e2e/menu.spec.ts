@@ -50,4 +50,20 @@ test.describe("MfcMenu", () => {
     expect(store.playingPoint).not.toBeNull();
     expect(graph.dots.some((dot) => dot.u > 0)).toBe(true);
   });
+
+  test("Graph > Browse community graphs opens dialog with entries", async ({ page }) => {
+    await page.click(".mfc-menu-root-button:text('Graph')");
+    const dropdown = page.locator(".mfc-menu-dropdown").first();
+    const browseItem = dropdown.getByRole("menuitem", { name: "Browse community graphs..." });
+    await expect(browseItem).toBeVisible();
+    await browseItem.click();
+
+    const dialog = page.locator(".mfc-window");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator(".mfc-title")).toHaveText("Browse community graphs");
+    await expect(dialog.locator(".mfc-list-view-item").first()).toBeVisible();
+
+    await dialog.locator("button:text('Close')").click();
+    await expect(dialog).not.toBeVisible();
+  });
 });
