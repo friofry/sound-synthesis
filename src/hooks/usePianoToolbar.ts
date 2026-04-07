@@ -259,6 +259,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   const [audioEngine] = useState(() => new AudioEngine());
   const keyboardHeldCodes = useRef(new Set<string>());
   const activeAliasesRef = useRef(new Set<string>());
+  const wasGraphEmptyRef = useRef(graph.dots.length === 0);
   const recorderRef = useRef<SncCreator | null>(null);
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
   const generationAbortRef = useRef<AbortController | null>(null);
@@ -280,6 +281,19 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     audioEngine.loadInstrument(instrumentNotes);
     recorderRef.current = new SncCreator(instrumentNotes.map((note) => note.alias));
   }, [audioEngine, instrumentNotes]);
+
+  useEffect(() => {
+    const isGraphEmpty = graph.dots.length === 0;
+    if (isGraphEmpty && !wasGraphEmptyRef.current) {
+      audioEngine.stopAll(true);
+      activeAliasesRef.current.clear();
+      keyboardHeldCodes.current.clear();
+      releaseAll();
+      setInstrumentNotes(createFallbackNotes(noteCount));
+      setLastRenderedWav(null);
+    }
+    wasGraphEmptyRef.current = isGraphEmpty;
+  }, [audioEngine, graph.dots.length, noteCount, releaseAll, setInstrumentNotes, setLastRenderedWav]);
 
   const syncOscillogram = useCallback(
     (index: number) => {
