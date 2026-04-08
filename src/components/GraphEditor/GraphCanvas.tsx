@@ -11,9 +11,20 @@ const HAMMER_CURSOR =
 
 type GraphCanvasProps = {
   onHammerPreview?: (buffer: Float32Array, sampleRate: number) => void;
+  onHammerImpact?: (payload: {
+    impactX: number;
+    impactY: number;
+    charge: number;
+    settings: {
+      distribution: "equivalent" | "smoothed";
+      amplitude: number;
+      velocity: number;
+      radius: number;
+    };
+  }) => void;
 };
 
-export function GraphCanvas({ onHammerPreview }: GraphCanvasProps) {
+export function GraphCanvas({ onHammerPreview, onHammerImpact }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [size, setSize] = useState({ width: 1200, height: 700 });
@@ -501,6 +512,17 @@ export function GraphCanvas({ onHammerPreview }: GraphCanvasProps) {
       if (graph.dots.length === 0 || charge <= 0) {
         return;
       }
+      onHammerImpact?.({
+        impactX: point.x,
+        impactY: point.y,
+        charge,
+        settings: {
+          distribution: hammerSettings.distribution,
+          amplitude: hammerSettings.amplitude,
+          velocity: hammerSettings.velocity,
+          radius: hammerSettings.radius,
+        },
+      });
       void generateHammerOneShot({
         graph,
         impactX: point.x,

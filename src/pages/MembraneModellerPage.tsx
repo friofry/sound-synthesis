@@ -36,7 +36,9 @@ import {
   DEFAULT_SIMULATION_SUBSTEPS_MODE,
 } from "../engine/simulationDefaults";
 import { useGraphStore } from "../store/graphStore";
+import { useMembraneViewerStore } from "../store/membraneViewerStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
+import { useViewerStore } from "../store/viewerStore";
 
 export function MembraneModellerPage() {
   const skipAutoRandomInit = import.meta.env.VITE_E2E === "1";
@@ -236,6 +238,50 @@ export function MembraneModellerPage() {
     loadGraph(graphFromBinary(buffer));
   }, [loadGraph]);
 
+  const handleHammerImpactToViewer = useCallback((payload: {
+    impactX: number;
+    impactY: number;
+    charge: number;
+    settings: {
+      distribution: "equivalent" | "smoothed";
+      amplitude: number;
+      velocity: number;
+      radius: number;
+    };
+  }) => {
+    const { setActiveSource, updateActiveSnapshotGraph } = useMembraneViewerStore.getState();
+    const { resetFrame, play } = useViewerStore.getState();
+    const radius = Math.max(1, payload.settings.radius);
+    const sigma = Math.max(1, radius * 0.45);
+    const effectiveAmplitude = Math.max(0, payload.settings.amplitude * payload.charge);
+
+    setActiveSource("editor");
+    updateActiveSnapshotGraph((nextGraph) => {
+      for (let index = 0; index < nextGraph.dots.length; index += 1) {
+        const dot = nextGraph.dots[index];
+        if (!dot || dot.fixed) {
+          continue;
+        }
+        const dist = Math.hypot(dot.x - payload.impactX, dot.y - payload.impactY);
+        if (dist > radius) {
+          continue;
+        }
+        const factor =
+          payload.settings.distribution === "smoothed"
+            ? Math.exp(-(dist * dist) / (2 * sigma * sigma))
+            : 1;
+        const nextU = dot.u + effectiveAmplitude * factor;
+        const nextV = dot.v + payload.settings.velocity * factor;
+        nextGraph.setDotProps(index, {
+          u: Math.max(-1, Math.min(1, nextU)),
+          v: Math.max(-1, Math.min(1, nextV)),
+        });
+      }
+    });
+    resetFrame();
+    play();
+  }, []);
+
   return (
     <section className="workspace-layout">
       <MfcSplitView className="workspace-split-view" defaultRatio={0.5} minPaneSize={280}>
@@ -245,7 +291,7 @@ export function MembraneModellerPage() {
               <EditorToolbar onReprepareAndGenerate={handleReprepareAndGenerate} />
             </aside>
             <div className="graph-stage">
-              <GraphCanvas onHammerPreview={handlePlayPreviewBuffer} />
+              <GraphCanvas onHammerPreview={handlePlayPreviewBuffer} onHammerImpact={handleHammerImpactToViewer} />
               <StatusBar />
             </div>
           </section>
