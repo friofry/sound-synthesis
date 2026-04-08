@@ -11,7 +11,7 @@ import { useGraphStore } from "../../../store/graphStore";
 import { usePianoStore } from "../../../store/pianoStore";
 import { useViewerStore } from "../../../store/viewerStore";
 import { MfcButton, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup, MfcSelect } from "../../ui/MfcDialog";
-import { DEFAULT_SIMULATION_BACKEND, DEFAULT_SIMULATION_PRECISION } from "../../../engine/simulationDefaults";
+import { DEFAULT_SIMULATION_PRECISION, resolveDefaultSimulationBackend } from "../../../engine/simulationDefaults";
 
 export type SimulationFormValues = {
   outputMode: SimulationCaptureMode;
@@ -196,7 +196,7 @@ export function SimulationDialog() {
         attenuation: simulationParams.attenuation,
         squareAttenuation: simulationParams.squareAttenuation,
         method: simulationParams.method,
-        backend: DEFAULT_SIMULATION_BACKEND,
+        backend: resolveDefaultSimulationBackend(simulationParams.method, DEFAULT_SIMULATION_PRECISION),
         precision: DEFAULT_SIMULATION_PRECISION,
         substepsMode: simulationParams.substepsMode ?? "fixed",
         substeps: simulationParams.substeps ?? 1,

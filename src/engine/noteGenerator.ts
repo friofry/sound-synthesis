@@ -4,7 +4,7 @@ import { runSimulation } from "./simulation";
 import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "./tuning";
 import type { RawInstrumentNote, SimulationParams } from "./types";
 import { DEFAULT_KEYBINDS, DEFAULT_KEY_LABELS } from "../components/PianoPlayer/KeyboardMapping";
-import { DEFAULT_SIMULATION_BACKEND } from "./simulationDefaults";
+import { DEFAULT_SIMULATION_PRECISION, resolveDefaultSimulationBackend } from "./simulationDefaults";
 
 type GenerateInstrumentOptions = {
   noteCount?: number;
@@ -31,6 +31,7 @@ export function generateInstrumentFromGraph(
   const attenuation = options.attenuation ?? 4;
   const squareAttenuation = options.squareAttenuation ?? (1 / 50) * attenuation;
   const method = options.method ?? "euler";
+  const backend = resolveDefaultSimulationBackend(method, DEFAULT_SIMULATION_PRECISION);
   const substepsMode = options.substepsMode ?? "fixed";
   const substeps = options.substeps ?? 1;
   const ratioForIndex = (index: number): number => 2 ** ((index - baseIndex) / 12);
@@ -53,7 +54,7 @@ export function generateInstrumentFromGraph(
         substeps,
       },
       undefined,
-      { capture: "playing-point-only", backend: DEFAULT_SIMULATION_BACKEND },
+      { capture: "playing-point-only", backend },
     );
     const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, sampleRate);
     if (measuredFirstFrequency !== null) {
@@ -80,7 +81,7 @@ export function generateInstrumentFromGraph(
         substeps,
       },
       undefined,
-      { capture: "playing-point-only", backend: DEFAULT_SIMULATION_BACKEND },
+      { capture: "playing-point-only", backend },
     );
 
     notes.push({

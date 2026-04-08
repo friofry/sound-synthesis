@@ -21,7 +21,7 @@ import type {
 } from "../engine/types";
 import type { GenerateNotesDialogValues } from "../components/PianoPlayer/GenerateNotesDialog";
 import { usePianoStore } from "../store/pianoStore";
-import { DEFAULT_SIMULATION_BACKEND } from "../engine/simulationDefaults";
+import { resolveDefaultSimulationBackend } from "../engine/simulationDefaults";
 
 type InstrumentBundle = {
   type: "sound-synthesis-instrument";
@@ -102,12 +102,13 @@ function runSimulationInWorker(
   graph: GraphModel,
   params: SimulationParams,
   outputMode: SimulationCaptureMode = "full",
-  backend: SimulationBackend = DEFAULT_SIMULATION_BACKEND,
+  backend?: SimulationBackend,
   precision: SimulationPrecision = 64,
   onProgress?: (completed: number, total: number) => void,
   signal?: AbortSignal,
   sharedWorker?: Worker,
 ): Promise<SimulationResult> {
+  const resolvedBackend = backend ?? resolveDefaultSimulationBackend(params.method, precision);
   return new Promise((resolve, reject) => {
     const worker = sharedWorker ?? new Worker(new URL("../engine/simulation.worker.ts", import.meta.url), { type: "module" });
     const ownsWorker = !sharedWorker;
@@ -192,7 +193,7 @@ function runSimulationInWorker(
       graph: graph.toGraphData(),
       params,
       outputMode,
-      backend,
+      backend: resolvedBackend,
       precision,
     });
   });

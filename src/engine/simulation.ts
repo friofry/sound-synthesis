@@ -69,7 +69,10 @@ import {
   runSimulationWasmCsrBackend,
   type RuntimeSimulationStepper as WasmCsrRuntimeSimulationStepper,
 } from "./simulationOptimized12WasmCsr";
-import { DEFAULT_SIMULATION_BACKEND } from "./simulationDefaults";
+import {
+  DEFAULT_SIMULATION_PRECISION,
+  resolveDefaultSimulationBackend,
+} from "./simulationDefaults";
 
 const DEFAULT_EDGE_FADE_MS = 2;
 
@@ -340,7 +343,8 @@ export function runSimulation(
   onProgress?: (completed: number, total: number) => void,
   options?: RunSimulationOptions,
 ): SimulationResult {
-  const backend = options?.backend ?? DEFAULT_SIMULATION_BACKEND;
+  const precision = options?.precision ?? DEFAULT_SIMULATION_PRECISION;
+  const backend = options?.backend ?? resolveDefaultSimulationBackend(params.method, precision);
   if (backend === "optimized") {
     return runSimulationOptimized(graph, params, onProgress, options);
   }
@@ -383,7 +387,7 @@ export function runSimulation(
 export function createRuntimeSimulationStepper(
   graph: GraphData,
   params: SimulationParams,
-  backend: SimulationBackend = DEFAULT_SIMULATION_BACKEND,
+  backend: SimulationBackend = resolveDefaultSimulationBackend(params.method, DEFAULT_SIMULATION_PRECISION),
 ): RuntimeSimulationStepper {
   if (backend === "optimized") {
     return createOptimizedRuntimeStepper(graph, params) as OptimizedRuntimeSimulationStepper;

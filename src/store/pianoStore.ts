@@ -7,11 +7,11 @@ import type {
   SimulationSubstepsMode,
 } from "../engine/types";
 import {
-  DEFAULT_SIMULATION_BACKEND,
   DEFAULT_SIMULATION_METHOD,
   DEFAULT_SIMULATION_PRECISION,
   DEFAULT_SIMULATION_SUBSTEPS,
   DEFAULT_SIMULATION_SUBSTEPS_MODE,
+  resolveDefaultSimulationBackend,
 } from "../engine/simulationDefaults";
 
 export type PianoGenerateSettings = {
@@ -76,7 +76,7 @@ export const usePianoStore = create<PianoStore>((set) => ({
     tillSilence: false,
     sampleRate: 44100,
     method: DEFAULT_SIMULATION_METHOD,
-    backend: DEFAULT_SIMULATION_BACKEND,
+    backend: resolveDefaultSimulationBackend(DEFAULT_SIMULATION_METHOD, DEFAULT_SIMULATION_PRECISION),
     precision: DEFAULT_SIMULATION_PRECISION,
     substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
     substeps: DEFAULT_SIMULATION_SUBSTEPS,

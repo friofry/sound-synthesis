@@ -7,6 +7,7 @@ import {
   type SimulationPrecision,
   type SimulationSubstepsMode,
 } from "../../engine/types";
+import { resolveDefaultSimulationBackend } from "../../engine/simulationDefaults";
 import "./GenerateNotesDialog.css";
 
 export type GenerateNotesDialogValues = {
@@ -123,7 +124,10 @@ function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateN
             <MfcRadioGroup
               name="generate-notes-method"
               value={method}
-              onChange={(value) => setMethod(value)}
+              onChange={(value) => {
+                setMethod(value);
+                setBackend(resolveDefaultSimulationBackend(value, precision));
+              }}
               direction="row"
               pushLike
               options={[
@@ -147,7 +151,9 @@ function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateN
                 value={String(precision)}
                 onChange={(value) => {
                   if (value === "32" || value === "64") {
-                    setPrecision(Number(value) as SimulationPrecision);
+                    const nextPrecision = Number(value) as SimulationPrecision;
+                    setPrecision(nextPrecision);
+                    setBackend(resolveDefaultSimulationBackend(method, nextPrecision));
                   }
                 }}
                 direction="row"
