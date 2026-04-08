@@ -34,6 +34,36 @@ export type RuntimeSimulationStepper = {
   step: (steps?: number) => void;
 };
 
+function normalizeSubsteps(value: number | undefined): number {
+  if (!Number.isFinite(value)) {
+    return 1;
+  }
+  const rounded = Math.round(value ?? 1);
+  if (rounded <= 1) return 1;
+  if (rounded <= 2) return 2;
+  if (rounded <= 4) return 4;
+  return 8;
+}
+
+function estimateAdaptiveSubstepsFromMatrix(matrix: PackedSparseMatrix, nodeCount: number, sampleRate: number): number {
+  if (nodeCount <= 0 || sampleRate <= 0 || matrix.value.length === 0) {
+    return 1;
+  }
+  const rowAbs = new Float64Array(nodeCount);
+  for (let i = 0; i < matrix.value.length; i += 1) {
+    rowAbs[matrix.row[i]] += Math.abs(matrix.value[i]);
+  }
+  let maxRowAbs = 0;
+  for (let i = 0; i < rowAbs.length; i += 1) {
+    maxRowAbs = Math.max(maxRowAbs, rowAbs[i]);
+  }
+  const stiffnessRatio = Math.sqrt(maxRowAbs) / sampleRate;
+  if (stiffnessRatio > 0.12) return 8;
+  if (stiffnessRatio > 0.06) return 4;
+  if (stiffnessRatio > 0.03) return 2;
+  return 1;
+}
+
 type RunSimulationOptions = {
   capture?: SimulationCaptureMode;
 };
@@ -113,20 +143,28 @@ export function createOptimizedRuntimeStepper(graph: GraphData, params: Simulati
 
   const eulerSpring = new Float64Array(totalDots);
   const rk = createRungeKuttaWorkspace(totalDots);
+  const fixedSubsteps = normalizeSubsteps(params.substeps);
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromMatrix(matrix, totalDots, params.sampleRate);
+  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
+  const integrateOne =
+    params.method === "runge-kutta"
+      ? (stepDt: number) =>
+        rungeKuttaStepOptimized(state, matrix, stepDt, params.attenuation, params.squareAttenuation, rk)
+      : (stepDt: number) =>
+        eulerCramerStepOptimized(state, matrix, stepDt, params.attenuation, params.squareAttenuation, eulerSpring);
 
   return {
     state,
     step(steps = 1) {
       for (let s = 0; s < steps; s += 1) {
-        if (params.method === "runge-kutta") {
-          rungeKuttaStepOptimized(state, matrix, dt, params.attenuation, params.squareAttenuation, rk);
-        } else {
-          eulerCramerStepOptimized(state, matrix, dt, params.attenuation, params.squareAttenuation, eulerSpring);
-        }
-
-        for (const index of fixedIndices) {
-          state.u[index] = 0;
-          state.v[index] = 0;
+        const sampleSubsteps = resolveSubsteps();
+        const sampleDt = dt / sampleSubsteps;
+        for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+          integrateOne(sampleDt);
+          for (const index of fixedIndices) {
+            state.u[index] = 0;
+            state.v[index] = 0;
+          }
         }
       }
     },

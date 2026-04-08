@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { MfcButton, MfcCheckbox, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup, MfcSelect } from "../ui/MfcDialog";
-import { SIMULATION_BACKEND_OPTIONS, type SimMethod, type SimulationBackend, type SimulationPrecision } from "../../engine/types";
+import {
+  SIMULATION_BACKEND_OPTIONS,
+  type SimMethod,
+  type SimulationBackend,
+  type SimulationPrecision,
+  type SimulationSubstepsMode,
+} from "../../engine/types";
 import "./GenerateNotesDialog.css";
 
 export type GenerateNotesDialogValues = {
@@ -13,6 +19,8 @@ export type GenerateNotesDialogValues = {
   method: SimMethod;
   backend: SimulationBackend;
   precision: SimulationPrecision;
+  substepsMode: SimulationSubstepsMode;
+  substeps: number;
 };
 
 type GenerateNotesDialogProps = {
@@ -57,6 +65,8 @@ function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateN
   const [method, setMethod] = useState<SimMethod>(initialValues.method);
   const [backend, setBackend] = useState<SimulationBackend>(initialValues.backend);
   const [precision, setPrecision] = useState<SimulationPrecision>(initialValues.precision);
+  const [substepsMode, setSubstepsMode] = useState<SimulationSubstepsMode>(initialValues.substepsMode);
+  const [substeps, setSubsteps] = useState(initialValues.substeps);
 
   return (
     <MfcDialog
@@ -74,6 +84,8 @@ function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateN
           method,
           backend,
           precision,
+          substepsMode,
+          substeps: Number.isFinite(substeps) ? Math.max(1, Math.round(substeps)) : 1,
         })
       }
       width={460}
@@ -142,6 +154,28 @@ function GenerateNotesDialogForm({ initialValues, onClose, onSubmit }: GenerateN
                 options={[
                   { value: "64", label: "64" },
                   { value: "32", label: "32" },
+                ]}
+              />
+            </MfcField>
+            <MfcField label="Substeps" labelWidth={58}>
+              <MfcSelect
+                value={substepsMode === "adaptive" ? "adaptive" : String(substeps)}
+                onChange={(value) => {
+                  if (value === "adaptive") {
+                    setSubstepsMode("adaptive");
+                    return;
+                  }
+                  if (value === "1" || value === "2" || value === "4" || value === "8") {
+                    setSubstepsMode("fixed");
+                    setSubsteps(Number(value));
+                  }
+                }}
+                options={[
+                  { value: "1", label: "1x" },
+                  { value: "2", label: "2x" },
+                  { value: "4", label: "4x" },
+                  { value: "8", label: "8x" },
+                  { value: "adaptive", label: "Adaptive" },
                 ]}
               />
             </MfcField>

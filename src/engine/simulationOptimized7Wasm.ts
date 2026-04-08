@@ -51,6 +51,37 @@ export type RuntimeSimulationStepper = {
   step: (steps?: number) => void;
 };
 
+function normalizeSubsteps(value: number | undefined): number {
+  if (!Number.isFinite(value)) return 1;
+  const rounded = Math.round(value ?? 1);
+  if (rounded <= 1) return 1;
+  if (rounded <= 2) return 2;
+  if (rounded <= 4) return 4;
+  return 8;
+}
+
+function estimateAdaptiveSubstepsFromCompiled(compiled: CompiledSimulationGraph, sampleRate: number): number {
+  if (sampleRate <= 0) {
+    return 1;
+  }
+  let maxCoeff = 0;
+  for (let i = 0; i < compiled.edges.freeFree.kOverMassI.length; i += 1) {
+    maxCoeff = Math.max(
+      maxCoeff,
+      Math.abs(compiled.edges.freeFree.kOverMassI[i]),
+      Math.abs(compiled.edges.freeFree.kOverMassJ[i]),
+    );
+  }
+  for (let i = 0; i < compiled.edges.freeFixed.kOverMass.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(compiled.edges.freeFixed.kOverMass[i]));
+  }
+  const stiffnessRatio = Math.sqrt(maxCoeff) / sampleRate;
+  if (stiffnessRatio > 0.12) return 8;
+  if (stiffnessRatio > 0.06) return 4;
+  if (stiffnessRatio > 0.03) return 2;
+  return 1;
+}
+
 function decodeBase64ToBytes(base64: string): Uint8Array {
   if (typeof Buffer !== "undefined") {
     return Uint8Array.from(Buffer.from(base64, "base64"));
@@ -237,6 +268,13 @@ export function runSimulationWasm(
   const captureMode = options?.capture ?? "full";
   const captureFull = captureMode === "full";
   const dt = 1 / params.sampleRate;
+  const fixedSubsteps = normalizeSubsteps(params.substeps);
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromCompiled(compiled, params.sampleRate);
+  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
+  const integrateOne =
+    params.method === "runge-kutta"
+      ? (stepDt: number) => kernel.rk4Step(stepDt, params.attenuation, params.squareAttenuation)
+      : (stepDt: number) => kernel.eulerStep(stepDt, params.attenuation, params.squareAttenuation);
 
   const frames = captureFull ? new Array<FloatArray>(totalSamples) : [];
   const playingPointBuffer = new Float32Array(totalSamples);
@@ -247,10 +285,10 @@ export function runSimulationWasm(
     : null;
 
   for (let sample = 0; sample < totalSamples; sample += 1) {
-    if (params.method === "runge-kutta") {
-      kernel.rk4Step(dt, params.attenuation, params.squareAttenuation);
-    } else {
-      kernel.eulerStep(dt, params.attenuation, params.squareAttenuation);
+    const sampleSubsteps = resolveSubsteps();
+    const sampleDt = dt / sampleSubsteps;
+    for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+      integrateOne(sampleDt);
     }
 
     if (packedHistory) {
@@ -314,6 +352,13 @@ export function createWasmRuntimeStepper(
   }
 
   const dt = 1 / params.sampleRate;
+  const fixedSubsteps = normalizeSubsteps(params.substeps);
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromCompiled(compiled, params.sampleRate);
+  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
+  const integrateOne =
+    params.method === "runge-kutta"
+      ? (stepDt: number) => kernel.rk4Step(stepDt, params.attenuation, params.squareAttenuation)
+      : (stepDt: number) => kernel.eulerStep(stepDt, params.attenuation, params.squareAttenuation);
   const state: SimulationState = {
     u: precision === 32 ? new Float32Array(compiled.totalDots) : new Float64Array(compiled.totalDots),
     v: precision === 32 ? new Float32Array(compiled.totalDots) : new Float64Array(compiled.totalDots),
@@ -329,10 +374,10 @@ export function createWasmRuntimeStepper(
     state,
     step(steps = 1) {
       for (let s = 0; s < steps; s += 1) {
-        if (params.method === "runge-kutta") {
-          kernel.rk4Step(dt, params.attenuation, params.squareAttenuation);
-        } else {
-          kernel.eulerStep(dt, params.attenuation, params.squareAttenuation);
+        const sampleSubsteps = resolveSubsteps();
+        const sampleDt = dt / sampleSubsteps;
+        for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+          integrateOne(sampleDt);
         }
       }
 

@@ -37,6 +37,33 @@ export type RuntimeSimulationStepper = {
   step: (steps?: number) => void;
 };
 
+function normalizeSubsteps(value: number | undefined): number {
+  if (!Number.isFinite(value)) return 1;
+  const rounded = Math.round(value ?? 1);
+  if (rounded <= 1) return 1;
+  if (rounded <= 2) return 2;
+  if (rounded <= 4) return 4;
+  return 8;
+}
+
+function estimateAdaptiveSubstepsFromEdges(edges: EdgeList, sampleRate: number): number {
+  if (sampleRate <= 0) {
+    return 1;
+  }
+  let maxCoeff = 0;
+  for (let i = 0; i < edges.kOverMassI.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(edges.kOverMassI[i]), Math.abs(edges.kOverMassJ[i]));
+  }
+  for (let i = 0; i < edges.diagValue.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(edges.diagValue[i]));
+  }
+  const stiffnessRatio = Math.sqrt(maxCoeff) / sampleRate;
+  if (stiffnessRatio > 0.12) return 8;
+  if (stiffnessRatio > 0.06) return 4;
+  if (stiffnessRatio > 0.03) return 2;
+  return 1;
+}
+
 type RunSimulationOptions = {
   capture?: SimulationCaptureMode;
 };
@@ -116,20 +143,28 @@ export function createEdgeListRuntimeStepper(graph: GraphData, params: Simulatio
 
   const eulerSpring = new Float64Array(totalDots);
   const rk = createRungeKuttaWorkspace(totalDots);
+  const fixedSubsteps = normalizeSubsteps(params.substeps);
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromEdges(edges, params.sampleRate);
+  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
+  const integrateOne =
+    params.method === "runge-kutta"
+      ? (stepDt: number) =>
+        rungeKuttaStepEdgeList(state, edges, stepDt, params.attenuation, params.squareAttenuation, rk)
+      : (stepDt: number) =>
+        eulerCramerStepEdgeList(state, edges, stepDt, params.attenuation, params.squareAttenuation, eulerSpring);
 
   return {
     state,
     step(steps = 1) {
       for (let s = 0; s < steps; s += 1) {
-        if (params.method === "runge-kutta") {
-          rungeKuttaStepEdgeList(state, edges, dt, params.attenuation, params.squareAttenuation, rk);
-        } else {
-          eulerCramerStepEdgeList(state, edges, dt, params.attenuation, params.squareAttenuation, eulerSpring);
-        }
-
-        for (const index of fixedIndices) {
-          state.u[index] = 0;
-          state.v[index] = 0;
+        const sampleSubsteps = resolveSubsteps();
+        const sampleDt = dt / sampleSubsteps;
+        for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+          integrateOne(sampleDt);
+          for (const index of fixedIndices) {
+            state.u[index] = 0;
+            state.v[index] = 0;
+          }
         }
       }
     },

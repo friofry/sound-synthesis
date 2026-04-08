@@ -98,6 +98,51 @@ export type RuntimeSimulationStepper = {
   step: (steps?: number) => void;
 };
 
+function normalizeSubsteps(value: number | undefined): number {
+  if (!Number.isFinite(value)) {
+    return 1;
+  }
+  const rounded = Math.round(value ?? 1);
+  if (rounded <= 1) {
+    return 1;
+  }
+  if (rounded <= 2) {
+    return 2;
+  }
+  if (rounded <= 4) {
+    return 4;
+  }
+  if (rounded <= 8) {
+    return 8;
+  }
+  return 8;
+}
+
+function estimateAdaptiveSubstepsFromCoeffs(coeffs: KoeffStr[], nodeCount: number, sampleRate: number): number {
+  if (nodeCount <= 0 || sampleRate <= 0 || coeffs.length === 0) {
+    return 1;
+  }
+  const rowAbs = new Float64Array(nodeCount);
+  for (const coeff of coeffs) {
+    rowAbs[coeff.i] += Math.abs(coeff.value);
+  }
+  let maxRowAbs = 0;
+  for (let i = 0; i < rowAbs.length; i += 1) {
+    maxRowAbs = Math.max(maxRowAbs, rowAbs[i]);
+  }
+  const stiffnessRatio = Math.sqrt(maxRowAbs) / sampleRate;
+  if (stiffnessRatio > 0.12) {
+    return 8;
+  }
+  if (stiffnessRatio > 0.06) {
+    return 4;
+  }
+  if (stiffnessRatio > 0.03) {
+    return 2;
+  }
+  return 1;
+}
+
 export function createConnectionStructure(graph: GraphData): KoeffStr[] {
   const coeffs: KoeffStr[] = [];
 
@@ -403,20 +448,28 @@ function createLegacyRuntimeStepper(graph: GraphData, params: SimulationParams):
 
   const eulerSpring = new Float64Array(totalDots);
   const rungeKuttaWorkspace = createRungeKuttaWorkspace(totalDots);
+  const fixedSubsteps = normalizeSubsteps(params.substeps);
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromCoeffs(coeffs, totalDots, params.sampleRate);
+  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
+  const integrateOne =
+    params.method === "runge-kutta"
+      ? (stepDt: number) =>
+        rungeKuttaStep(state, coeffs, stepDt, params.attenuation, params.squareAttenuation, rungeKuttaWorkspace)
+      : (stepDt: number) =>
+        eulerCramerStep(state, coeffs, stepDt, params.attenuation, params.squareAttenuation, eulerSpring);
 
   return {
     state,
     step(steps = 1) {
       for (let sample = 0; sample < steps; sample += 1) {
-        if (params.method === "runge-kutta") {
-          rungeKuttaStep(state, coeffs, dt, params.attenuation, params.squareAttenuation, rungeKuttaWorkspace);
-        } else {
-          eulerCramerStep(state, coeffs, dt, params.attenuation, params.squareAttenuation, eulerSpring);
-        }
-
-        for (const index of fixedIndices) {
-          state.u[index] = 0;
-          state.v[index] = 0;
+        const sampleSubsteps = resolveSubsteps();
+        const sampleDt = dt / sampleSubsteps;
+        for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+          integrateOne(sampleDt);
+          for (const index of fixedIndices) {
+            state.u[index] = 0;
+            state.v[index] = 0;
+          }
         }
       }
     }

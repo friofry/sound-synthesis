@@ -53,6 +53,33 @@ export type RuntimeSimulationStepper = {
   step: (steps?: number) => void;
 };
 
+function normalizeSubsteps(value: number | undefined): number {
+  if (!Number.isFinite(value)) return 1;
+  const rounded = Math.round(value ?? 1);
+  if (rounded <= 1) return 1;
+  if (rounded <= 2) return 2;
+  if (rounded <= 4) return 4;
+  return 8;
+}
+
+function estimateAdaptiveSubstepsFromEdges(edges: SplitEdges, sampleRate: number): number {
+  if (sampleRate <= 0) {
+    return 1;
+  }
+  let maxCoeff = 0;
+  for (let i = 0; i < edges.freeFree.kOverMassI.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(edges.freeFree.kOverMassI[i]), Math.abs(edges.freeFree.kOverMassJ[i]));
+  }
+  for (let i = 0; i < edges.freeFixed.kOverMass.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(edges.freeFixed.kOverMass[i]));
+  }
+  const stiffnessRatio = Math.sqrt(maxCoeff) / sampleRate;
+  if (stiffnessRatio > 0.12) return 8;
+  if (stiffnessRatio > 0.06) return 4;
+  if (stiffnessRatio > 0.03) return 2;
+  return 1;
+}
+
 export type CompiledSimulationGraph = {
   totalDots: number;
   freeCount: number;
@@ -120,16 +147,25 @@ export function runSimulationFusedLoop(
   const springScratch = createFloatArray(compiled.freeCount, precision);
   const rk = createRungeKuttaWorkspace(compiled.freeCount, precision);
   const dt = 1 / params.sampleRate;
+  const fixedSubsteps = normalizeSubsteps(params.substeps);
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromEdges(compiled.edges, params.sampleRate);
+  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
+  const integrateOne =
+    params.method === "runge-kutta"
+      ? (stepDt: number) =>
+        rungeKuttaStep(state, compiled.edges, stepDt, params.attenuation, params.squareAttenuation, rk)
+      : (stepDt: number) =>
+        eulerCramerStep(state, compiled.edges, stepDt, params.attenuation, params.squareAttenuation, springScratch);
 
   const frames = captureFull ? new Array<FloatArray>(totalSamples) : [];
   const playingPointBuffer = new Float32Array(totalSamples);
   const packedHistory = captureFull ? createFloatArray(totalSamples * compiled.totalDots, precision) : null;
 
   for (let sample = 0; sample < totalSamples; sample += 1) {
-    if (params.method === "runge-kutta") {
-      rungeKuttaStep(state, compiled.edges, dt, params.attenuation, params.squareAttenuation, rk);
-    } else {
-      eulerCramerStep(state, compiled.edges, dt, params.attenuation, params.squareAttenuation, springScratch);
+    const sampleSubsteps = resolveSubsteps();
+    const sampleDt = dt / sampleSubsteps;
+    for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+      integrateOne(sampleDt);
     }
 
     if (packedHistory) {
@@ -205,29 +241,38 @@ export function createFusedLoopRuntimeStepper(
 
   const springScratch = createFloatArray(compiled.freeCount, precision);
   const rk = createRungeKuttaWorkspace(compiled.freeCount, precision);
+  const fixedSubsteps = normalizeSubsteps(params.substeps);
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromEdges(compiled.edges, params.sampleRate);
+  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
+  const integrateOne =
+    params.method === "runge-kutta"
+      ? (stepDt: number) =>
+        rungeKuttaStep(
+          dynamicState,
+          compiled.edges,
+          stepDt,
+          params.attenuation,
+          params.squareAttenuation,
+          rk,
+        )
+      : (stepDt: number) =>
+        eulerCramerStep(
+          dynamicState,
+          compiled.edges,
+          stepDt,
+          params.attenuation,
+          params.squareAttenuation,
+          springScratch,
+        );
 
   return {
     state,
     step(steps = 1) {
       for (let s = 0; s < steps; s += 1) {
-        if (params.method === "runge-kutta") {
-          rungeKuttaStep(
-            dynamicState,
-            compiled.edges,
-            dt,
-            params.attenuation,
-            params.squareAttenuation,
-            rk,
-          );
-        } else {
-          eulerCramerStep(
-            dynamicState,
-            compiled.edges,
-            dt,
-            params.attenuation,
-            params.squareAttenuation,
-            springScratch,
-          );
+        const sampleSubsteps = resolveSubsteps();
+        const sampleDt = dt / sampleSubsteps;
+        for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+          integrateOne(sampleDt);
         }
       }
 

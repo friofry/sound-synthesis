@@ -21,6 +21,13 @@ import { LegacyOscillogrammSpectrum } from "../components/PianoPlayer/LegacyOsci
 import { MfcSplitView } from "../components/ui/MfcSplitView";
 import { graphFromBinary } from "../engine/fileIO/graphFile";
 import type { GridType, StiffnessType } from "../engine/types";
+import {
+  DEFAULT_SIMULATION_BACKEND,
+  DEFAULT_SIMULATION_METHOD,
+  DEFAULT_SIMULATION_PRECISION,
+  DEFAULT_SIMULATION_SUBSTEPS,
+  DEFAULT_SIMULATION_SUBSTEPS_MODE,
+} from "../engine/simulationDefaults";
 import { useGraphStore } from "../store/graphStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
 
@@ -111,9 +118,11 @@ export function MembraneModellerPage() {
       durationMs: 150,
       tillSilence: false,
       sampleRate: 44100,
-      method: "runge-kutta",
-      backend: "wasm-hotloop",
-      precision: 64,
+      method: DEFAULT_SIMULATION_METHOD,
+      backend: DEFAULT_SIMULATION_BACKEND,
+      precision: DEFAULT_SIMULATION_PRECISION,
+      substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
+      substeps: DEFAULT_SIMULATION_SUBSTEPS,
     }, preparedGraph);
   }, [
     generateNotesSettings.attenuation,
@@ -174,9 +183,11 @@ export function MembraneModellerPage() {
       durationMs: 150,
       tillSilence: false,
       sampleRate: 44100,
-      method: "runge-kutta",
-      backend: "wasm-hotloop",
-      precision: 64,
+      method: DEFAULT_SIMULATION_METHOD,
+      backend: DEFAULT_SIMULATION_BACKEND,
+      precision: DEFAULT_SIMULATION_PRECISION,
+      substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
+      substeps: DEFAULT_SIMULATION_SUBSTEPS,
     }, preparedGraph);
   }, [
     createPresetGraph,
@@ -286,9 +297,11 @@ export function MembraneModellerPage() {
             durationMs: 150,
             tillSilence: false,
             sampleRate: 44100,
-            method: "runge-kutta",
-            backend: "wasm-hotloop",
-            precision: 64,
+            method: DEFAULT_SIMULATION_METHOD,
+            backend: DEFAULT_SIMULATION_BACKEND,
+            precision: DEFAULT_SIMULATION_PRECISION,
+            substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
+            substeps: DEFAULT_SIMULATION_SUBSTEPS,
           });
         }}
         onClose={closeInsertDialog}

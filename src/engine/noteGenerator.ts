@@ -4,6 +4,7 @@ import { runSimulation } from "./simulation";
 import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "./tuning";
 import type { RawInstrumentNote, SimulationParams } from "./types";
 import { DEFAULT_KEYBINDS, DEFAULT_KEY_LABELS } from "../components/PianoPlayer/KeyboardMapping";
+import { DEFAULT_SIMULATION_BACKEND } from "./simulationDefaults";
 
 type GenerateInstrumentOptions = {
   noteCount?: number;
@@ -14,6 +15,8 @@ type GenerateInstrumentOptions = {
   attenuation?: number;
   squareAttenuation?: number;
   method?: SimulationParams["method"];
+  substepsMode?: SimulationParams["substepsMode"];
+  substeps?: number;
 };
 
 export function generateInstrumentFromGraph(
@@ -28,6 +31,8 @@ export function generateInstrumentFromGraph(
   const attenuation = options.attenuation ?? 4;
   const squareAttenuation = options.squareAttenuation ?? (1 / 50) * attenuation;
   const method = options.method ?? "euler";
+  const substepsMode = options.substepsMode ?? "fixed";
+  const substeps = options.substeps ?? 1;
   const ratioForIndex = (index: number): number => 2 ** ((index - baseIndex) / 12);
   let calibrationPitchRatio = 1;
 
@@ -44,9 +49,11 @@ export function generateInstrumentFromGraph(
         attenuation,
         squareAttenuation,
         playingPoint: calibrationGraph.playingPoint ?? 0,
+        substepsMode,
+        substeps,
       },
       undefined,
-      { capture: "playing-point-only", backend: "fused-loop" },
+      { capture: "playing-point-only", backend: DEFAULT_SIMULATION_BACKEND },
     );
     const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, sampleRate);
     if (measuredFirstFrequency !== null) {
@@ -69,9 +76,11 @@ export function generateInstrumentFromGraph(
         attenuation,
         squareAttenuation,
         playingPoint: noteGraph.playingPoint ?? 0,
+        substepsMode,
+        substeps,
       },
       undefined,
-      { capture: "playing-point-only", backend: "fused-loop" },
+      { capture: "playing-point-only", backend: DEFAULT_SIMULATION_BACKEND },
     );
 
     notes.push({

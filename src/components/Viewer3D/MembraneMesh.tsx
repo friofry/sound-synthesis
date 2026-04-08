@@ -12,6 +12,7 @@ import {
   createRuntimeSimulationStepper,
 } from "../../engine/simulation";
 import type { RuntimeSimulationStepper } from "../../engine/simulation";
+import { DEFAULT_SIMULATION_BACKEND } from "../../engine/simulationDefaults";
 
 function computeBounds(points: { x: number; y: number }[]) {
   let minX = Number.POSITIVE_INFINITY;
@@ -174,7 +175,7 @@ export function MembraneMesh() {
         dots: graph.dots,
         lines: graph.lines,
         playingPoint: graph.playingPoint ?? simulationParams.playingPoint,
-      }, simulationParams, "wasm-hotloop");
+      }, simulationParams, DEFAULT_SIMULATION_BACKEND);
     }
 
     const runtimeStepper = runtimeStepperRef.current;
