@@ -18,6 +18,7 @@ import {
   type RuntimeSimulationStepper as SortedEdgeRuntimeSimulationStepper,
 } from "./simulationOptimized6SortedEdgeCSR";
 import { applyEndFadeOut, applyStartFadeIn } from "./simulationFade";
+import { resolveSampleSubsteps, substepsFromStiffnessRatio } from "./simulationSubsteps";
 import { getCachedWasmModule } from "./simulationWasmModule";
 import { SIM_HOTLOOP_CSR_WASM_BASE64 } from "./wasm/sim_hotloop_csr.wasm.base64";
 import { SIM_HOTLOOP_CSR_F32_WASM_BASE64 } from "./wasm/sim_hotloop_csr_f32.wasm.base64";
@@ -106,6 +107,20 @@ function toCompiledGraph(graph: CompiledCsrGraph64, precision: SimulationPrecisi
   };
 }
 
+function estimateAdaptiveSubstepsFromCompiled(compiled: CompiledSimulationGraph, sampleRate: number): number {
+  if (sampleRate <= 0) {
+    return 1;
+  }
+  let maxCoeff = 0;
+  for (let i = 0; i < compiled.csr.coeff.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(compiled.csr.coeff[i]));
+  }
+  for (let i = 0; i < compiled.csr.diag.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(compiled.csr.diag[i]));
+  }
+  return substepsFromStiffnessRatio(Math.sqrt(maxCoeff) / sampleRate);
+}
+
 export function compileGraph(
   graph: GraphData,
   params: Pick<SimulationParams, "playingPoint">,
@@ -187,6 +202,8 @@ export function runSimulationWasmCsr(
   const captureMode = options?.capture ?? "full";
   const captureFull = captureMode === "full";
   const dt = 1 / params.sampleRate;
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromCompiled(compiled, params.sampleRate);
+  const resolveSubsteps = resolveSampleSubsteps(params, adaptiveSubsteps);
 
   const frames = captureFull ? new Array<FloatArray>(totalSamples) : [];
   const playingPointBuffer = new Float32Array(totalSamples);
@@ -197,7 +214,11 @@ export function runSimulationWasmCsr(
     : null;
 
   for (let sample = 0; sample < totalSamples; sample += 1) {
-    kernel.eulerStep(dt, params.attenuation, params.squareAttenuation);
+    const sampleSubsteps = resolveSubsteps();
+    const sampleDt = dt / sampleSubsteps;
+    for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+      kernel.eulerStep(sampleDt, params.attenuation, params.squareAttenuation);
+    }
 
     if (packedHistory) {
       const offset = sample * compiled.totalDots;
@@ -263,6 +284,8 @@ export function createWasmCsrRuntimeStepper(
   }
 
   const dt = 1 / params.sampleRate;
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromCompiled(compiled, params.sampleRate);
+  const resolveSubsteps = resolveSampleSubsteps(params, adaptiveSubsteps);
   const state: SimulationState = {
     u: compiled.precision === 32 ? new Float32Array(compiled.totalDots) : new Float64Array(compiled.totalDots),
     v: compiled.precision === 32 ? new Float32Array(compiled.totalDots) : new Float64Array(compiled.totalDots),
@@ -278,7 +301,11 @@ export function createWasmCsrRuntimeStepper(
     state,
     step(steps = 1) {
       for (let s = 0; s < steps; s += 1) {
-        kernel.eulerStep(dt, params.attenuation, params.squareAttenuation);
+        const sampleSubsteps = resolveSubsteps();
+        const sampleDt = dt / sampleSubsteps;
+        for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+          kernel.eulerStep(sampleDt, params.attenuation, params.squareAttenuation);
+        }
       }
 
       for (let i = 0; i < compiled.freeToGlobal.length; i += 1) {

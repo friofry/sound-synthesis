@@ -4,9 +4,9 @@ import type { GridParams, GridType } from "./types";
 export function generateGraph(type: GridType, params: GridParams): GraphModel {
   const graph = new GraphModel();
   generateTopology(graph, type, params);
-  applyBoundaryMode(graph, type, params);
   applyNormalizedStiffness(graph, params);
   applyWeightDistribution(graph, type, params);
+  applyBoundaryMode(graph, type, params);
   graph.playingPoint = graph.findFirstPlayableDot();
   return graph;
 }
