@@ -323,7 +323,7 @@ function createLegacyRuntimeStepper(graph: GraphData, params: SimulationParams):
           clampFixedNodes(state, fixedIndices);
         }
       }
-    }
+    },
   };
 }
 

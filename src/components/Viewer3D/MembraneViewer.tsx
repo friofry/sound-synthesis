@@ -57,8 +57,6 @@ export function MembraneViewer() {
   const activeSource = useMembraneViewerStore((state) => state.activeSource);
   const activeSnapshot = useMembraneViewerStore((state) => state.snapshots[state.activeSource]);
   const initializeSource = useMembraneViewerStore((state) => state.initializeSource);
-  const updateActiveSnapshotGraph = useMembraneViewerStore((state) => state.updateActiveSnapshotGraph);
-  const playing = useViewerStore((state) => state.playing);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
   const paintSignRef = useRef(1);
   const isPaintingRef = useRef(false);
@@ -152,44 +150,40 @@ export function MembraneViewer() {
       return;
     }
 
+    const runtimeStepper = getMembraneRuntimeStepper();
+    if (!runtimeStepper) {
+      return;
+    }
+
     lastPaintPointRef.current = { x: graphX, y: graphY };
-    const runtimeStepper = playing ? getMembraneRuntimeStepper() : null;
-
-    updateActiveSnapshotGraph((next) => {
-      let changed = false;
-
-      for (let index = 0; index < next.dots.length; index += 1) {
-        const dot = next.dots[index];
-        if (!dot || dot.fixed) {
-          continue;
-        }
-
-        const dist = Math.hypot(dot.x - graphX, dot.y - graphY);
-        if (dist > brushRadius) {
-          continue;
-        }
-
-        const factor = Math.exp(-(dist * dist) / (2 * sigma * sigma));
-        const liveBaseU = runtimeStepper?.state.u[index];
-        const baseU = typeof liveBaseU === "number" && Number.isFinite(liveBaseU) ? liveBaseU : dot.u;
-        const nextU = clamp(baseU + amount * factor, -1, 1);
-        if (nextU === dot.u) {
-          if (!(Number.isFinite(liveBaseU) && nextU !== liveBaseU)) {
-            continue;
-          }
-        }
-
-        changed = true;
-        next.setDotProps(index, { u: nextU });
-        if (runtimeStepper && index < runtimeStepper.state.u.length) {
-          runtimeStepper.state.u[index] = nextU;
-        }
+    const runtimeU = runtimeStepper.state.u;
+    let changed = false;
+    for (let index = 0; index < graph.dots.length; index += 1) {
+      const dot = graph.dots[index];
+      if (!dot || dot.fixed || index >= runtimeU.length) {
+        continue;
       }
 
-      if (!changed) {
-        lastPaintPointRef.current = previousPoint;
+      const dist = Math.hypot(dot.x - graphX, dot.y - graphY);
+      if (dist > brushRadius) {
+        continue;
       }
-    });
+
+      const factor = Math.exp(-(dist * dist) / (2 * sigma * sigma));
+      const baseU = runtimeU[index];
+      const safeBaseU = Number.isFinite(baseU) ? baseU : 0;
+      const nextU = clamp(safeBaseU + amount * factor, -1, 1);
+      if (nextU === safeBaseU) {
+        continue;
+      }
+
+      changed = true;
+      runtimeU[index] = nextU;
+    }
+
+    if (!changed) {
+      lastPaintPointRef.current = previousPoint;
+    }
   };
 
   const tryPaint = (event: ThreeEvent<PointerEvent>, force = false) => {

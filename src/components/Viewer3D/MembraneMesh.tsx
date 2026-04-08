@@ -7,9 +7,9 @@ import {
   LineSegments,
 } from "three";
 import { GraphModel } from "../../engine/graph";
-import { resolveDefaultSimulationBackend } from "../../engine/simulationDefaults";
 import type { SimulationParams } from "../../engine/types";
 import { DEFAULT_ATTENUATION, DEFAULT_SQUARE_ATTENUATION } from "../../engine/types";
+import type { SimulationBackend } from "../../engine/types";
 import { useMembraneViewerStore } from "../../store/membraneViewerStore";
 import { useViewerStore } from "../../store/viewerStore";
 import {
@@ -43,8 +43,7 @@ function computeBounds(points: { x: number; y: number }[]) {
 
 const material = new LineBasicMaterial({ color: "#00b8ff" });
 const VIEWER_LIVE_METHOD: SimulationParams["method"] = "runge-kutta";
-const VIEWER_LIVE_PRECISION = 64 as const;
-const VIEWER_LIVE_BACKEND = resolveDefaultSimulationBackend(VIEWER_LIVE_METHOD, VIEWER_LIVE_PRECISION);
+const VIEWER_LIVE_BACKEND: SimulationBackend = "edge-list";
 
 export function MembraneMesh() {
   const meshRef = useRef<LineSegments>(null);
@@ -55,9 +54,7 @@ export function MembraneMesh() {
   const prevStructureSignatureRef = useRef<string | null>(null);
   const activeSource = useMembraneViewerStore((state) => state.activeSource);
   const activeSnapshot = useMembraneViewerStore((state) => state.snapshots[state.activeSource]);
-  const syncRuntimeStateToActiveSnapshot = useMembraneViewerStore((state) => state.syncRuntimeStateToActiveSnapshot);
   const graph = activeSnapshot?.graph ?? EMPTY_GRAPH;
-  const activeSnapshotRevision = activeSnapshot?.revision ?? 0;
 
   const normalizedDots = useMemo(() => {
     if (graph.dots.length === 0) return [];
@@ -70,8 +67,8 @@ export function MembraneMesh() {
     }));
   }, [graph.dots]);
   const structureSignature = useMemo(
-    () => `${activeSource}@${activeSnapshotRevision}#${buildGraphStructureSignature(graph)}`,
-    [activeSnapshotRevision, activeSource, graph],
+    () => `${activeSource}#${buildGraphStructureSignature(graph)}`,
+    [activeSource, graph],
   );
 
   useEffect(() => {
@@ -129,29 +126,16 @@ export function MembraneMesh() {
     if (structureChanged) {
       runtimeStepperRef.current = null;
       prevPlayingRef.current = false;
-    } else if (runtimeStepperRef.current) {
-      // Keep live playback running and inject freshly painted displacement
-      // without wiping the accumulated runtime velocity.
-      syncRuntimeStateFromGraph(runtimeStepperRef.current, graph);
     }
 
     prevStructureSignatureRef.current = structureSignature;
-  }, [graph, structureSignature]);
+  }, [structureSignature]);
 
   useFrame(() => {
     const { playing, frameIndex, amplitudeScale, speed } = useViewerStore.getState();
     const wasPlaying = prevPlayingRef.current;
     const justStarted = !wasPlaying && playing;
-    const justStopped = wasPlaying && !playing;
     prevPlayingRef.current = playing;
-
-    if (justStopped && runtimeStepperRef.current) {
-      syncRuntimeStateToActiveSnapshot(runtimeStepperRef.current.state.u, runtimeStepperRef.current.state.v);
-    }
-
-    if (!playing) {
-      return;
-    }
 
     const positions = positionsRef.current;
     const geo = geometryRef.current;
@@ -159,7 +143,7 @@ export function MembraneMesh() {
       return;
     }
 
-    const shouldReinitialize = justStarted && frameIndex === 0;
+    const shouldReinitialize = (justStarted && frameIndex === 0) || !runtimeStepperRef.current;
     if (shouldReinitialize || !runtimeStepperRef.current) {
       runtimeStepperRef.current = createRuntimeSimulationStepper(
         graph.toGraphData(),
@@ -173,8 +157,10 @@ export function MembraneMesh() {
       return;
     }
 
-    const steps = Math.max(1, Math.floor(speed));
-    runtimeStepper.step(steps);
+    if (playing) {
+      const steps = Math.max(1, Math.floor(speed));
+      runtimeStepper.step(steps);
+    }
     const runtimeState = runtimeStepper.state;
 
     let cursor = 0;
@@ -201,22 +187,12 @@ export function MembraneMesh() {
     attr.needsUpdate = true;
     geo.computeBoundingSphere();
 
-    useViewerStore.getState().advanceFrame(0);
+    if (playing) {
+      useViewerStore.getState().advanceFrame(0);
+    }
   });
 
   return <lineSegments ref={meshRef} material={material} />;
-}
-
-function syncRuntimeStateFromGraph(runtimeStepper: RuntimeSimulationStepper, graph: GraphModel) {
-  const { u } = runtimeStepper.state;
-  const dotCount = Math.min(graph.dots.length, u.length);
-  for (let i = 0; i < dotCount; i += 1) {
-    const dot = graph.dots[i];
-    if (!dot) {
-      continue;
-    }
-    u[i] = dot.fixed ? 0 : dot.u;
-  }
 }
 
 function buildGraphStructureSignature(graph: GraphModel): string {
