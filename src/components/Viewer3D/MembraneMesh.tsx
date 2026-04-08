@@ -13,6 +13,7 @@ import {
 } from "../../engine/simulation";
 import type { RuntimeSimulationStepper } from "../../engine/simulation";
 import { DEFAULT_SIMULATION_BACKEND } from "../../engine/simulationDefaults";
+import { registerMembraneRuntimeAccessor } from "./liveRuntimeBridge";
 
 function computeBounds(points: { x: number; y: number }[]) {
   let minX = Number.POSITIVE_INFINITY;
@@ -45,9 +46,10 @@ export function MembraneMesh() {
   const positionsRef = useRef<Float32Array | null>(null);
   const runtimeStepperRef = useRef<RuntimeSimulationStepper | null>(null);
   const prevPlayingRef = useRef(false);
+  const prevStructureSignatureRef = useRef<string | null>(null);
+  const prevSimulationSignatureRef = useRef<string | null>(null);
 
   const graph = useGraphStore((s) => s.graph);
-  const simulationResult = useGraphStore((s) => s.simulationResult);
   const simulationParams = useGraphStore((s) => s.simulationParams);
 
   const normalizedDots = useMemo(() => {
@@ -60,11 +62,13 @@ export function MembraneMesh() {
       fixed: dot.fixed,
     }));
   }, [graph.dots]);
+  const structureSignature = useMemo(() => buildGraphStructureSignature(graph), [graph]);
+  const simulationSignature = useMemo(() => buildSimulationSignature(simulationParams), [simulationParams]);
 
-  const frames = useMemo(
-    () => simulationResult?.frames ?? [],
-    [simulationResult],
-  );
+  useEffect(() => {
+    registerMembraneRuntimeAccessor(() => runtimeStepperRef.current);
+    return () => registerMembraneRuntimeAccessor(null);
+  }, []);
 
   useEffect(() => {
     const mesh = meshRef.current;
@@ -110,56 +114,30 @@ export function MembraneMesh() {
   }, [normalizedDots, graph.lines]);
 
   useEffect(() => {
-    runtimeStepperRef.current = null;
-    prevPlayingRef.current = false;
-  }, [graph, simulationParams]);
+    const structureChanged =
+      prevStructureSignatureRef.current !== null && prevStructureSignatureRef.current !== structureSignature;
+    const simulationChanged =
+      prevSimulationSignatureRef.current !== null && prevSimulationSignatureRef.current !== simulationSignature;
 
-  useFrame(() => {
-    const { playing, frameIndex, amplitudeScale } =
-      useViewerStore.getState();
-
-    if (!playing || frames.length === 0) return;
-
-    const positions = positionsRef.current;
-    const geo = geometryRef.current;
-    if (!positions || !geo) return;
-
-    const frame = frames[frameIndex];
-    if (!frame) return;
-
-    let cursor = 0;
-    for (const line of graph.lines) {
-      const a = normalizedDots[line.dot1];
-      const b = normalizedDots[line.dot2];
-      if (!a || !b) {
-        cursor += 6;
-        continue;
-      }
-
-      const ay = a.fixed ? 0 : (frame[line.dot1] ?? 0) * amplitudeScale;
-      const by = b.fixed ? 0 : (frame[line.dot2] ?? 0) * amplitudeScale;
-
-      positions[cursor++] = a.x;
-      positions[cursor++] = ay;
-      positions[cursor++] = a.z;
-      positions[cursor++] = b.x;
-      positions[cursor++] = by;
-      positions[cursor++] = b.z;
+    if (structureChanged || simulationChanged) {
+      runtimeStepperRef.current = null;
+      prevPlayingRef.current = false;
+    } else if (runtimeStepperRef.current) {
+      // Keep live playback running and inject freshly painted displacement
+      // without wiping the accumulated runtime velocity.
+      syncRuntimeStateFromGraph(runtimeStepperRef.current, graph);
     }
 
-    const attr = geo.getAttribute("position") as BufferAttribute;
-    attr.needsUpdate = true;
-    geo.computeBoundingSphere();
-
-    useViewerStore.getState().advanceFrame(frames.length);
-  });
+    prevStructureSignatureRef.current = structureSignature;
+    prevSimulationSignatureRef.current = simulationSignature;
+  }, [graph, simulationSignature, structureSignature]);
 
   useFrame(() => {
     const { playing, frameIndex, amplitudeScale, speed } = useViewerStore.getState();
     const justStarted = !prevPlayingRef.current && playing;
     prevPlayingRef.current = playing;
 
-    if (!playing || frames.length > 0) {
+    if (!playing) {
       return;
     }
 
@@ -215,4 +193,35 @@ export function MembraneMesh() {
   });
 
   return <lineSegments ref={meshRef} material={material} />;
+}
+
+function syncRuntimeStateFromGraph(runtimeStepper: RuntimeSimulationStepper, graph: ReturnType<typeof useGraphStore.getState>["graph"]) {
+  const { u } = runtimeStepper.state;
+  const dotCount = Math.min(graph.dots.length, u.length);
+  for (let i = 0; i < dotCount; i += 1) {
+    const dot = graph.dots[i];
+    if (!dot) {
+      continue;
+    }
+    u[i] = dot.fixed ? 0 : dot.u;
+  }
+}
+
+function buildGraphStructureSignature(graph: ReturnType<typeof useGraphStore.getState>["graph"]): string {
+  const dots = graph.dots.map((dot) => `${Number(dot.fixed)}:${dot.weight}`).join("|");
+  const lines = graph.lines.map((line) => `${line.dot1}:${line.dot2}:${line.k}`).join("|");
+  return `${graph.playingPoint ?? -1}#${dots}#${lines}`;
+}
+
+function buildSimulationSignature(params: typeof useGraphStore.getState extends () => infer T ? T extends { simulationParams: infer P } ? P : never : never): string {
+  return [
+    params.sampleRate,
+    params.lengthK,
+    params.method,
+    params.attenuation,
+    params.squareAttenuation,
+    params.playingPoint,
+    params.substepsMode,
+    params.substeps,
+  ].join("|");
 }

@@ -5,6 +5,8 @@ import { DoubleSide } from "three";
 import { MembraneMesh } from "./MembraneMesh";
 import { ViewerToolbar } from "./ViewerToolbar";
 import { useGraphStore } from "../../store/graphStore";
+import { useViewerStore } from "../../store/viewerStore";
+import { getMembraneRuntimeStepper } from "./liveRuntimeBridge";
 
 type Bounds = {
   minX: number;
@@ -45,6 +47,7 @@ function computeBounds(points: { x: number; y: number }[]) {
 export function MembraneViewer() {
   const graph = useGraphStore((state) => state.graph);
   const updateGraph = useGraphStore((state) => state.updateGraph);
+  const playing = useViewerStore((state) => state.playing);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
   const paintSignRef = useRef(1);
   const isPaintingRef = useRef(false);
@@ -108,6 +111,7 @@ export function MembraneViewer() {
     }
 
     lastPaintPointRef.current = { x: graphX, y: graphY };
+    const runtimeStepper = playing ? getMembraneRuntimeStepper() : null;
 
     updateGraph((next) => {
       let changed = false;
@@ -124,13 +128,20 @@ export function MembraneViewer() {
         }
 
         const factor = Math.exp(-(dist * dist) / (2 * sigma * sigma));
-        const nextU = clamp(dot.u + amount * factor, -1, 1);
+        const liveBaseU = runtimeStepper?.state.u[index];
+        const baseU = Number.isFinite(liveBaseU) ? liveBaseU : dot.u;
+        const nextU = clamp(baseU + amount * factor, -1, 1);
         if (nextU === dot.u) {
-          continue;
+          if (!(Number.isFinite(liveBaseU) && nextU !== liveBaseU)) {
+            continue;
+          }
         }
 
         changed = true;
         next.setDotProps(index, { u: nextU });
+        if (runtimeStepper && index < runtimeStepper.state.u.length) {
+          runtimeStepper.state.u[index] = nextU;
+        }
       }
 
       if (!changed) {
