@@ -67,14 +67,14 @@ jobs:
         run: |
           git checkout "${{ github.event.pull_request.base.sha }}"
           npm ci
-          npm run test:bench | tee bench-base.txt
+          npm run test:bench:ci | tee bench-base.txt
 
       - name: Benchmark head branch (PR only)
         if: github.event_name == 'pull_request'
         run: |
           git checkout "${{ github.sha }}"
           npm ci
-          npm run test:bench | tee bench-head.txt
+          npm run test:bench:ci | tee bench-head.txt
 
       - name: Compare benchmark results (PR only)
         if: github.event_name == 'pull_request'
@@ -87,7 +87,7 @@ jobs:
 
       - name: Benchmark current branch (push only)
         if: github.event_name != 'pull_request'
-        run: npm run test:bench | tee bench-head.txt
+        run: npm run test:bench:ci | tee bench-head.txt
 
       - name: Publish benchmark summary
         if: always()

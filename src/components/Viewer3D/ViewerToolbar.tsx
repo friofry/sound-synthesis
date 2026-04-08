@@ -10,6 +10,7 @@ export function ViewerToolbar() {
   const playing = useViewerStore((state) => state.playing);
   const speed = useViewerStore((state) => state.speed);
   const amplitudeScale = useViewerStore((state) => state.amplitudeScale);
+  const heatmapEnabled = useViewerStore((state) => state.heatmapEnabled);
   const frameIndex = useViewerStore((state) => state.frameIndex);
   const play = useViewerStore((state) => state.play);
   const pause = useViewerStore((state) => state.pause);
@@ -18,6 +19,7 @@ export function ViewerToolbar() {
   const slower = useViewerStore((state) => state.slower);
   const increaseAmplitude = useViewerStore((state) => state.increaseAmplitude);
   const decreaseAmplitude = useViewerStore((state) => state.decreaseAmplitude);
+  const toggleHeatmap = useViewerStore((state) => state.toggleHeatmap);
 
   const canPlay = Boolean(activeSnapshot && activeSnapshot.graph.dots.length > 0 && activeSnapshot.graph.lines.length > 0);
   const frameLabel = `${frameIndex}/live-sim`;
@@ -78,6 +80,16 @@ export function ViewerToolbar() {
       >
         <span className="toolbar-sprite viewer-toolbar-sprite" style={{ "--sprite-index": 5 } as CSSProperties} aria-hidden />
         <span className="sr-only">Restart and stop</span>
+      </button>
+      <button
+        type="button"
+        className="viewer-btn"
+        onClick={toggleHeatmap}
+        title={heatmapEnabled ? "Disable heatmap coloring" : "Enable heatmap coloring"}
+        aria-pressed={heatmapEnabled}
+      >
+        <span aria-hidden>🎨</span>
+        <span className="sr-only">Toggle heatmap coloring</span>
       </button>
       <span className="viewer-meta">Speed: {speed}x</span>
       <span className="viewer-meta">Amp: {amplitudeScale.toFixed(1)}</span>

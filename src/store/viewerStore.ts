@@ -5,6 +5,7 @@ interface ViewerStore {
   playing: boolean;
   speed: number;
   amplitudeScale: number;
+  heatmapEnabled: boolean;
   play: () => void;
   pause: () => void;
   stop: () => void;
@@ -12,6 +13,7 @@ interface ViewerStore {
   slower: () => void;
   increaseAmplitude: () => void;
   decreaseAmplitude: () => void;
+  toggleHeatmap: () => void;
   resetFrame: () => void;
   advanceFrame: (frameCount: number) => void;
 }
@@ -21,6 +23,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   playing: false,
   speed: 1,
   amplitudeScale: 1,
+  heatmapEnabled: false,
   play: () => set({ playing: true }),
   pause: () => set({ playing: false }),
   stop: () => set({ playing: false, frameIndex: 0 }),
@@ -28,6 +31,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   slower: () => set((state) => ({ speed: Math.max(1, Math.floor(state.speed / 2)) })),
   increaseAmplitude: () => set((state) => ({ amplitudeScale: Math.min(8, state.amplitudeScale + 0.5) })),
   decreaseAmplitude: () => set((state) => ({ amplitudeScale: Math.max(0.5, state.amplitudeScale - 0.5) })),
+  toggleHeatmap: () => set((state) => ({ heatmapEnabled: !state.heatmapEnabled })),
   resetFrame: () => set({ frameIndex: 0 }),
   advanceFrame: (frameCount) => {
     const { playing, frameIndex, speed } = get();

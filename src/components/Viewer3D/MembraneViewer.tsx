@@ -5,11 +5,14 @@ import { DoubleSide } from "three";
 import { GraphModel } from "../../engine/graph";
 import { scaleGraphForPitchRatio } from "../../engine/gridGenerators";
 import { MembraneMesh } from "./MembraneMesh";
+import { MembraneHeatmapMesh } from "./MembraneHeatmapMesh";
 import { ViewerToolbar } from "./ViewerToolbar";
 import { useGraphStore } from "../../store/graphStore";
 import { useMembraneViewerStore } from "../../store/membraneViewerStore";
 import { usePianoStore } from "../../store/pianoStore";
+import { useViewerStore } from "../../store/viewerStore";
 import { getMembraneRuntimeStepper } from "./liveRuntimeBridge";
+import { computeRange } from "./heatmap";
 
 type Bounds = {
   minX: number;
@@ -55,6 +58,7 @@ export function MembraneViewer() {
   const pressedKeys = usePianoStore((state) => state.pressedKeys);
   const activeSource = useMembraneViewerStore((state) => state.activeSource);
   const activeSnapshot = useMembraneViewerStore((state) => state.snapshots[state.activeSource]);
+  const heatmapEnabled = useViewerStore((state) => state.heatmapEnabled);
   const initializeSource = useMembraneViewerStore((state) => state.initializeSource);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
   const paintSignRef = useRef(1);
@@ -82,7 +86,7 @@ export function MembraneViewer() {
     const keyIsPressedNow = pressedKeys.has(lastPressedKeyIndex);
     const shouldActivate = keyIsPressedNow || activeSource === source;
     const baseGraph = GraphModel.fromJSON(baseSnapshot);
-    const noteGraph = scaleGraphForPitchRatio(baseGraph, note.viewerTunedRatio);
+    const noteGraph = scaleGraphForPitchRatio(baseGraph, note.viewerTunedRatio ?? 1);
     noteGraph.playingPoint = baseGraph.playingPoint ?? baseGraph.findFirstPlayableDot();
     initializeSource(source, noteGraph, {
       activate: shouldActivate,
@@ -99,6 +103,8 @@ export function MembraneViewer() {
     }
     return Math.max(12, Math.max(bounds.width, bounds.height) * 0.06);
   }, [bounds]);
+  const stiffnessRange = useMemo(() => computeRange(graph.lines.map((line) => line.k)), [graph.lines]);
+  const weightRange = useMemo(() => computeRange(graph.dots.map((dot) => dot.weight)), [graph.dots]);
 
   const normalizedDots = useMemo(() => {
     if (!bounds) {
@@ -277,10 +283,30 @@ export function MembraneViewer() {
             <meshBasicMaterial transparent opacity={0} depthWrite={false} side={DoubleSide} />
           </mesh>
           <group>
-            <MembraneMesh />
+            {heatmapEnabled ? <MembraneHeatmapMesh heatmapEnabled /> : <MembraneMesh />}
           </group>
           <OrbitControls enableDamping dampingFactor={0.08} enabled={orbitEnabled} />
         </Canvas>
+        {heatmapEnabled ? (
+          <div className="viewer-heatmap-legend" aria-hidden="true">
+            <div className="viewer-heatmap-legend-row">
+              <div className="viewer-heatmap-legend-title">Edge stiffness (k)</div>
+              <div className="viewer-heatmap-legend-scale viewer-heatmap-legend-scale-stiffness" />
+              <div className="viewer-heatmap-legend-values">
+                <span>{formatLegendValue(stiffnessRange.min)}</span>
+                <span>{formatLegendValue(stiffnessRange.max)}</span>
+              </div>
+            </div>
+            <div className="viewer-heatmap-legend-row">
+              <div className="viewer-heatmap-legend-title">Point weight</div>
+              <div className="viewer-heatmap-legend-scale viewer-heatmap-legend-scale-weight" />
+              <div className="viewer-heatmap-legend-values">
+                <span>{formatLegendValue(weightRange.min)}</span>
+                <span>{formatLegendValue(weightRange.max)}</span>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </>
   );
@@ -295,6 +321,17 @@ function viewerToGraph(x: number, z: number, bounds: Bounds): { x: number; y: nu
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function formatLegendValue(value: number): string {
+  const abs = Math.abs(value);
+  if (abs > 0 && abs < 0.001) {
+    return value.toExponential(1);
+  }
+  if (abs >= 1000) {
+    return value.toExponential(1);
+  }
+  return value.toFixed(abs >= 10 ? 1 : 3);
 }
 
 const EMPTY_GRAPH = new GraphModel();
