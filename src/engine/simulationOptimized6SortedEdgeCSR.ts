@@ -1,13 +1,18 @@
 import type {
   FloatArray,
   GraphData,
-  SimulationCaptureMode,
   SimulationParams,
   SimulationResult,
   SimulationState,
 } from "./types";
-
-const DEFAULT_EDGE_FADE_MS = 2;
+import type {
+  RunSimulationOptions as SharedRunSimulationOptions,
+  RuntimeSimulationStepper as SharedRuntimeSimulationStepper,
+} from "./simulationRuntimeTypes";
+import { forEachSpringLine } from "./simulationAssembly";
+import { applyEndFadeOut, applyStartFadeIn } from "./simulationFade";
+import { createIntegratorStep } from "./simulationIntegratorBridge";
+import { resolveSampleSubsteps, substepsFromStiffnessRatio } from "./simulationSubsteps";
 
 type CSRGraph = {
   freeCount: number;
@@ -38,19 +43,7 @@ type RungeKuttaWorkspace = {
   k4v: Float64Array;
 };
 
-export type RuntimeSimulationStepper = {
-  state: SimulationState;
-  step: (steps?: number) => void;
-};
-
-function normalizeSubsteps(value: number | undefined): number {
-  if (!Number.isFinite(value)) return 1;
-  const rounded = Math.round(value ?? 1);
-  if (rounded <= 1) return 1;
-  if (rounded <= 2) return 2;
-  if (rounded <= 4) return 4;
-  return 8;
-}
+export type RuntimeSimulationStepper = SharedRuntimeSimulationStepper;
 
 function estimateAdaptiveSubstepsFromCsr(csr: CSRGraph, sampleRate: number): number {
   if (sampleRate <= 0) {
@@ -63,11 +56,7 @@ function estimateAdaptiveSubstepsFromCsr(csr: CSRGraph, sampleRate: number): num
   for (let i = 0; i < csr.diag.length; i += 1) {
     maxCoeff = Math.max(maxCoeff, Math.abs(csr.diag[i]));
   }
-  const stiffnessRatio = Math.sqrt(maxCoeff) / sampleRate;
-  if (stiffnessRatio > 0.12) return 8;
-  if (stiffnessRatio > 0.06) return 4;
-  if (stiffnessRatio > 0.03) return 2;
-  return 1;
+  return substepsFromStiffnessRatio(Math.sqrt(maxCoeff) / sampleRate);
 }
 
 export type CompiledSimulationGraph = {
@@ -82,9 +71,7 @@ export type CompiledSimulationGraph = {
   playingPointFree: number;
 };
 
-type RunSimulationOptions = {
-  capture?: SimulationCaptureMode;
-};
+type RunSimulationOptions = Pick<SharedRunSimulationOptions, "capture">;
 
 export function compileGraph(
   graph: GraphData,
@@ -126,15 +113,15 @@ export function runSimulationSortedEdgeCSR(
   const springScratch = new Float64Array(compiled.freeCount);
   const rk = createRungeKuttaWorkspace(compiled.freeCount);
   const dt = 1 / params.sampleRate;
-  const fixedSubsteps = normalizeSubsteps(params.substeps);
   const adaptiveSubsteps = estimateAdaptiveSubstepsFromCsr(compiled.csr, params.sampleRate);
-  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
-  const integrateOne =
-    params.method === "runge-kutta"
-      ? (stepDt: number) =>
-        rungeKuttaStep(state, compiled.csr, stepDt, params.attenuation, params.squareAttenuation, rk)
-      : (stepDt: number) =>
-        eulerCramerStep(state, compiled.csr, stepDt, params.attenuation, params.squareAttenuation, springScratch);
+  const resolveSubsteps = resolveSampleSubsteps(params, adaptiveSubsteps);
+  const integrateOne = createIntegratorStep(
+    params.method,
+    (stepDt: number) =>
+      eulerCramerStep(state, compiled.csr, stepDt, params.attenuation, params.squareAttenuation, springScratch),
+    (stepDt: number) =>
+      rungeKuttaStep(state, compiled.csr, stepDt, params.attenuation, params.squareAttenuation, rk),
+  );
 
   const frames = captureFull ? new Array<Float64Array>(totalSamples) : [];
   const playingPointBuffer = new Float32Array(totalSamples);
@@ -219,29 +206,29 @@ export function createSortedEdgeCSRRuntimeStepper(
 
   const springScratch = new Float64Array(compiled.freeCount);
   const rk = createRungeKuttaWorkspace(compiled.freeCount);
-  const fixedSubsteps = normalizeSubsteps(params.substeps);
   const adaptiveSubsteps = estimateAdaptiveSubstepsFromCsr(compiled.csr, params.sampleRate);
-  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
-  const integrateOne =
-    params.method === "runge-kutta"
-      ? (stepDt: number) =>
-        rungeKuttaStep(
-          dynamicState,
-          compiled.csr,
-          stepDt,
-          params.attenuation,
-          params.squareAttenuation,
-          rk,
-        )
-      : (stepDt: number) =>
-        eulerCramerStep(
-          dynamicState,
-          compiled.csr,
-          stepDt,
-          params.attenuation,
-          params.squareAttenuation,
-          springScratch,
-        );
+  const resolveSubsteps = resolveSampleSubsteps(params, adaptiveSubsteps);
+  const integrateOne = createIntegratorStep(
+    params.method,
+    (stepDt: number) =>
+      eulerCramerStep(
+        dynamicState,
+        compiled.csr,
+        stepDt,
+        params.attenuation,
+        params.squareAttenuation,
+        springScratch,
+      ),
+    (stepDt: number) =>
+      rungeKuttaStep(
+        dynamicState,
+        compiled.csr,
+        stepDt,
+        params.attenuation,
+        params.squareAttenuation,
+        rk,
+      ),
+  );
 
   return {
     state,
@@ -280,13 +267,7 @@ function createCSRGraph(graph: GraphData, globalToFree: Int32Array, freeCount: n
   const rowCoeff: number[][] = Array.from({ length: freeCount }, () => []);
   const diag = new Float64Array(freeCount);
 
-  for (const line of graph.lines) {
-    const d1 = graph.dots[line.dot1];
-    const d2 = graph.dots[line.dot2];
-    if (!d1 || !d2) {
-      continue;
-    }
-
+  forEachSpringLine(graph, (line, d1, d2) => {
     if (!d1.fixed && !d2.fixed) {
       const i = globalToFree[line.dot1];
       const j = globalToFree[line.dot2];
@@ -300,7 +281,7 @@ function createCSRGraph(graph: GraphData, globalToFree: Int32Array, freeCount: n
       rowCoeff[i].push(coeffI);
       rowCol[j].push(i);
       rowCoeff[j].push(coeffJ);
-      continue;
+      return;
     }
 
     if (!d1.fixed) {
@@ -311,7 +292,7 @@ function createCSRGraph(graph: GraphData, globalToFree: Int32Array, freeCount: n
       const i = globalToFree[line.dot2];
       diag[i] -= line.k / d2.weight;
     }
-  }
+  });
 
   const rowPtr = new Uint32Array(freeCount + 1);
   let totalNnz = 0;
@@ -489,39 +470,3 @@ function createRungeKuttaWorkspace(n: number): RungeKuttaWorkspace {
   };
 }
 
-// ---------------------------------------------------------------------------
-// Edge fades
-// ---------------------------------------------------------------------------
-
-function applyStartFadeIn(buffer: Float32Array, sampleRate: number, fadeInMs = DEFAULT_EDGE_FADE_MS): void {
-  if (buffer.length === 0 || sampleRate <= 0 || fadeInMs <= 0) {
-    return;
-  }
-
-  const requestedSamples = Math.round((sampleRate * fadeInMs) / 1000);
-  const fadeSamples = Math.min(buffer.length, Math.max(2, requestedSamples));
-  if (fadeSamples <= 1) {
-    buffer[0] = 0;
-    return;
-  }
-  for (let i = 0; i < fadeSamples; i += 1) {
-    buffer[i] *= i / (fadeSamples - 1);
-  }
-}
-
-function applyEndFadeOut(buffer: Float32Array, sampleRate: number, fadeOutMs = DEFAULT_EDGE_FADE_MS): void {
-  if (buffer.length === 0 || sampleRate <= 0 || fadeOutMs <= 0) {
-    return;
-  }
-
-  const requestedSamples = Math.round((sampleRate * fadeOutMs) / 1000);
-  const fadeSamples = Math.min(buffer.length, Math.max(2, requestedSamples));
-  if (fadeSamples <= 1) {
-    buffer[buffer.length - 1] = 0;
-    return;
-  }
-  const start = buffer.length - fadeSamples;
-  for (let i = 0; i < fadeSamples; i += 1) {
-    buffer[start + i] *= (fadeSamples - 1 - i) / (fadeSamples - 1);
-  }
-}

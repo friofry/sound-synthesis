@@ -1,12 +1,15 @@
 import type {
   FloatArray,
   GraphData,
-  SimulationCaptureMode,
   SimulationParams,
   SimulationPrecision,
   SimulationResult,
   SimulationState,
 } from "./types";
+import type {
+  RunSimulationOptions as SharedRunSimulationOptions,
+  RuntimeSimulationStepper as SharedRuntimeSimulationStepper,
+} from "./simulationRuntimeTypes";
 import {
   compileGraph,
   type CompiledSimulationGraph,
@@ -16,15 +19,14 @@ import {
   runSimulationWasm,
   type RuntimeSimulationStepper as WasmRuntimeSimulationStepper,
 } from "./simulationOptimized7Wasm";
+import { applyEndFadeOut, applyStartFadeIn } from "./simulationFade";
+import { createIntegratorStep } from "./simulationIntegratorBridge";
+import { resolveSampleSubsteps, substepsFromStiffnessRatio } from "./simulationSubsteps";
+import { getCachedWasmModule } from "./simulationWasmModule";
 import { SIM_HOTLOOP_SIMD_WASM_BASE64 } from "./wasm/sim_hotloop_simd.wasm.base64";
 import { SIM_HOTLOOP_SIMD_F32_WASM_BASE64 } from "./wasm/sim_hotloop_simd_f32.wasm.base64";
 
-const DEFAULT_EDGE_FADE_MS = 2;
-
-type RunSimulationOptions = {
-  capture?: SimulationCaptureMode;
-  precision?: SimulationPrecision;
-};
+type RunSimulationOptions = Pick<SharedRunSimulationOptions, "capture" | "precision">;
 
 type WasmExports = {
   memory: WebAssembly.Memory;
@@ -48,19 +50,7 @@ type WasmKernel = {
   rk4Step: (dt: number, attenuation: number, squareAttenuation: number) => void;
 };
 
-export type RuntimeSimulationStepper = {
-  state: SimulationState;
-  step: (steps?: number) => void;
-};
-
-function normalizeSubsteps(value: number | undefined): number {
-  if (!Number.isFinite(value)) return 1;
-  const rounded = Math.round(value ?? 1);
-  if (rounded <= 1) return 1;
-  if (rounded <= 2) return 2;
-  if (rounded <= 4) return 4;
-  return 8;
-}
+export type RuntimeSimulationStepper = SharedRuntimeSimulationStepper;
 
 function estimateAdaptiveSubstepsFromCompiled(compiled: CompiledSimulationGraph, sampleRate: number): number {
   if (sampleRate <= 0) {
@@ -77,49 +67,15 @@ function estimateAdaptiveSubstepsFromCompiled(compiled: CompiledSimulationGraph,
   for (let i = 0; i < compiled.edges.freeFixed.kOverMass.length; i += 1) {
     maxCoeff = Math.max(maxCoeff, Math.abs(compiled.edges.freeFixed.kOverMass[i]));
   }
-  const stiffnessRatio = Math.sqrt(maxCoeff) / sampleRate;
-  if (stiffnessRatio > 0.12) return 8;
-  if (stiffnessRatio > 0.06) return 4;
-  if (stiffnessRatio > 0.03) return 2;
-  return 1;
+  return substepsFromStiffnessRatio(Math.sqrt(maxCoeff) / sampleRate);
 }
-
-function decodeBase64ToBytes(base64: string): Uint8Array {
-  if (typeof Buffer !== "undefined") {
-    return Uint8Array.from(Buffer.from(base64, "base64"));
-  }
-
-  const decoded = atob(base64);
-  const bytes = new Uint8Array(decoded.length);
-  for (let i = 0; i < decoded.length; i += 1) {
-    bytes[i] = decoded.charCodeAt(i);
-  }
-  return bytes;
-}
-
-function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  return Uint8Array.from(bytes).buffer;
-}
-
-function compileWasmModule(wasmBytes: ArrayBuffer): WebAssembly.Module | null {
-  try {
-    return new WebAssembly.Module(wasmBytes);
-  } catch {
-    return null;
-  }
-}
-
-const cachedWasmSimdModule = compileWasmModule(toArrayBuffer(decodeBase64ToBytes(SIM_HOTLOOP_SIMD_WASM_BASE64)));
-const cachedWasmSimdModuleF32 = compileWasmModule(
-  toArrayBuffer(decodeBase64ToBytes(SIM_HOTLOOP_SIMD_F32_WASM_BASE64)),
-);
 
 function getWasmSimdModule(): WebAssembly.Module | null {
-  return cachedWasmSimdModule;
+  return getCachedWasmModule("sim_hotloop_simd_f64", SIM_HOTLOOP_SIMD_WASM_BASE64);
 }
 
 function getWasmSimdModuleF32(): WebAssembly.Module | null {
-  return cachedWasmSimdModuleF32;
+  return getCachedWasmModule("sim_hotloop_simd_f32", SIM_HOTLOOP_SIMD_F32_WASM_BASE64);
 }
 
 function instantiateWasmExports(module: WebAssembly.Module): WasmExports | null {
@@ -270,13 +226,13 @@ export function runSimulationWasmSimd(
   const captureMode = options?.capture ?? "full";
   const captureFull = captureMode === "full";
   const dt = 1 / params.sampleRate;
-  const fixedSubsteps = normalizeSubsteps(params.substeps);
   const adaptiveSubsteps = estimateAdaptiveSubstepsFromCompiled(compiled, params.sampleRate);
-  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
-  const integrateOne =
-    params.method === "runge-kutta"
-      ? (stepDt: number) => kernel.rk4Step(stepDt, params.attenuation, params.squareAttenuation)
-      : (stepDt: number) => kernel.eulerStep(stepDt, params.attenuation, params.squareAttenuation);
+  const resolveSubsteps = resolveSampleSubsteps(params, adaptiveSubsteps);
+  const integrateOne = createIntegratorStep(
+    params.method,
+    (stepDt: number) => kernel.eulerStep(stepDt, params.attenuation, params.squareAttenuation),
+    (stepDt: number) => kernel.rk4Step(stepDt, params.attenuation, params.squareAttenuation),
+  );
 
   const frames = captureFull ? new Array<FloatArray>(totalSamples) : [];
   const playingPointBuffer = new Float32Array(totalSamples);
@@ -354,13 +310,13 @@ export function createWasmSimdRuntimeStepper(
   }
 
   const dt = 1 / params.sampleRate;
-  const fixedSubsteps = normalizeSubsteps(params.substeps);
   const adaptiveSubsteps = estimateAdaptiveSubstepsFromCompiled(compiled, params.sampleRate);
-  const resolveSubsteps = () => (params.substepsMode === "adaptive" ? adaptiveSubsteps : fixedSubsteps);
-  const integrateOne =
-    params.method === "runge-kutta"
-      ? (stepDt: number) => kernel.rk4Step(stepDt, params.attenuation, params.squareAttenuation)
-      : (stepDt: number) => kernel.eulerStep(stepDt, params.attenuation, params.squareAttenuation);
+  const resolveSubsteps = resolveSampleSubsteps(params, adaptiveSubsteps);
+  const integrateOne = createIntegratorStep(
+    params.method,
+    (stepDt: number) => kernel.eulerStep(stepDt, params.attenuation, params.squareAttenuation),
+    (stepDt: number) => kernel.rk4Step(stepDt, params.attenuation, params.squareAttenuation),
+  );
   const state: SimulationState = {
     u: precision === 32 ? new Float32Array(compiled.totalDots) : new Float64Array(compiled.totalDots),
     v: precision === 32 ? new Float32Array(compiled.totalDots) : new Float64Array(compiled.totalDots),
@@ -400,35 +356,3 @@ export function createWasmSimdRuntimeStepperBackend(
   return createWasmSimdRuntimeStepper(compiled, params);
 }
 
-function applyStartFadeIn(buffer: Float32Array, sampleRate: number, fadeInMs = DEFAULT_EDGE_FADE_MS): void {
-  if (buffer.length === 0 || sampleRate <= 0 || fadeInMs <= 0) {
-    return;
-  }
-
-  const requestedSamples = Math.round((sampleRate * fadeInMs) / 1000);
-  const fadeSamples = Math.min(buffer.length, Math.max(2, requestedSamples));
-  if (fadeSamples <= 1) {
-    buffer[0] = 0;
-    return;
-  }
-  for (let i = 0; i < fadeSamples; i += 1) {
-    buffer[i] *= i / (fadeSamples - 1);
-  }
-}
-
-function applyEndFadeOut(buffer: Float32Array, sampleRate: number, fadeOutMs = DEFAULT_EDGE_FADE_MS): void {
-  if (buffer.length === 0 || sampleRate <= 0 || fadeOutMs <= 0) {
-    return;
-  }
-
-  const requestedSamples = Math.round((sampleRate * fadeOutMs) / 1000);
-  const fadeSamples = Math.min(buffer.length, Math.max(2, requestedSamples));
-  if (fadeSamples <= 1) {
-    buffer[buffer.length - 1] = 0;
-    return;
-  }
-  const start = buffer.length - fadeSamples;
-  for (let i = 0; i < fadeSamples; i += 1) {
-    buffer[start + i] *= (fadeSamples - 1 - i) / (fadeSamples - 1);
-  }
-}

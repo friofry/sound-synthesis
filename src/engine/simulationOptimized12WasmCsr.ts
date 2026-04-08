@@ -1,12 +1,15 @@
 import type {
   FloatArray,
   GraphData,
-  SimulationCaptureMode,
   SimulationParams,
   SimulationPrecision,
   SimulationResult,
   SimulationState,
 } from "./types";
+import type {
+  RunSimulationOptions as SharedRunSimulationOptions,
+  RuntimeSimulationStepper as SharedRuntimeSimulationStepper,
+} from "./simulationRuntimeTypes";
 import {
   compileGraph as compileGraphCsr64,
   createSortedEdgeCSRRuntimeStepper,
@@ -14,15 +17,12 @@ import {
   type CompiledSimulationGraph as CompiledCsrGraph64,
   type RuntimeSimulationStepper as SortedEdgeRuntimeSimulationStepper,
 } from "./simulationOptimized6SortedEdgeCSR";
+import { applyEndFadeOut, applyStartFadeIn } from "./simulationFade";
+import { getCachedWasmModule } from "./simulationWasmModule";
 import { SIM_HOTLOOP_CSR_WASM_BASE64 } from "./wasm/sim_hotloop_csr.wasm.base64";
 import { SIM_HOTLOOP_CSR_F32_WASM_BASE64 } from "./wasm/sim_hotloop_csr_f32.wasm.base64";
 
-const DEFAULT_EDGE_FADE_MS = 2;
-
-type RunSimulationOptions = {
-  capture?: SimulationCaptureMode;
-  precision?: SimulationPrecision;
-};
+type RunSimulationOptions = Pick<SharedRunSimulationOptions, "capture" | "precision">;
 
 type CompiledSimulationGraph = {
   precision: SimulationPrecision;
@@ -60,37 +60,7 @@ type WasmKernel = {
   eulerStep: (dt: number, attenuation: number, squareAttenuation: number) => void;
 };
 
-export type RuntimeSimulationStepper = {
-  state: SimulationState;
-  step: (steps?: number) => void;
-};
-
-function decodeBase64ToBytes(base64: string): Uint8Array {
-  if (typeof Buffer !== "undefined") {
-    return Uint8Array.from(Buffer.from(base64, "base64"));
-  }
-  const decoded = atob(base64);
-  const bytes = new Uint8Array(decoded.length);
-  for (let i = 0; i < decoded.length; i += 1) {
-    bytes[i] = decoded.charCodeAt(i);
-  }
-  return bytes;
-}
-
-function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  return Uint8Array.from(bytes).buffer;
-}
-
-function compileWasmModule(wasmBytes: ArrayBuffer): WebAssembly.Module | null {
-  try {
-    return new WebAssembly.Module(wasmBytes);
-  } catch {
-    return null;
-  }
-}
-
-const cachedModuleF64 = compileWasmModule(toArrayBuffer(decodeBase64ToBytes(SIM_HOTLOOP_CSR_WASM_BASE64)));
-const cachedModuleF32 = compileWasmModule(toArrayBuffer(decodeBase64ToBytes(SIM_HOTLOOP_CSR_F32_WASM_BASE64)));
+export type RuntimeSimulationStepper = SharedRuntimeSimulationStepper;
 
 function instantiateWasmExports(module: WebAssembly.Module): WasmExports | null {
   let instance: WebAssembly.Instance;
@@ -145,7 +115,10 @@ export function compileGraph(
 }
 
 function createWasmKernel(compiled: CompiledSimulationGraph): WasmKernel | null {
-  const module = compiled.precision === 32 ? cachedModuleF32 : cachedModuleF64;
+  const module =
+    compiled.precision === 32
+      ? getCachedWasmModule("sim_hotloop_csr_f32", SIM_HOTLOOP_CSR_F32_WASM_BASE64)
+      : getCachedWasmModule("sim_hotloop_csr_f64", SIM_HOTLOOP_CSR_WASM_BASE64);
   if (!module) {
     return null;
   }
@@ -325,35 +298,3 @@ export function createWasmCsrRuntimeStepperBackend(
   return createWasmCsrRuntimeStepper(compiled, params);
 }
 
-function applyStartFadeIn(buffer: Float32Array, sampleRate: number, fadeInMs = DEFAULT_EDGE_FADE_MS): void {
-  if (buffer.length === 0 || sampleRate <= 0 || fadeInMs <= 0) {
-    return;
-  }
-
-  const requestedSamples = Math.round((sampleRate * fadeInMs) / 1000);
-  const fadeSamples = Math.min(buffer.length, Math.max(2, requestedSamples));
-  if (fadeSamples <= 1) {
-    buffer[0] = 0;
-    return;
-  }
-  for (let i = 0; i < fadeSamples; i += 1) {
-    buffer[i] *= i / (fadeSamples - 1);
-  }
-}
-
-function applyEndFadeOut(buffer: Float32Array, sampleRate: number, fadeOutMs = DEFAULT_EDGE_FADE_MS): void {
-  if (buffer.length === 0 || sampleRate <= 0 || fadeOutMs <= 0) {
-    return;
-  }
-
-  const requestedSamples = Math.round((sampleRate * fadeOutMs) / 1000);
-  const fadeSamples = Math.min(buffer.length, Math.max(2, requestedSamples));
-  if (fadeSamples <= 1) {
-    buffer[buffer.length - 1] = 0;
-    return;
-  }
-  const start = buffer.length - fadeSamples;
-  for (let i = 0; i < fadeSamples; i += 1) {
-    buffer[start + i] *= (fadeSamples - 1 - i) / (fadeSamples - 1);
-  }
-}
