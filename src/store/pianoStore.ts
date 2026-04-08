@@ -15,6 +15,11 @@ import {
   resolveDefaultSimulationBackend,
 } from "../engine/simulationDefaults";
 
+export const VIEWER_BASE_GRAPH_SNAPSHOT_IDS = {
+  instrument: "instrument:latest",
+  singleNote: "single-note:latest",
+} as const;
+
 export type PianoGenerateSettings = {
   octaves: 1 | 2 | 3;
   attenuation: number;
@@ -128,11 +133,34 @@ export const usePianoStore = create<PianoStore>((set) => ({
     }),
   setViewerBaseGraphSnapshots: (snapshots) => set({ viewerBaseGraphSnapshots: { ...snapshots } }),
   setViewerBaseGraphSnapshot: (snapshotId, graph) =>
-    set({
-      // Keep only latest generated base snapshot.
-      viewerBaseGraphSnapshots: {
-        [snapshotId]: graph,
-      },
+    set((state) => {
+      const current = state.viewerBaseGraphSnapshots;
+      if (snapshotId === VIEWER_BASE_GRAPH_SNAPSHOT_IDS.instrument) {
+        return {
+          viewerBaseGraphSnapshots: {
+            [VIEWER_BASE_GRAPH_SNAPSHOT_IDS.instrument]: graph,
+            ...(current[VIEWER_BASE_GRAPH_SNAPSHOT_IDS.singleNote]
+              ? { [VIEWER_BASE_GRAPH_SNAPSHOT_IDS.singleNote]: current[VIEWER_BASE_GRAPH_SNAPSHOT_IDS.singleNote] }
+              : {}),
+          },
+        };
+      }
+      if (snapshotId === VIEWER_BASE_GRAPH_SNAPSHOT_IDS.singleNote) {
+        return {
+          viewerBaseGraphSnapshots: {
+            ...(current[VIEWER_BASE_GRAPH_SNAPSHOT_IDS.instrument]
+              ? { [VIEWER_BASE_GRAPH_SNAPSHOT_IDS.instrument]: current[VIEWER_BASE_GRAPH_SNAPSHOT_IDS.instrument] }
+              : {}),
+            [VIEWER_BASE_GRAPH_SNAPSHOT_IDS.singleNote]: graph,
+          },
+        };
+      }
+      return {
+        viewerBaseGraphSnapshots: {
+          ...current,
+          [snapshotId]: graph,
+        },
+      };
     }),
   setGenerateNotesDialogOpen: (open) => set({ generateNotesDialogOpen: open }),
   setGenerateNotesSettings: (settings) => set({ generateNotesSettings: settings }),

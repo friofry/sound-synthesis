@@ -114,23 +114,22 @@ export function MembraneViewer() {
   }, [bounds, graph.dots]);
 
   useEffect(() => {
-    if (!isPaintingRef.current) {
-      return;
-    }
-
-    const stopPainting = () => {
+    const handleWindowPointerStop = () => {
+      if (!isPaintingRef.current) {
+        return;
+      }
       isPaintingRef.current = false;
       lastPaintPointRef.current = null;
       setOrbitEnabled(true);
     };
 
-    window.addEventListener("pointerup", stopPainting);
-    window.addEventListener("pointercancel", stopPainting);
+    window.addEventListener("pointerup", handleWindowPointerStop);
+    window.addEventListener("pointercancel", handleWindowPointerStop);
     return () => {
-      window.removeEventListener("pointerup", stopPainting);
-      window.removeEventListener("pointercancel", stopPainting);
+      window.removeEventListener("pointerup", handleWindowPointerStop);
+      window.removeEventListener("pointercancel", handleWindowPointerStop);
     };
-  }, [orbitEnabled]);
+  }, []);
 
   const stopPainting = () => {
     if (!isPaintingRef.current) {

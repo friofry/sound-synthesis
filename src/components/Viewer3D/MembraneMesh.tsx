@@ -55,6 +55,7 @@ export function MembraneMesh() {
   const activeSource = useMembraneViewerStore((state) => state.activeSource);
   const activeSnapshot = useMembraneViewerStore((state) => state.snapshots[state.activeSource]);
   const graph = activeSnapshot?.graph ?? EMPTY_GRAPH;
+  const snapshotRevision = activeSnapshot?.revision ?? 0;
 
   const normalizedDots = useMemo(() => {
     if (graph.dots.length === 0) return [];
@@ -67,8 +68,8 @@ export function MembraneMesh() {
     }));
   }, [graph.dots]);
   const structureSignature = useMemo(
-    () => `${activeSource}#${buildGraphStructureSignature(graph)}`,
-    [activeSource, graph],
+    () => `${activeSource}#${snapshotRevision}#${buildGraphStructureSignature(graph)}`,
+    [activeSource, graph, snapshotRevision],
   );
 
   useEffect(() => {

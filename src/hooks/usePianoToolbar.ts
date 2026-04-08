@@ -21,7 +21,7 @@ import type {
   SimulationWorkerMessage,
 } from "../engine/types";
 import type { GenerateNotesDialogValues } from "../components/PianoPlayer/GenerateNotesDialog";
-import { usePianoStore } from "../store/pianoStore";
+import { usePianoStore, VIEWER_BASE_GRAPH_SNAPSHOT_IDS } from "../store/pianoStore";
 import { resolveDefaultSimulationBackend } from "../engine/simulationDefaults";
 
 type InstrumentBundle = {
@@ -43,10 +43,6 @@ type InstrumentBundle = {
 
 function aliasForIndex(index: number): string {
   return `note-${index}`;
-}
-
-function createViewerBaseSnapshotId(prefix = "instrument"): string {
-  return `${prefix}:${Date.now().toString(36)}:${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function downloadBlob(filename: string, blob: Blob): void {
@@ -502,7 +498,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
           }
 
           const noteProgress = new Array<number>(safeNoteCount).fill(0);
-          const viewerBaseGraphSnapshotId = createViewerBaseSnapshotId("instrument");
+          const viewerBaseGraphSnapshotId = VIEWER_BASE_GRAPH_SNAPSHOT_IDS.instrument;
           setViewerBaseGraphSnapshot(viewerBaseGraphSnapshotId, targetGraph.toJSON());
           const updateGenerationProgress = () => {
             const totalProgress = noteProgress.reduce((sum, value) => sum + value, 0);
@@ -625,7 +621,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       setActiveBuffer(fallback.buffer, fallback.sampleRate);
       return;
     }
-    const singleBaseGraphSnapshotId = createViewerBaseSnapshotId("single-note");
+    const singleBaseGraphSnapshotId = VIEWER_BASE_GRAPH_SNAPSHOT_IDS.singleNote;
     setViewerBaseGraphSnapshot(singleBaseGraphSnapshotId, graph.toJSON());
     const note = generateInstrumentFromGraph(graph, {
       noteCount: 1,
