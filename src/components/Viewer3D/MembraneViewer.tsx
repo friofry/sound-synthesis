@@ -2,9 +2,13 @@ import { OrbitControls } from "@react-three/drei";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DoubleSide } from "three";
+import { GraphModel } from "../../engine/graph";
+import { scaleGraphForPitchRatio } from "../../engine/gridGenerators";
 import { MembraneMesh } from "./MembraneMesh";
 import { ViewerToolbar } from "./ViewerToolbar";
 import { useGraphStore } from "../../store/graphStore";
+import { useMembraneViewerStore } from "../../store/membraneViewerStore";
+import { usePianoStore } from "../../store/pianoStore";
 import { useViewerStore } from "../../store/viewerStore";
 import { getMembraneRuntimeStepper } from "./liveRuntimeBridge";
 
@@ -45,13 +49,51 @@ function computeBounds(points: { x: number; y: number }[]) {
 }
 
 export function MembraneViewer() {
-  const graph = useGraphStore((state) => state.graph);
-  const updateGraph = useGraphStore((state) => state.updateGraph);
+  const editorGraph = useGraphStore((state) => state.graph);
+  const instrumentNotes = usePianoStore((state) => state.instrumentNotes);
+  const viewerBaseGraphSnapshots = usePianoStore((state) => state.viewerBaseGraphSnapshots);
+  const lastPressedKeyIndex = usePianoStore((state) => state.lastPressedKeyIndex);
+  const pressedKeys = usePianoStore((state) => state.pressedKeys);
+  const activeSource = useMembraneViewerStore((state) => state.activeSource);
+  const activeSnapshot = useMembraneViewerStore((state) => state.snapshots[state.activeSource]);
+  const initializeSource = useMembraneViewerStore((state) => state.initializeSource);
+  const updateActiveSnapshotGraph = useMembraneViewerStore((state) => state.updateActiveSnapshotGraph);
   const playing = useViewerStore((state) => state.playing);
   const [orbitEnabled, setOrbitEnabled] = useState(true);
   const paintSignRef = useRef(1);
   const isPaintingRef = useRef(false);
   const lastPaintPointRef = useRef<{ x: number; y: number } | null>(null);
+  const graph = activeSnapshot?.graph ?? EMPTY_GRAPH;
+
+  useEffect(() => {
+    initializeSource("editor", editorGraph, { activate: false });
+  }, [editorGraph, initializeSource]);
+
+  useEffect(() => {
+    if (lastPressedKeyIndex === null) {
+      return;
+    }
+    const note = instrumentNotes[lastPressedKeyIndex];
+    if (!note?.viewerBaseGraphSnapshotId || !Number.isFinite(note.viewerTunedRatio)) {
+      return;
+    }
+    const baseSnapshot = viewerBaseGraphSnapshots[note.viewerBaseGraphSnapshotId];
+    if (!baseSnapshot) {
+      return;
+    }
+    const source = "note-generated" as const;
+    const keyIsPressedNow = pressedKeys.has(lastPressedKeyIndex);
+    const shouldActivate = keyIsPressedNow || activeSource === source;
+    const baseGraph = GraphModel.fromJSON(baseSnapshot);
+    const noteGraph = scaleGraphForPitchRatio(baseGraph, note.viewerTunedRatio);
+    noteGraph.playingPoint = baseGraph.playingPoint ?? baseGraph.findFirstPlayableDot();
+    initializeSource(source, noteGraph, {
+      activate: shouldActivate,
+      // Rebuild note snapshot on every fresh key press so previous paint
+      // or runtime deformations do not persist when revisiting this note.
+      force: keyIsPressedNow,
+    });
+  }, [activeSource, initializeSource, instrumentNotes, lastPressedKeyIndex, pressedKeys, viewerBaseGraphSnapshots]);
 
   const bounds = useMemo(() => computeBounds(graph.dots), [graph.dots]);
   const brushRadius = useMemo(() => {
@@ -113,7 +155,7 @@ export function MembraneViewer() {
     lastPaintPointRef.current = { x: graphX, y: graphY };
     const runtimeStepper = playing ? getMembraneRuntimeStepper() : null;
 
-    updateGraph((next) => {
+    updateActiveSnapshotGraph((next) => {
       let changed = false;
 
       for (let index = 0; index < next.dots.length; index += 1) {
@@ -129,7 +171,7 @@ export function MembraneViewer() {
 
         const factor = Math.exp(-(dist * dist) / (2 * sigma * sigma));
         const liveBaseU = runtimeStepper?.state.u[index];
-        const baseU = Number.isFinite(liveBaseU) ? liveBaseU : dot.u;
+        const baseU = typeof liveBaseU === "number" && Number.isFinite(liveBaseU) ? liveBaseU : dot.u;
         const nextU = clamp(baseU + amount * factor, -1, 1);
         if (nextU === dot.u) {
           if (!(Number.isFinite(liveBaseU) && nextU !== liveBaseU)) {
@@ -262,3 +304,5 @@ function viewerToGraph(x: number, z: number, bounds: Bounds): { x: number; y: nu
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
+
+const EMPTY_GRAPH = new GraphModel();

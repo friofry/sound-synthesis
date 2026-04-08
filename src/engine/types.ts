@@ -219,6 +219,8 @@ export type RawInstrumentNote = {
   frequency: number;
   buffer: Float32Array;
   sampleRate: number;
+  viewerBaseGraphSnapshotId?: string;
+  viewerTunedRatio?: number;
 };
 
 export const CHROMATIC_DIES_ONE_BASED = new Set([2, 4, 7, 9, 11]);

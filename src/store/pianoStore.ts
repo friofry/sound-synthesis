@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type {
   RawInstrumentNote,
   SimMethod,
+  SerializedGraph,
   SimulationBackend,
   SimulationPrecision,
   SimulationSubstepsMode,
@@ -31,6 +32,8 @@ export type PianoGenerateSettings = {
 type PianoStore = {
   noteCount: number;
   pressedKeys: Set<number>;
+  lastPressedKeyIndex: number | null;
+  viewerBaseGraphSnapshots: Record<string, SerializedGraph>;
   activeBuffer: Float32Array | null;
   activeSampleRate: number;
   instrumentNotes: RawInstrumentNote[];
@@ -48,6 +51,8 @@ type PianoStore = {
   releaseAll: () => void;
   setActiveBuffer: (buffer: Float32Array | null, sampleRate?: number) => void;
   setInstrumentNotes: (notes: RawInstrumentNote[]) => void;
+  setViewerBaseGraphSnapshots: (snapshots: Record<string, SerializedGraph>) => void;
+  setViewerBaseGraphSnapshot: (snapshotId: string, graph: SerializedGraph) => void;
   setGenerateNotesDialogOpen: (open: boolean) => void;
   setGenerateNotesSettings: (settings: PianoGenerateSettings) => void;
   setInstrumentGenerationState: (values: {
@@ -64,6 +69,8 @@ type PianoStore = {
 export const usePianoStore = create<PianoStore>((set) => ({
   noteCount: 24,
   pressedKeys: new Set<number>(),
+  lastPressedKeyIndex: null,
+  viewerBaseGraphSnapshots: {},
   activeBuffer: null,
   activeSampleRate: 48_000,
   instrumentNotes: [],
@@ -95,7 +102,7 @@ export const usePianoStore = create<PianoStore>((set) => ({
       }
       const next = new Set(state.pressedKeys);
       next.add(index);
-      return { pressedKeys: next };
+      return { pressedKeys: next, lastPressedKeyIndex: index };
     }),
   releaseKey: (index) =>
     set((state) => {
@@ -118,6 +125,14 @@ export const usePianoStore = create<PianoStore>((set) => ({
       noteCount: notes.length || 24,
       activeBuffer: notes[0]?.buffer ?? null,
       activeSampleRate: notes[0]?.sampleRate ?? 48_000,
+    }),
+  setViewerBaseGraphSnapshots: (snapshots) => set({ viewerBaseGraphSnapshots: { ...snapshots } }),
+  setViewerBaseGraphSnapshot: (snapshotId, graph) =>
+    set({
+      // Keep only latest generated base snapshot.
+      viewerBaseGraphSnapshots: {
+        [snapshotId]: graph,
+      },
     }),
   setGenerateNotesDialogOpen: (open) => set({ generateNotesDialogOpen: open }),
   setGenerateNotesSettings: (settings) => set({ generateNotesSettings: settings }),
