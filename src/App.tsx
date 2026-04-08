@@ -1,20 +1,49 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import "./App.css";
 import { MfcMenuBar, type MfcMenuBarItem } from "./components/ui/MfcMenu";
 import { MembraneModellerPage } from "./pages/MembraneModellerPage";
 import { PianoPlayerPage } from "./pages/PianoPlayerPage";
+import { graphFromBinary, graphToBinary } from "./engine/fileIO/graphFile";
 import { useGraphStore } from "./store/graphStore";
 
 type AppTab = "modeller" | "piano";
 
 function App() {
   const [tab, setTab] = useState<AppTab>("modeller");
+  const graphInputRef = useRef<HTMLInputElement | null>(null);
   const openInsertDialog = useGraphStore((s) => s.openInsertDialog);
   const openCellTemplateDialog = useGraphStore((s) => s.openCellTemplateDialog);
   const openHexTemplateDialog = useGraphStore((s) => s.openHexTemplateDialog);
   const openCommunityGraphsDialog = useGraphStore((s) => s.openCommunityGraphsDialog);
   const zoomViewport = useGraphStore((s) => s.zoomViewport);
   const resetViewport = useGraphStore((s) => s.resetViewport);
+  const clearGraph = useGraphStore((s) => s.clearGraph);
+  const loadGraph = useGraphStore((s) => s.loadGraph);
+  const serializeGraph = useGraphStore((s) => s.serializeGraph);
+
+  const handleOpenGraph = async (event: ChangeEvent<HTMLInputElement>) => {
+    const [file] = Array.from(event.target.files ?? []);
+    if (!file) {
+      return;
+    }
+    try {
+      const buffer = await file.arrayBuffer();
+      loadGraph(graphFromBinary(buffer));
+    } catch (error) {
+      window.alert(`Failed to load graph file: ${(error as Error).message}`);
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const handleSaveGraph = () => {
+    try {
+      const serializedGraph = serializeGraph();
+      downloadGraphFile("graph.gph", graphToBinary(serializedGraph));
+    } catch (error) {
+      window.alert(`Failed to save graph file: ${(error as Error).message}`);
+    }
+  };
 
   const menuItems = useMemo<MfcMenuBarItem[]>(
     () => [
@@ -22,9 +51,9 @@ function App() {
         id: "file",
         label: "File",
         items: [
-          { id: "new", label: "New", shortcut: "Ctrl+N", disabled: true },
-          { id: "open", label: "Open...", shortcut: "Ctrl+O", disabled: true },
-          { id: "save", label: "Save", shortcut: "Ctrl+S", disabled: true },
+          { id: "new", label: "New", shortcut: "Ctrl+N", onClick: clearGraph },
+          { id: "open", label: "Open...", shortcut: "Ctrl+O", onClick: () => graphInputRef.current?.click() },
+          { id: "save", label: "Save", shortcut: "Ctrl+S", onClick: handleSaveGraph },
           { kind: "separator", id: "file-sep-1" },
           { id: "exit", label: "Exit", disabled: true },
         ],
@@ -99,15 +128,44 @@ function App() {
         ],
       },
     ],
-    [openCellTemplateDialog, openCommunityGraphsDialog, openHexTemplateDialog, openInsertDialog, resetViewport, tab, zoomViewport],
+    [
+      clearGraph,
+      handleSaveGraph,
+      openCellTemplateDialog,
+      openCommunityGraphsDialog,
+      openHexTemplateDialog,
+      openInsertDialog,
+      resetViewport,
+      tab,
+      zoomViewport,
+    ],
   );
 
   return (
     <main className="app-shell">
       <MfcMenuBar items={menuItems} className="menu-bar" />
       <section className="app-content">{tab === "modeller" ? <MembraneModellerPage /> : <PianoPlayerPage />}</section>
+      <input
+        ref={graphInputRef}
+        type="file"
+        accept=".gph,application/octet-stream"
+        className="hidden-input"
+        onChange={handleOpenGraph}
+      />
     </main>
   );
 }
 
 export default App;
+
+function downloadGraphFile(filename: string, buffer: ArrayBuffer): void {
+  const blob = new Blob([buffer], { type: "application/octet-stream" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
