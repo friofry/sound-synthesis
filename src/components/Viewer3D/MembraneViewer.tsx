@@ -1,12 +1,25 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
-import { useMemo } from "react";
-import { Vector3 } from "three";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { DoubleSide } from "three";
 import { MembraneMesh } from "./MembraneMesh";
 import { ViewerToolbar } from "./ViewerToolbar";
 import { useGraphStore } from "../../store/graphStore";
 
+type Bounds = {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  width: number;
+  height: number;
+};
+
 function computeBounds(points: { x: number; y: number }[]) {
+  if (points.length === 0) {
+    return null;
+  }
+
   let minX = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
@@ -26,55 +39,176 @@ function computeBounds(points: { x: number; y: number }[]) {
     maxY,
     width: Math.max(1e-6, maxX - minX),
     height: Math.max(1e-6, maxY - minY),
-  };
+  } satisfies Bounds;
 }
 
 export function MembraneViewer() {
   const graph = useGraphStore((state) => state.graph);
   const updateGraph = useGraphStore((state) => state.updateGraph);
+  const [orbitEnabled, setOrbitEnabled] = useState(true);
+  const paintSignRef = useRef(1);
+  const isPaintingRef = useRef(false);
+  const lastPaintPointRef = useRef<{ x: number; y: number } | null>(null);
+
+  const bounds = useMemo(() => computeBounds(graph.dots), [graph.dots]);
+  const brushRadius = useMemo(() => {
+    if (!bounds) {
+      return 12;
+    }
+    return Math.max(12, Math.max(bounds.width, bounds.height) * 0.06);
+  }, [bounds]);
 
   const normalizedDots = useMemo(() => {
-    const bounds = computeBounds(graph.dots);
+    if (!bounds) {
+      return [];
+    }
+
     return graph.dots.map((dot, index) => ({
       index,
       x: ((dot.x - bounds.minX) / bounds.width) * 4 - 2,
       z: ((dot.y - bounds.minY) / bounds.height) * 2 - 1,
       fixed: dot.fixed,
     }));
-  }, [graph.dots]);
+  }, [bounds, graph.dots]);
 
-  const onPointerDown = (event: ThreeEvent<PointerEvent>) => {
-    event.stopPropagation();
-    const click = event.point.clone();
-
-    let nearestIndex = -1;
-    let nearestDistance = Number.POSITIVE_INFINITY;
-
-    for (const dot of normalizedDots) {
-      if (dot.fixed) {
-        continue;
-      }
-
-      const candidate = new Vector3(dot.x, 0, dot.z);
-      const distance = candidate.distanceTo(click);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestIndex = dot.index;
-      }
-    }
-
-    if (nearestIndex === -1) {
+  useEffect(() => {
+    if (!isPaintingRef.current) {
       return;
     }
 
-    const amount = event.button === 2 ? -1 : 1;
+    const stopPainting = () => {
+      isPaintingRef.current = false;
+      lastPaintPointRef.current = null;
+      setOrbitEnabled(true);
+    };
+
+    window.addEventListener("pointerup", stopPainting);
+    window.addEventListener("pointercancel", stopPainting);
+    return () => {
+      window.removeEventListener("pointerup", stopPainting);
+      window.removeEventListener("pointercancel", stopPainting);
+    };
+  }, [orbitEnabled]);
+
+  const stopPainting = () => {
+    if (!isPaintingRef.current) {
+      return;
+    }
+    isPaintingRef.current = false;
+    lastPaintPointRef.current = null;
+    setOrbitEnabled(true);
+  };
+
+  const applyAmplitudeBrush = (graphX: number, graphY: number, amount: number) => {
+    const sigma = Math.max(1, brushRadius * 0.45);
+    const minDistance = Math.max(4, brushRadius * 0.18);
+    const previousPoint = lastPaintPointRef.current;
+    if (previousPoint && Math.hypot(previousPoint.x - graphX, previousPoint.y - graphY) < minDistance) {
+      return;
+    }
+
+    lastPaintPointRef.current = { x: graphX, y: graphY };
+
     updateGraph((next) => {
-      const dot = next.dots[nearestIndex];
-      if (!dot || dot.fixed) {
-        return;
+      let changed = false;
+
+      for (let index = 0; index < next.dots.length; index += 1) {
+        const dot = next.dots[index];
+        if (!dot || dot.fixed) {
+          continue;
+        }
+
+        const dist = Math.hypot(dot.x - graphX, dot.y - graphY);
+        if (dist > brushRadius) {
+          continue;
+        }
+
+        const factor = Math.exp(-(dist * dist) / (2 * sigma * sigma));
+        const nextU = clamp(dot.u + amount * factor, -1, 1);
+        if (nextU === dot.u) {
+          continue;
+        }
+
+        changed = true;
+        next.setDotProps(index, { u: nextU });
       }
-      next.setDotProps(nearestIndex, { u: dot.u + amount * 0.5 });
+
+      if (!changed) {
+        lastPaintPointRef.current = previousPoint;
+      }
     });
+  };
+
+  const tryPaint = (event: ThreeEvent<PointerEvent>, force = false) => {
+    if (!bounds) {
+      return;
+    }
+
+    const graphPoint = viewerToGraph(event.point.x, event.point.z, bounds);
+    const hasNearbyPlayableDot = graph.dots.some((dot) => {
+      if (dot.fixed) {
+        return false;
+      }
+      return Math.hypot(dot.x - graphPoint.x, dot.y - graphPoint.y) <= brushRadius;
+    });
+
+    if (!hasNearbyPlayableDot) {
+      if (!force) {
+        stopPainting();
+      }
+      return;
+    }
+
+    applyAmplitudeBrush(graphPoint.x, graphPoint.y, paintSignRef.current * 0.18);
+  };
+
+  const handleBrushPointerDown = (event: ThreeEvent<PointerEvent>) => {
+    if (event.button !== 0 && event.button !== 2) {
+      return;
+    }
+
+    if (!bounds || normalizedDots.length === 0) {
+      return;
+    }
+
+    const graphPoint = viewerToGraph(event.point.x, event.point.z, bounds);
+    const hasNearbyPlayableDot = graph.dots.some((dot) => {
+      if (dot.fixed) {
+        return false;
+      }
+      return Math.hypot(dot.x - graphPoint.x, dot.y - graphPoint.y) <= brushRadius;
+    });
+
+    if (!hasNearbyPlayableDot) {
+      return;
+    }
+
+    event.stopPropagation();
+    paintSignRef.current = event.button === 2 ? -1 : 1;
+    isPaintingRef.current = true;
+    lastPaintPointRef.current = null;
+    setOrbitEnabled(false);
+    applyAmplitudeBrush(graphPoint.x, graphPoint.y, paintSignRef.current * 0.18);
+  };
+
+  const handleBrushPointerMove = (event: ThreeEvent<PointerEvent>) => {
+    if (!isPaintingRef.current) {
+      return;
+    }
+    if (event.buttons === 0) {
+      stopPainting();
+      return;
+    }
+    event.stopPropagation();
+    tryPaint(event);
+  };
+
+  const handleBrushPointerUp = (event: ThreeEvent<PointerEvent>) => {
+    if (!isPaintingRef.current) {
+      return;
+    }
+    event.stopPropagation();
+    stopPainting();
   };
 
   return (
@@ -88,12 +222,32 @@ export function MembraneViewer() {
             gl.domElement.oncontextmenu = (e) => e.preventDefault();
           }}
         >
-          <group onPointerDown={onPointerDown}>
+          <mesh
+            rotation={[-Math.PI / 2, 0, 0]}
+            onPointerDown={handleBrushPointerDown}
+            onPointerMove={handleBrushPointerMove}
+            onPointerUp={handleBrushPointerUp}
+          >
+            <planeGeometry args={[4, 2]} />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} side={DoubleSide} />
+          </mesh>
+          <group>
             <MembraneMesh />
           </group>
-          <OrbitControls enableDamping dampingFactor={0.08} />
+          <OrbitControls enableDamping dampingFactor={0.08} enabled={orbitEnabled} />
         </Canvas>
       </div>
     </>
   );
+}
+
+function viewerToGraph(x: number, z: number, bounds: Bounds): { x: number; y: number } {
+  return {
+    x: bounds.minX + ((x + 2) / 4) * bounds.width,
+    y: bounds.minY + ((z + 1) / 2) * bounds.height,
+  };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
