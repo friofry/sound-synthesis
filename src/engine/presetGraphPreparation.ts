@@ -11,6 +11,7 @@ export type CenterGroupModifyOptions = {
   stiffness: number;
   distribution: DistributionMode;
   fixMode: FixMode;
+  radiusRatio?: number;
 };
 
 export type PresetGraphPreparationOptions = {
@@ -40,8 +41,11 @@ function applyCenteredGroupModify(graph: GraphModel, options: CenterGroupModifyO
 
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerY = (bounds.minY + bounds.maxY) / 2;
-  const rectWidth = (bounds.maxX - bounds.minX) * CENTER_GROUP_AREA_RATIO;
-  const rectHeight = (bounds.maxY - bounds.minY) * CENTER_GROUP_AREA_RATIO;
+  const radiusRatio = Number.isFinite(options.radiusRatio)
+    ? Math.max(0.05, Math.min(1, options.radiusRatio))
+    : CENTER_GROUP_AREA_RATIO;
+  const rectWidth = (bounds.maxX - bounds.minX) * radiusRatio;
+  const rectHeight = (bounds.maxY - bounds.minY) * radiusRatio;
   const rect = {
     x1: centerX - rectWidth / 2,
     y1: centerY - rectHeight / 2,

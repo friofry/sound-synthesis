@@ -126,6 +126,7 @@ export function MembraneModellerPage() {
         stiffness: randomPreset.stiffness,
         distribution: randomPreset.centerDistribution,
         fixMode: "none",
+        radiusRatio: randomPreset.centerGroupRadiusRatio,
       },
     });
     const preparedGraph = useGraphStore.getState().graph.clone();
@@ -200,6 +201,7 @@ export function MembraneModellerPage() {
         stiffness: randomPreset.stiffness,
         distribution: randomPreset.centerDistribution,
         fixMode: "none",
+        radiusRatio: randomPreset.centerGroupRadiusRatio,
       },
     });
 
@@ -400,6 +402,7 @@ function createRandomPresetConfig(): {
   size: number;
   stiffness: number;
   amplitude: number;
+  centerGroupRadiusRatio: number;
   stiffnessType: StiffnessType;
   boundaryMode: BoundaryMode;
   stiffnessNormalizationMode: StiffnessNormalizationMode;
@@ -415,9 +418,10 @@ function createRandomPresetConfig(): {
   const centerDistributions: DistributionMode[] = ["equivalent", "smoothed"];
   return {
     graphType: graphTypes[randomInt(0, graphTypes.length - 1)],
-    size: randomInt(30, 50),
-    stiffness: randomFloat(0.5, 2.5),
-    amplitude: randomFloat(0.5, 1),
+    size: randomInt(15, 50),
+    stiffness: randomFloat(0.5, 5),
+    amplitude: randomFloat(0.1, 0.8),
+    centerGroupRadiusRatio: randomFloat(0.175, 0.475),
     stiffnessType: Math.random() < 0.5 ? "tetradic" : "isotropic",
     boundaryMode: boundaryModes[randomInt(0, boundaryModes.length - 1)],
     stiffnessNormalizationMode: stiffnessNormalizationModes[randomInt(0, stiffnessNormalizationModes.length - 1)],
