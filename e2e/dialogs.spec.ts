@@ -126,7 +126,7 @@ test.describe("Dialogs", () => {
 
     const dialog = page.locator(".mfc-window");
     await expect(dialog).toBeVisible();
-    await expect(dialog.locator(".mfc-title")).toHaveText("Create Buffer Dialog");
+    await expect(dialog.locator(".mfc-title")).toHaveText("Simulation Output");
   });
 
   test("SimulationDialog has Sample Rate and Algorithm fields", async ({ page }) => {
