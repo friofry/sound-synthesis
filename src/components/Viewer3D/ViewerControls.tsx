@@ -1,9 +1,8 @@
-import { useGraphStore } from "../../store/graphStore";
+import { useMembraneViewerStore } from "../../store/membraneViewerStore";
 import { useViewerStore } from "../../store/viewerStore";
 
 export function ViewerControls() {
-  const simulationResult = useGraphStore((state) => state.simulationResult);
-  const graph = useGraphStore((state) => state.graph);
+  const activeSnapshot = useMembraneViewerStore((state) => state.snapshots[state.activeSource]);
   const playing = useViewerStore((state) => state.playing);
   const speed = useViewerStore((state) => state.speed);
   const amplitudeScale = useViewerStore((state) => state.amplitudeScale);
@@ -16,9 +15,8 @@ export function ViewerControls() {
   const increaseAmplitude = useViewerStore((state) => state.increaseAmplitude);
   const decreaseAmplitude = useViewerStore((state) => state.decreaseAmplitude);
 
-  const frameCount = simulationResult?.frames.length ?? 0;
-  const canPlay = graph.dots.length > 0 && graph.lines.length > 0;
-  const frameLabel = frameCount > 0 ? `${frameIndex}/${Math.max(0, frameCount - 1)}` : `${frameIndex}/live-sim`;
+  const canPlay = Boolean(activeSnapshot && activeSnapshot.graph.dots.length > 0 && activeSnapshot.graph.lines.length > 0);
+  const frameLabel = `${frameIndex}/live-sim`;
 
   return (
     <div className="viewer-toolbar">

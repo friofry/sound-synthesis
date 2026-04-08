@@ -12,6 +12,7 @@ import { encodeWavBlob } from "../engine/snc/wavExport";
 import { GraphModel } from "../engine/graph";
 import type {
   RawInstrumentNote,
+  SerializedGraph,
   SimulationBackend,
   SimulationCaptureMode,
   SimulationParams,
@@ -20,12 +21,13 @@ import type {
   SimulationWorkerMessage,
 } from "../engine/types";
 import type { GenerateNotesDialogValues } from "../components/PianoPlayer/GenerateNotesDialog";
-import { usePianoStore } from "../store/pianoStore";
+import { usePianoStore, VIEWER_BASE_GRAPH_SNAPSHOT_IDS } from "../store/pianoStore";
 import { resolveDefaultSimulationBackend } from "../engine/simulationDefaults";
 
 type InstrumentBundle = {
   type: "sound-synthesis-instrument";
   manifest: string;
+  baseGraphSnapshots?: Record<string, SerializedGraph>;
   notes: Array<{
     alias: string;
     keyLabel: string;
@@ -34,6 +36,8 @@ type InstrumentBundle = {
     frequency: number;
     sampleRate: number;
     buffer: number[];
+    viewerBaseGraphSnapshotId?: string;
+    viewerTunedRatio?: number;
   }>;
 };
 
@@ -247,6 +251,9 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   const releaseAll = usePianoStore((s) => s.releaseAll);
   const setActiveBuffer = usePianoStore((s) => s.setActiveBuffer);
   const setInstrumentNotes = usePianoStore((s) => s.setInstrumentNotes);
+  const setViewerBaseGraphSnapshots = usePianoStore((s) => s.setViewerBaseGraphSnapshots);
+  const setViewerBaseGraphSnapshot = usePianoStore((s) => s.setViewerBaseGraphSnapshot);
+  const viewerBaseGraphSnapshots = usePianoStore((s) => s.viewerBaseGraphSnapshots);
   const setGenerateNotesDialogOpen = usePianoStore((s) => s.setGenerateNotesDialogOpen);
   const setGenerateNotesSettings = usePianoStore((s) => s.setGenerateNotesSettings);
   const setInstrumentGenerationState = usePianoStore((s) => s.setInstrumentGenerationState);
@@ -491,6 +498,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
           }
 
           const noteProgress = new Array<number>(safeNoteCount).fill(0);
+          const viewerBaseGraphSnapshotId = VIEWER_BASE_GRAPH_SNAPSHOT_IDS.instrument;
+          setViewerBaseGraphSnapshot(viewerBaseGraphSnapshotId, targetGraph.toJSON());
           const updateGenerationProgress = () => {
             const totalProgress = noteProgress.reduce((sum, value) => sum + value, 0);
             const absoluteProgress = (totalProgress / safeNoteCount) * 100;
@@ -554,6 +563,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
                 frequency: baseFrequency * targetRatio,
                 buffer: result.playingPointBuffer,
                 sampleRate: safeSampleRate,
+                viewerBaseGraphSnapshotId,
+                viewerTunedRatio: tunedRatio,
               };
             }
           };
@@ -598,6 +609,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       setInstrumentGenerationState,
       setInstrumentNotes,
       setLastRenderedWav,
+      setViewerBaseGraphSnapshot,
       simulationParams,
     ],
   );
@@ -609,6 +621,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       setActiveBuffer(fallback.buffer, fallback.sampleRate);
       return;
     }
+    const singleBaseGraphSnapshotId = VIEWER_BASE_GRAPH_SNAPSHOT_IDS.singleNote;
+    setViewerBaseGraphSnapshot(singleBaseGraphSnapshotId, graph.toJSON());
     const note = generateInstrumentFromGraph(graph, {
       noteCount: 1,
       sampleRate: simulationParams.sampleRate,
@@ -616,10 +630,11 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       attenuation: simulationParams.attenuation,
       squareAttenuation: simulationParams.squareAttenuation,
       method: simulationParams.method,
+      viewerBaseGraphSnapshotId: singleBaseGraphSnapshotId,
     })[0];
     audioEngine.setNote(note);
     setActiveBuffer(note.buffer, note.sampleRate);
-  }, [audioEngine, graph, simulationParams, setActiveBuffer]);
+  }, [audioEngine, graph, setActiveBuffer, setViewerBaseGraphSnapshot, simulationParams]);
 
   const handlePlayPreviewBuffer = useCallback(
     async (buffer: Float32Array, sampleRate: number) => {
@@ -673,10 +688,13 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
         frequency: note.frequency,
         sampleRate: note.sampleRate,
         buffer: Array.from(note.buffer),
+        viewerBaseGraphSnapshotId: note.viewerBaseGraphSnapshotId,
+        viewerTunedRatio: note.viewerTunedRatio,
       })),
+      baseGraphSnapshots: viewerBaseGraphSnapshots,
     };
     downloadBlob("instrument.json", new Blob([JSON.stringify(bundle)], { type: "application/json" }));
-  }, [instrumentNotes]);
+  }, [instrumentNotes, viewerBaseGraphSnapshots]);
 
   const handleLoadInstrumentFile = useCallback(
     async (file: File) => {
@@ -703,7 +721,10 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
           const notes: RawInstrumentNote[] = parsed.notes.map((note) => ({
             ...note,
             buffer: Float32Array.from(note.buffer),
+            viewerBaseGraphSnapshotId: note.viewerBaseGraphSnapshotId,
+            viewerTunedRatio: note.viewerTunedRatio,
           }));
+          setViewerBaseGraphSnapshots(parsed.baseGraphSnapshots ?? {});
           setInstrumentNotes(notes);
           return;
         }
@@ -714,7 +735,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       const manifest = parseInstrumentFile(text);
       window.alert(`Parsed ${manifest.length} entries from .ins, but browser loading of external WAV paths is not implemented.`);
     },
-    [audioEngine, setInstrumentNotes],
+    [audioEngine, setInstrumentNotes, setViewerBaseGraphSnapshots],
   );
 
   const handleSaveSnc = useCallback(() => {

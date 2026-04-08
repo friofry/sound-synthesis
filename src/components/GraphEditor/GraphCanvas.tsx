@@ -142,7 +142,7 @@ export function GraphCanvas({ onHammerPreview }: GraphCanvasProps) {
 
       ctx.fillStyle = fill;
       ctx.beginPath();
-      ctx.arc(dot.x, dot.y, DOT_RADIUS, 0, Math.PI * 2);
+      ctx.arc(dot.x, dot.y, DOT_RADIUS / viewportScale, 0, Math.PI * 2);
       ctx.fill();
     }
 

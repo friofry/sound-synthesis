@@ -17,6 +17,7 @@ type GenerateInstrumentOptions = {
   method?: SimulationParams["method"];
   substepsMode?: SimulationParams["substepsMode"];
   substeps?: number;
+  viewerBaseGraphSnapshotId?: string;
 };
 
 export function generateInstrumentFromGraph(
@@ -35,6 +36,7 @@ export function generateInstrumentFromGraph(
   const substepsMode = options.substepsMode ?? "fixed";
   const substeps = options.substeps ?? 1;
   const ratioForIndex = (index: number): number => 2 ** ((index - baseIndex) / 12);
+  const viewerBaseGraphSnapshotId = options.viewerBaseGraphSnapshotId ?? "note-generator:base";
   let calibrationPitchRatio = 1;
 
   if (noteCount > 0) {
@@ -92,6 +94,8 @@ export function generateInstrumentFromGraph(
       frequency: baseFrequency * targetRatio,
       buffer: result.playingPointBuffer,
       sampleRate,
+      viewerBaseGraphSnapshotId,
+      viewerTunedRatio: tunedRatio,
     });
   }
 
