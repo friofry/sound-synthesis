@@ -1,10 +1,20 @@
 import { useState } from "react";
-import { SIMULATION_BACKEND_OPTIONS, type SimMethod, type SimulationBackend, type SimulationPrecision } from "../../../engine/types";
+import {
+  SIMULATION_BACKEND_OPTIONS,
+  type SimMethod,
+  type SimulationBackend,
+  type SimulationCaptureMode,
+  type SimulationPrecision,
+  type SimulationSubstepsMode,
+} from "../../../engine/types";
 import { useGraphStore } from "../../../store/graphStore";
+import { usePianoStore } from "../../../store/pianoStore";
 import { useViewerStore } from "../../../store/viewerStore";
 import { MfcButton, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput, MfcRadioGroup, MfcSelect } from "../../ui/MfcDialog";
+import { DEFAULT_SIMULATION_BACKEND, DEFAULT_SIMULATION_PRECISION } from "../../../engine/simulationDefaults";
 
 export type SimulationFormValues = {
+  outputMode: SimulationCaptureMode;
   sampleRate: number;
   lengthK: number;
   attenuation: number;
@@ -12,6 +22,8 @@ export type SimulationFormValues = {
   method: SimMethod;
   backend: SimulationBackend;
   precision: SimulationPrecision;
+  substepsMode: SimulationSubstepsMode;
+  substeps: number;
 };
 
 export type SimulationFormProps = {
@@ -21,6 +33,7 @@ export type SimulationFormProps = {
 };
 
 export function SimulationForm({ initialValues, onSubmit, onClose }: SimulationFormProps) {
+  const [outputMode, setOutputMode] = useState<SimulationCaptureMode>(initialValues.outputMode);
   const [sampleRate, setSampleRate] = useState(initialValues.sampleRate);
   const [lengthK, setLengthK] = useState(initialValues.lengthK);
   const [attenuation, setAttenuation] = useState(initialValues.attenuation);
@@ -28,23 +41,54 @@ export function SimulationForm({ initialValues, onSubmit, onClose }: SimulationF
   const [method, setMethod] = useState(initialValues.method);
   const [backend, setBackend] = useState<SimulationBackend>(initialValues.backend);
   const [precision, setPrecision] = useState<SimulationPrecision>(initialValues.precision);
+  const [substepsMode, setSubstepsMode] = useState<SimulationSubstepsMode>(initialValues.substepsMode);
+  const [substeps, setSubsteps] = useState(initialValues.substeps);
 
   return (
     <MfcDialog
-      title="Create Buffer Dialog"
+      title="Simulation Output"
       open
       onClose={onClose}
-      onSubmit={() => onSubmit({ sampleRate, lengthK, attenuation, squareAttenuation, method, backend, precision })}
+      onSubmit={() =>
+        onSubmit({
+          outputMode,
+          sampleRate,
+          lengthK,
+          attenuation,
+          squareAttenuation,
+          method,
+          backend,
+          precision,
+          substepsMode,
+          substeps: Number.isFinite(substeps) ? Math.max(1, Math.round(substeps)) : 1,
+        })
+      }
       width={430}
       actions={
         <>
           <MfcButton onClick={onClose}>Cancel</MfcButton>
           <MfcButton type="submit" defaultAction>
-            Generate
+            {outputMode === "playing-point-only" ? "Generate Audio Buffer" : "Run Full Simulation"}
           </MfcButton>
         </>
       }
     >
+      <MfcGroupBox legend="Result Mode">
+        <MfcRadioGroup
+          name="simulation-output-mode"
+          value={outputMode}
+          onChange={(value) => {
+            if (value === "playing-point-only" || value === "full") {
+              setOutputMode(value as SimulationCaptureMode);
+            }
+          }}
+          options={[
+            { value: "playing-point-only", label: "Audio only (playing point)" },
+            { value: "full", label: "Full frames (viewer replay)" },
+          ]}
+        />
+      </MfcGroupBox>
+
       <MfcGroupBox legend="Parameters">
         <MfcField label="Sample Rate" labelWidth={130}>
           <MfcNumberInput min={1000} value={sampleRate} onChange={setSampleRate} />
@@ -98,6 +142,28 @@ export function SimulationForm({ initialValues, onSubmit, onClose }: SimulationF
             ]}
           />
         </MfcField>
+        <MfcField label="Substeps" labelWidth={130}>
+          <MfcSelect
+            value={substepsMode === "adaptive" ? "adaptive" : String(substeps)}
+            onChange={(value) => {
+              if (value === "adaptive") {
+                setSubstepsMode("adaptive");
+                return;
+              }
+              if (value === "1" || value === "2" || value === "4" || value === "8") {
+                setSubstepsMode("fixed");
+                setSubsteps(Number(value));
+              }
+            }}
+            options={[
+              { value: "1", label: "1x" },
+              { value: "2", label: "2x" },
+              { value: "4", label: "4x" },
+              { value: "8", label: "8x" },
+              { value: "adaptive", label: "Adaptive" },
+            ]}
+          />
+        </MfcField>
       </MfcGroupBox>
     </MfcDialog>
   );
@@ -115,6 +181,7 @@ export function SimulationDialog() {
   } = useGraphStore();
   const resetFrame = useViewerStore((state) => state.resetFrame);
   const stop = useViewerStore((state) => state.stop);
+  const setActiveBuffer = usePianoStore((state) => state.setActiveBuffer);
 
   if (!simulationDialogOpen) {
     return null;
@@ -123,13 +190,16 @@ export function SimulationDialog() {
   return (
     <SimulationForm
       initialValues={{
+        outputMode: "playing-point-only",
         sampleRate: simulationParams.sampleRate,
         lengthK: simulationParams.lengthK,
         attenuation: simulationParams.attenuation,
         squareAttenuation: simulationParams.squareAttenuation,
         method: simulationParams.method,
-        backend: "wasm-hotloop",
-        precision: 64,
+        backend: DEFAULT_SIMULATION_BACKEND,
+        precision: DEFAULT_SIMULATION_PRECISION,
+        substepsMode: simulationParams.substepsMode ?? "fixed",
+        substeps: simulationParams.substeps ?? 1,
       }}
       onSubmit={(values) => {
         const worker = new Worker(new URL("../../../engine/simulation.worker.ts", import.meta.url), {
@@ -143,16 +213,25 @@ export function SimulationDialog() {
           squareAttenuation: Number.isFinite(values.squareAttenuation) ? values.squareAttenuation : simulationParams.squareAttenuation,
           method: values.method,
           playingPoint: playingPoint ?? graph.findFirstPlayableDot(),
+          substepsMode: values.substepsMode,
+          substeps: Number.isFinite(values.substeps) ? Math.max(1, Math.round(values.substeps)) : 1,
         } as const;
 
         setSimulationParams(nextParams);
-        setSimulationState({
-          isSimulating: true,
-          simulationProgress: 0,
-          simulationResult: null,
-        });
-        stop();
-        resetFrame();
+        if (values.outputMode === "full") {
+          setSimulationState({
+            isSimulating: true,
+            simulationProgress: 0,
+            simulationResult: null,
+          });
+          stop();
+          resetFrame();
+        } else {
+          setSimulationState({
+            isSimulating: true,
+            simulationProgress: 0,
+          });
+        }
 
         worker.onmessage = (event: MessageEvent<import("../../../engine/types").SimulationWorkerMessage>) => {
           const message = event.data;
@@ -164,6 +243,26 @@ export function SimulationDialog() {
           }
 
           if (message.type === "complete") {
+            if (values.outputMode === "playing-point-only") {
+              if (message.outputMode !== "playing-point-only") {
+                setSimulationState({
+                  isSimulating: false,
+                  simulationProgress: 0,
+                });
+                worker.terminate();
+                window.alert("Simulation worker did not return playing point audio");
+                return;
+              }
+              setSimulationState({
+                isSimulating: false,
+                simulationProgress: 100,
+              });
+              setActiveBuffer(message.playingPointBuffer, nextParams.sampleRate);
+              worker.terminate();
+              closeSimulationDialog();
+              return;
+            }
+
             if (message.outputMode !== "full") {
               setSimulationState({
                 isSimulating: false,
@@ -179,17 +278,25 @@ export function SimulationDialog() {
               simulationProgress: 100,
               simulationResult: message.result,
             });
+            setActiveBuffer(message.result.playingPointBuffer, nextParams.sampleRate);
             worker.terminate();
             closeSimulationDialog();
             return;
           }
 
           if (message.type === "error") {
-            setSimulationState({
-              isSimulating: false,
-              simulationProgress: 0,
-              simulationResult: null,
-            });
+            if (values.outputMode === "full") {
+              setSimulationState({
+                isSimulating: false,
+                simulationProgress: 0,
+                simulationResult: null,
+              });
+            } else {
+              setSimulationState({
+                isSimulating: false,
+                simulationProgress: 0,
+              });
+            }
             worker.terminate();
             window.alert(message.message);
           }
@@ -198,7 +305,7 @@ export function SimulationDialog() {
         worker.postMessage({
           graph: graph.toGraphData(),
           params: nextParams,
-          outputMode: "full",
+          outputMode: values.outputMode,
           backend: values.backend,
           precision: values.precision,
         });
