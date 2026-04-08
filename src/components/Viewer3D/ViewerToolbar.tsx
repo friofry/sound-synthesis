@@ -1,16 +1,19 @@
 import type { CSSProperties } from "react";
+import { useGraphStore } from "../../store/graphStore";
 import { useMembraneViewerStore } from "../../store/membraneViewerStore";
 import { useViewerStore } from "../../store/viewerStore";
 
 export function ViewerToolbar() {
+  const editorGraph = useGraphStore((state) => state.graph);
   const activeSnapshot = useMembraneViewerStore((state) => state.snapshots[state.activeSource]);
+  const initializeSource = useMembraneViewerStore((state) => state.initializeSource);
   const playing = useViewerStore((state) => state.playing);
   const speed = useViewerStore((state) => state.speed);
   const amplitudeScale = useViewerStore((state) => state.amplitudeScale);
   const frameIndex = useViewerStore((state) => state.frameIndex);
   const play = useViewerStore((state) => state.play);
   const pause = useViewerStore((state) => state.pause);
-  const stop = useViewerStore((state) => state.stop);
+  const resetFrame = useViewerStore((state) => state.resetFrame);
   const faster = useViewerStore((state) => state.faster);
   const slower = useViewerStore((state) => state.slower);
   const increaseAmplitude = useViewerStore((state) => state.increaseAmplitude);
@@ -18,6 +21,10 @@ export function ViewerToolbar() {
 
   const canPlay = Boolean(activeSnapshot && activeSnapshot.graph.dots.length > 0 && activeSnapshot.graph.lines.length > 0);
   const frameLabel = `${frameIndex}/live-sim`;
+  const resetToEditorSampleZero = () => {
+    resetFrame();
+    initializeSource("editor", editorGraph, { force: true, activate: true });
+  };
 
   return (
     <div className="viewer-toolbar">
@@ -65,7 +72,7 @@ export function ViewerToolbar() {
       <button
         type="button"
         className="viewer-btn viewer-icon-btn"
-        onClick={stop}
+        onClick={resetToEditorSampleZero}
         disabled={!canPlay}
         title="Restart and stop"
       >

@@ -57,6 +57,7 @@ export function MembraneMesh() {
   const activeSnapshot = useMembraneViewerStore((state) => state.snapshots[state.activeSource]);
   const syncRuntimeStateToActiveSnapshot = useMembraneViewerStore((state) => state.syncRuntimeStateToActiveSnapshot);
   const graph = activeSnapshot?.graph ?? EMPTY_GRAPH;
+  const activeSnapshotRevision = activeSnapshot?.revision ?? 0;
 
   const normalizedDots = useMemo(() => {
     if (graph.dots.length === 0) return [];
@@ -68,7 +69,10 @@ export function MembraneMesh() {
       fixed: dot.fixed,
     }));
   }, [graph.dots]);
-  const structureSignature = useMemo(() => `${activeSource}#${buildGraphStructureSignature(graph)}`, [activeSource, graph]);
+  const structureSignature = useMemo(
+    () => `${activeSource}@${activeSnapshotRevision}#${buildGraphStructureSignature(graph)}`,
+    [activeSnapshotRevision, activeSource, graph],
+  );
 
   useEffect(() => {
     registerMembraneRuntimeAccessor(() => runtimeStepperRef.current);
