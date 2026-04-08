@@ -11,6 +11,22 @@ import {
   compileGraph as compileGraphWasm,
   runSimulationWasm,
 } from "./simulationOptimized7Wasm";
+import {
+  compileGraph as compileGraphWasmSimd,
+  runSimulationWasmSimd,
+} from "./simulationOptimized8WasmSimd";
+import {
+  compileGraph as compileGraphWasmSimdPacked,
+  runSimulationWasmSimdPacked,
+} from "./simulationOptimized9WasmSimdPacked";
+import {
+  compileGraph as compileGraphWasmSimdIntrinsics,
+  runSimulationWasmSimdIntrinsics,
+} from "./simulationOptimized10WasmSimdIntrinsics";
+import {
+  compileGraph as compileGraphWasmCsrF32,
+  runSimulationWasmCsrF32,
+} from "./simulationOptimized12WasmCsrF32";
 import type { GraphData, GridParams, SimMethod, SimulationBackend, SimulationParams, SimulationPrecision } from "./types";
 
 const GRID_SIZE = 25;
@@ -47,6 +63,13 @@ const compiledGraphFused32 = compileGraphFused(graph, BASE_PARAMS, 32);
 const compiledGraphSortedEdgeCSR = compileGraphSortedEdgeCSR(graph, BASE_PARAMS);
 const compiledGraphWasm64 = compileGraphWasm(graph, BASE_PARAMS, 64);
 const compiledGraphWasm32 = compileGraphWasm(graph, BASE_PARAMS, 32);
+const compiledGraphWasmSimd64 = compileGraphWasmSimd(graph, BASE_PARAMS, 64);
+const compiledGraphWasmSimd32 = compileGraphWasmSimd(graph, BASE_PARAMS, 32);
+const compiledGraphWasmSimdPacked64 = compileGraphWasmSimdPacked(graph, BASE_PARAMS, 64);
+const compiledGraphWasmSimdPacked32 = compileGraphWasmSimdPacked(graph, BASE_PARAMS, 32);
+const compiledGraphWasmSimdIntrinsics64 = compileGraphWasmSimdIntrinsics(graph, BASE_PARAMS, 64);
+const compiledGraphWasmSimdIntrinsics32 = compileGraphWasmSimdIntrinsics(graph, BASE_PARAMS, 32);
+const compiledGraphWasmCsrF32 = compileGraphWasmCsrF32(graph, BASE_PARAMS);
 
 function buildCenteredImpulseGraph(): GraphData {
   const next = generateGraph("cell", GRID_PARAMS);
@@ -111,6 +134,61 @@ function generateNoteWasmPrecompiled(method: SimMethod, precision: SimulationPre
     {
       capture: "playing-point-only",
       precision,
+    },
+  );
+  return result.playingPointBuffer;
+}
+
+function generateNoteWasmSimdPrecompiled(method: SimMethod, precision: SimulationPrecision = 64): Float32Array {
+  const compiledGraphWasmSimd = precision === 32 ? compiledGraphWasmSimd32 : compiledGraphWasmSimd64;
+  const result = runSimulationWasmSimd(
+    compiledGraphWasmSimd,
+    { ...BASE_PARAMS, method },
+    undefined,
+    {
+      capture: "playing-point-only",
+      precision,
+    },
+  );
+  return result.playingPointBuffer;
+}
+
+function generateNoteWasmSimdPackedPrecompiled(method: SimMethod, precision: SimulationPrecision = 64): Float32Array {
+  const compiledGraphWasmSimdPacked = precision === 32 ? compiledGraphWasmSimdPacked32 : compiledGraphWasmSimdPacked64;
+  const result = runSimulationWasmSimdPacked(
+    compiledGraphWasmSimdPacked,
+    { ...BASE_PARAMS, method },
+    undefined,
+    {
+      capture: "playing-point-only",
+      precision,
+    },
+  );
+  return result.playingPointBuffer;
+}
+
+function generateNoteWasmSimdIntrinsicsPrecompiled(method: SimMethod, precision: SimulationPrecision = 64): Float32Array {
+  const compiledGraphWasmSimdIntrinsics =
+    precision === 32 ? compiledGraphWasmSimdIntrinsics32 : compiledGraphWasmSimdIntrinsics64;
+  const result = runSimulationWasmSimdIntrinsics(
+    compiledGraphWasmSimdIntrinsics,
+    { ...BASE_PARAMS, method },
+    undefined,
+    {
+      capture: "playing-point-only",
+      precision,
+    },
+  );
+  return result.playingPointBuffer;
+}
+
+function generateNoteWasmCsrF32Precompiled(method: SimMethod): Float32Array {
+  const result = runSimulationWasmCsrF32(
+    compiledGraphWasmCsrF32,
+    { ...BASE_PARAMS, method },
+    undefined,
+    {
+      capture: "playing-point-only",
     },
   );
   return result.playingPointBuffer;
@@ -181,6 +259,73 @@ describe("note generation benchmark", () => {
     generateNoteWasmPrecompiled("euler", 32);
   });
 
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd)", () => {
+    generateNote("euler", "wasm-hotloop-simd");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-precompiled)", () => {
+    generateNoteWasmSimdPrecompiled("euler");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-f32)", () => {
+    generateNote("euler", "wasm-hotloop-simd", 32);
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-precompiled-f32)", () => {
+    generateNoteWasmSimdPrecompiled("euler", 32);
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-packed)", () => {
+    generateNote("euler", "wasm-hotloop-simd-packed");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-packed-precompiled)", () => {
+    generateNoteWasmSimdPackedPrecompiled("euler");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-packed-f32)", () => {
+    generateNote("euler", "wasm-hotloop-simd-packed", 32);
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-packed-precompiled-f32)", () => {
+    generateNoteWasmSimdPackedPrecompiled("euler", 32);
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-intrinsics)", () => {
+    generateNote("euler", "wasm-hotloop-simd-intrinsics");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-intrinsics-precompiled)", () => {
+    generateNoteWasmSimdIntrinsicsPrecompiled("euler");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-intrinsics-f32)", () => {
+    generateNote("euler", "wasm-hotloop-simd-intrinsics", 32);
+  });
+
+  bench(
+    "25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-hotloop-simd-intrinsics-precompiled-f32)",
+    () => {
+      generateNoteWasmSimdIntrinsicsPrecompiled("euler", 32);
+    },
+  );
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (csr-layout-hybrid)", () => {
+    generateNote("euler", "csr-layout-hybrid");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (csr-layout-hybrid-f32)", () => {
+    generateNote("euler", "csr-layout-hybrid", 32);
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-csr-f32)", () => {
+    generateNote("euler", "wasm-csr-f32");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Euler-Cramer (wasm-csr-f32-precompiled)", () => {
+    generateNoteWasmCsrF32Precompiled("euler");
+  });
+
   bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (legacy)", () => {
     generateNote("runge-kutta", "legacy");
   });
@@ -243,5 +388,110 @@ describe("note generation benchmark", () => {
 
   bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-precompiled-f32)", () => {
     generateNoteWasmPrecompiled("runge-kutta", 32);
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd)", () => {
+    generateNote("runge-kutta", "wasm-hotloop-simd");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-precompiled)", () => {
+    generateNoteWasmSimdPrecompiled("runge-kutta");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-f32)", () => {
+    generateNote("runge-kutta", "wasm-hotloop-simd", 32);
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-precompiled-f32)", () => {
+    generateNoteWasmSimdPrecompiled("runge-kutta", 32);
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-packed)", () => {
+    generateNote("runge-kutta", "wasm-hotloop-simd-packed");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-packed-precompiled)", () => {
+    generateNoteWasmSimdPackedPrecompiled("runge-kutta");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-packed-f32)", () => {
+    generateNote("runge-kutta", "wasm-hotloop-simd-packed", 32);
+  });
+
+  bench(
+    "25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-packed-precompiled-f32)",
+    () => {
+      generateNoteWasmSimdPackedPrecompiled("runge-kutta", 32);
+    },
+  );
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-intrinsics)", () => {
+    generateNote("runge-kutta", "wasm-hotloop-simd-intrinsics");
+  });
+
+  bench(
+    "25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-intrinsics-precompiled)",
+    () => {
+      generateNoteWasmSimdIntrinsicsPrecompiled("runge-kutta");
+    },
+  );
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-intrinsics-f32)", () => {
+    generateNote("runge-kutta", "wasm-hotloop-simd-intrinsics", 32);
+  });
+
+  bench(
+    "25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-hotloop-simd-intrinsics-precompiled-f32)",
+    () => {
+      generateNoteWasmSimdIntrinsicsPrecompiled("runge-kutta", 32);
+    },
+  );
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (csr-layout-hybrid)", () => {
+    generateNote("runge-kutta", "csr-layout-hybrid");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (csr-layout-hybrid-f32)", () => {
+    generateNote("runge-kutta", "csr-layout-hybrid", 32);
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-csr-f32)", () => {
+    generateNote("runge-kutta", "wasm-csr-f32");
+  });
+
+  bench("25x25 grid, center impulse, center read, 20ms, Runge-Kutta (wasm-csr-f32-precompiled)", () => {
+    generateNoteWasmCsrF32Precompiled("runge-kutta");
+  });
+});
+
+describe("simulation capture-mode hotspot benchmark", () => {
+  bench("wasm-hotloop-simd-intrinsics, euler, playing-point-only", () => {
+    runSimulation(graph, { ...BASE_PARAMS, method: "euler" }, undefined, {
+      capture: "playing-point-only",
+      backend: "wasm-hotloop-simd-intrinsics",
+      precision: 32,
+    });
+  });
+
+  bench("wasm-hotloop-simd-intrinsics, euler, full", () => {
+    runSimulation(graph, { ...BASE_PARAMS, method: "euler" }, undefined, {
+      capture: "full",
+      backend: "wasm-hotloop-simd-intrinsics",
+      precision: 32,
+    });
+  });
+
+  bench("wasm-csr-f32, euler, playing-point-only", () => {
+    runSimulation(graph, { ...BASE_PARAMS, method: "euler" }, undefined, {
+      capture: "playing-point-only",
+      backend: "wasm-csr-f32",
+    });
+  });
+
+  bench("wasm-csr-f32, euler, full", () => {
+    runSimulation(graph, { ...BASE_PARAMS, method: "euler" }, undefined, {
+      capture: "full",
+      backend: "wasm-csr-f32",
+    });
   });
 });

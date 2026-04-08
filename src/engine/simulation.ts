@@ -44,6 +44,31 @@ import {
   runSimulationWasmBackend,
   type RuntimeSimulationStepper as WasmRuntimeSimulationStepper,
 } from "./simulationOptimized7Wasm";
+import {
+  createWasmSimdRuntimeStepperBackend,
+  runSimulationWasmSimdBackend,
+  type RuntimeSimulationStepper as WasmSimdRuntimeSimulationStepper,
+} from "./simulationOptimized8WasmSimd";
+import {
+  createWasmSimdPackedRuntimeStepperBackend,
+  runSimulationWasmSimdPackedBackend,
+  type RuntimeSimulationStepper as WasmSimdPackedRuntimeSimulationStepper,
+} from "./simulationOptimized9WasmSimdPacked";
+import {
+  createWasmSimdIntrinsicsRuntimeStepperBackend,
+  runSimulationWasmSimdIntrinsicsBackend,
+  type RuntimeSimulationStepper as WasmSimdIntrinsicsRuntimeSimulationStepper,
+} from "./simulationOptimized10WasmSimdIntrinsics";
+import {
+  createCsrLayoutRuntimeStepperBackend,
+  runSimulationCsrLayoutBackend,
+  type RuntimeSimulationStepper as CsrLayoutRuntimeSimulationStepper,
+} from "./simulationOptimized11CsrLayout";
+import {
+  createWasmCsrF32RuntimeStepperBackend,
+  runSimulationWasmCsrF32Backend,
+  type RuntimeSimulationStepper as WasmCsrF32RuntimeSimulationStepper,
+} from "./simulationOptimized12WasmCsrF32";
 
 const DEFAULT_EDGE_FADE_MS = 2;
 
@@ -291,6 +316,21 @@ export function runSimulation(
   if (backend === "wasm-hotloop") {
     return runSimulationWasmBackend(graph, params, onProgress, options);
   }
+  if (backend === "wasm-hotloop-simd") {
+    return runSimulationWasmSimdBackend(graph, params, onProgress, options);
+  }
+  if (backend === "wasm-hotloop-simd-packed") {
+    return runSimulationWasmSimdPackedBackend(graph, params, onProgress, options);
+  }
+  if (backend === "wasm-hotloop-simd-intrinsics") {
+    return runSimulationWasmSimdIntrinsicsBackend(graph, params, onProgress, options);
+  }
+  if (backend === "csr-layout-hybrid") {
+    return runSimulationCsrLayoutBackend(graph, params, onProgress, options);
+  }
+  if (backend === "wasm-csr-f32") {
+    return runSimulationWasmCsrF32Backend(graph, params, onProgress, options);
+  }
   return runSimulationLegacy(graph, params, onProgress, options);
 }
 
@@ -319,6 +359,21 @@ export function createRuntimeSimulationStepper(
   }
   if (backend === "wasm-hotloop") {
     return createWasmRuntimeStepperBackend(graph, params) as WasmRuntimeSimulationStepper;
+  }
+  if (backend === "wasm-hotloop-simd") {
+    return createWasmSimdRuntimeStepperBackend(graph, params) as WasmSimdRuntimeSimulationStepper;
+  }
+  if (backend === "wasm-hotloop-simd-packed") {
+    return createWasmSimdPackedRuntimeStepperBackend(graph, params) as WasmSimdPackedRuntimeSimulationStepper;
+  }
+  if (backend === "wasm-hotloop-simd-intrinsics") {
+    return createWasmSimdIntrinsicsRuntimeStepperBackend(graph, params) as WasmSimdIntrinsicsRuntimeSimulationStepper;
+  }
+  if (backend === "csr-layout-hybrid") {
+    return createCsrLayoutRuntimeStepperBackend(graph, params) as CsrLayoutRuntimeSimulationStepper;
+  }
+  if (backend === "wasm-csr-f32") {
+    return createWasmCsrF32RuntimeStepperBackend(graph, params) as WasmCsrF32RuntimeSimulationStepper;
   }
   return createLegacyRuntimeStepper(graph, params);
 }

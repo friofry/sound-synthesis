@@ -41,6 +41,11 @@ describe("simulation backend parity", () => {
       "fused-loop",
       "sorted-edge-csr",
       "wasm-hotloop",
+      "wasm-hotloop-simd",
+      "wasm-hotloop-simd-packed",
+      "wasm-hotloop-simd-intrinsics",
+      "csr-layout-hybrid",
+      "wasm-csr-f32",
     ] as const;
 
     for (const method of methods) {
@@ -56,8 +61,9 @@ describe("simulation backend parity", () => {
       const legacy = runSimulation(graph, params, undefined, { capture: "full", backend: "legacy" });
       for (const backend of comparedBackends) {
         const actual = runSimulation(graph, params, undefined, { capture: "full", backend });
+        const precision = backend === "wasm-csr-f32" ? 5 : 8;
 
-        expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, 8);
+        expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, precision);
         expect(actual.frames.length).toBe(legacy.frames.length);
         expect(actual.allPointBuffers.length).toBe(legacy.allPointBuffers.length);
 
@@ -65,7 +71,7 @@ describe("simulation backend parity", () => {
         for (const sampleIndex of sampleIndices) {
           const legacyFrame = legacy.frames[sampleIndex];
           const actualFrame = actual.frames[sampleIndex];
-          expectCloseArray(actualFrame, legacyFrame, 8);
+          expectCloseArray(actualFrame, legacyFrame, precision);
         }
       }
     }
@@ -82,6 +88,11 @@ describe("simulation backend parity", () => {
       "fused-loop",
       "sorted-edge-csr",
       "wasm-hotloop",
+      "wasm-hotloop-simd",
+      "wasm-hotloop-simd-packed",
+      "wasm-hotloop-simd-intrinsics",
+      "csr-layout-hybrid",
+      "wasm-csr-f32",
     ] as const;
 
     for (const method of methods) {
@@ -99,9 +110,10 @@ describe("simulation backend parity", () => {
       expect(legacy.allPointBuffers.length).toBe(0);
       for (const backend of comparedBackends) {
         const actual = runSimulation(graph, params, undefined, { capture: "playing-point-only", backend });
+        const precision = backend === "wasm-csr-f32" ? 5 : 8;
         expect(actual.frames.length).toBe(0);
         expect(actual.allPointBuffers.length).toBe(0);
-        expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, 8);
+        expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, precision);
       }
     }
   });

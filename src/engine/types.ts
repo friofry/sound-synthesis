@@ -126,7 +126,12 @@ export type SimulationBackend =
   | "compiled"
   | "fused-loop"
   | "sorted-edge-csr"
-  | "wasm-hotloop";
+  | "wasm-hotloop"
+  | "wasm-hotloop-simd"
+  | "wasm-hotloop-simd-packed"
+  | "wasm-hotloop-simd-intrinsics"
+  | "csr-layout-hybrid"
+  | "wasm-csr-f32";
 
 export type SimulationBackendOption = {
   value: SimulationBackend;
@@ -142,6 +147,11 @@ export const SIMULATION_BACKEND_OPTIONS = [
   { value: "fused-loop", label: "Fused Loop" },
   { value: "sorted-edge-csr", label: "Sorted Edge CSR" },
   { value: "wasm-hotloop", label: "WASM Hotloop" },
+  { value: "wasm-hotloop-simd", label: "WASM Hotloop SIMD" },
+  { value: "wasm-hotloop-simd-packed", label: "WASM Hotloop SIMD Packed" },
+  { value: "wasm-hotloop-simd-intrinsics", label: "WASM Hotloop SIMD Intrinsics" },
+  { value: "csr-layout-hybrid", label: "CSR Layout Hybrid" },
+  { value: "wasm-csr-f32", label: "WASM CSR F32 (Euler)" },
 ] as const satisfies readonly SimulationBackendOption[];
 
 export interface SimulationWorkerRequest {
