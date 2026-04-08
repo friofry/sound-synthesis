@@ -9,7 +9,6 @@ import { ViewerToolbar } from "./ViewerToolbar";
 import { useGraphStore } from "../../store/graphStore";
 import { useMembraneViewerStore } from "../../store/membraneViewerStore";
 import { usePianoStore } from "../../store/pianoStore";
-import { useViewerStore } from "../../store/viewerStore";
 import { getMembraneRuntimeStepper } from "./liveRuntimeBridge";
 
 type Bounds = {
