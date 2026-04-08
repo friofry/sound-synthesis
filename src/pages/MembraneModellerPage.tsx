@@ -35,7 +35,6 @@ export function MembraneModellerPage() {
   const skipAutoRandomInit = import.meta.env.VITE_E2E === "1";
   const fuzzyGraphInitializedRef = useRef(false);
   const {
-    simulationResult,
     simulationParams,
     graph,
     insertDialog,
@@ -85,6 +84,7 @@ export function MembraneModellerPage() {
 
     initialState.setDefaults({
       fixedBorder: true,
+      boundaryMode: "fixed",
       stiffnessType: randomPreset.stiffnessType,
       defaultStiffness: randomPreset.stiffness,
     });
@@ -97,6 +97,9 @@ export function MembraneModellerPage() {
       weight: initialState.defaultWeight,
       fixedBorder: true,
       stiffnessType: randomPreset.stiffnessType,
+      boundaryMode: "fixed",
+      stiffnessNormalizationMode: "none",
+      weightDistributionMode: "uniform",
       width,
       height,
     }, {
@@ -149,6 +152,7 @@ export function MembraneModellerPage() {
 
     setDefaults({
       fixedBorder: true,
+      boundaryMode: "fixed",
       stiffnessType: randomPreset.stiffnessType,
       defaultStiffness: randomPreset.stiffness,
     });
@@ -161,6 +165,9 @@ export function MembraneModellerPage() {
       weight: currentState.defaultWeight,
       fixedBorder: true,
       stiffnessType: randomPreset.stiffnessType,
+      boundaryMode: "fixed",
+      stiffnessNormalizationMode: "none",
+      weightDistributionMode: "uniform",
       width,
       height,
     }, {
@@ -235,14 +242,14 @@ export function MembraneModellerPage() {
           </section>
           <section className="right-panel oscill-panel">
             <LegacyOscillogrammWaveform
-              buffer={activeBuffer ?? simulationResult?.playingPointBuffer ?? null}
+              buffer={activeBuffer}
               sampleRate={activeSampleRate || simulationParams.sampleRate}
             />
           </section>
           <section className="right-panel frequency-panel">
             <LegacyOscillogrammSpectrum
               analyser={audioEngine.analyser}
-              buffer={activeBuffer ?? simulationResult?.playingPointBuffer ?? null}
+              buffer={activeBuffer}
               sampleRate={activeSampleRate || simulationParams.sampleRate}
               compact
             />
@@ -330,7 +337,7 @@ function createRandomPresetConfig(): {
   amplitude: number;
   stiffnessType: StiffnessType;
 } {
-  const graphTypes: GridType[] = ["cell", "triangle", "astra", "hexagon"];
+  const graphTypes: GridType[] = ["cell", "triangle", "astra", "hexagon", "disk-hex"];
   return {
     graphType: graphTypes[randomInt(0, graphTypes.length - 1)],
     size: randomInt(30, 50),
