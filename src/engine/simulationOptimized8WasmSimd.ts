@@ -12,17 +12,19 @@ import type {
 } from "./simulationRuntimeTypes";
 import {
   compileGraph,
-  createFusedLoopRuntimeStepper,
-  runSimulationFusedLoop,
   type CompiledSimulationGraph,
-  type RuntimeSimulationStepper as FusedLoopRuntimeSimulationStepper,
 } from "./simulationOptimized5FusedLoop";
+import {
+  createWasmRuntimeStepper,
+  runSimulationWasm,
+  type RuntimeSimulationStepper as WasmRuntimeSimulationStepper,
+} from "./simulationOptimized7Wasm";
 import { applyEndFadeOut, applyStartFadeIn } from "./simulationFade";
 import { createIntegratorStep } from "./simulationIntegratorBridge";
 import { resolveSampleSubsteps, substepsFromStiffnessRatio } from "./simulationSubsteps";
 import { getCachedWasmModule } from "./simulationWasmModule";
-import { SIM_HOTLOOP_WASM_BASE64 } from "./wasm/sim_hotloop.wasm.base64";
-import { SIM_HOTLOOP_F32_WASM_BASE64 } from "./wasm/sim_hotloop_f32.wasm.base64";
+import { SIM_HOTLOOP_SIMD_WASM_BASE64 } from "./wasm/sim_hotloop_simd.wasm.base64";
+import { SIM_HOTLOOP_SIMD_F32_WASM_BASE64 } from "./wasm/sim_hotloop_simd_f32.wasm.base64";
 
 type RunSimulationOptions = Pick<SharedRunSimulationOptions, "capture" | "precision">;
 
@@ -68,12 +70,12 @@ function estimateAdaptiveSubstepsFromCompiled(compiled: CompiledSimulationGraph,
   return substepsFromStiffnessRatio(Math.sqrt(maxCoeff) / sampleRate);
 }
 
-function getWasmModule(): WebAssembly.Module | null {
-  return getCachedWasmModule("sim_hotloop_f64", SIM_HOTLOOP_WASM_BASE64);
+function getWasmSimdModule(): WebAssembly.Module | null {
+  return getCachedWasmModule("sim_hotloop_simd_f64", SIM_HOTLOOP_SIMD_WASM_BASE64);
 }
 
-function getWasmModuleF32(): WebAssembly.Module | null {
-  return getCachedWasmModule("sim_hotloop_f32", SIM_HOTLOOP_F32_WASM_BASE64);
+function getWasmSimdModuleF32(): WebAssembly.Module | null {
+  return getCachedWasmModule("sim_hotloop_simd_f32", SIM_HOTLOOP_SIMD_F32_WASM_BASE64);
 }
 
 function instantiateWasmExports(module: WebAssembly.Module): WasmExports | null {
@@ -106,7 +108,7 @@ function instantiateWasmExports(module: WebAssembly.Module): WasmExports | null 
 }
 
 function createWasmKernelF64(compiled: CompiledSimulationGraph): WasmKernel | null {
-  const module = getWasmModule();
+  const module = getWasmSimdModule();
   if (!module) {
     return null;
   }
@@ -156,7 +158,7 @@ function createWasmKernelF64(compiled: CompiledSimulationGraph): WasmKernel | nu
 }
 
 function createWasmKernelF32(compiled: CompiledSimulationGraph): WasmKernel | null {
-  const module = getWasmModuleF32();
+  const module = getWasmSimdModuleF32();
   if (!module) {
     return null;
   }
@@ -208,7 +210,7 @@ function createWasmKernelF32(compiled: CompiledSimulationGraph): WasmKernel | nu
 export { compileGraph };
 export type { CompiledSimulationGraph };
 
-export function runSimulationWasm(
+export function runSimulationWasmSimd(
   compiled: CompiledSimulationGraph,
   params: SimulationParams,
   onProgress?: (completed: number, total: number) => void,
@@ -217,7 +219,7 @@ export function runSimulationWasm(
   const precision = options?.precision ?? 64;
   const kernel = precision === 32 ? createWasmKernelF32(compiled) : createWasmKernelF64(compiled);
   if (!kernel) {
-    return runSimulationFusedLoop(compiled, params, onProgress, options);
+    return runSimulationWasm(compiled, params, onProgress, options);
   }
 
   const totalSamples = params.lengthK * 1024;
@@ -287,24 +289,24 @@ export function runSimulationWasm(
   };
 }
 
-export function runSimulationWasmBackend(
+export function runSimulationWasmSimdBackend(
   graph: GraphData,
   params: SimulationParams,
   onProgress?: (completed: number, total: number) => void,
   options?: RunSimulationOptions,
 ): SimulationResult {
   const compiled = compileGraph(graph, params, options?.precision ?? 64);
-  return runSimulationWasm(compiled, params, onProgress, options);
+  return runSimulationWasmSimd(compiled, params, onProgress, options);
 }
 
-export function createWasmRuntimeStepper(
+export function createWasmSimdRuntimeStepper(
   compiled: CompiledSimulationGraph,
   params: SimulationParams,
 ): RuntimeSimulationStepper {
   const precision: SimulationPrecision = compiled.initialU instanceof Float32Array ? 32 : 64;
   const kernel = precision === 32 ? createWasmKernelF32(compiled) : createWasmKernelF64(compiled);
   if (!kernel) {
-    return createFusedLoopRuntimeStepper(compiled, params) as FusedLoopRuntimeSimulationStepper;
+    return createWasmRuntimeStepper(compiled, params) as WasmRuntimeSimulationStepper;
   }
 
   const dt = 1 / params.sampleRate;
@@ -346,11 +348,11 @@ export function createWasmRuntimeStepper(
   };
 }
 
-export function createWasmRuntimeStepperBackend(
+export function createWasmSimdRuntimeStepperBackend(
   graph: GraphData,
   params: SimulationParams,
 ): RuntimeSimulationStepper {
   const compiled = compileGraph(graph, params);
-  return createWasmRuntimeStepper(compiled, params);
+  return createWasmSimdRuntimeStepper(compiled, params);
 }
 

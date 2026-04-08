@@ -77,6 +77,7 @@ export function HexTemplateDialog() {
           defaultWeight: safeWeight,
           defaultStiffness: safeStiffness,
           fixedBorder: values.fixedBorder,
+          boundaryMode: values.fixedBorder ? "fixed" : "free",
         });
         createPresetGraph("hexagon", {
           n: safeLayers,

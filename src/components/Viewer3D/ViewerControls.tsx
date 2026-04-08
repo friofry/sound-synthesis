@@ -18,7 +18,7 @@ export function ViewerControls() {
 
   const frameCount = simulationResult?.frames.length ?? 0;
   const canPlay = graph.dots.length > 0 && graph.lines.length > 0;
-  const frameLabel = frameCount > 0 ? `${frameIndex}/${Math.max(0, frameCount - 1)}` : `${frameIndex}/live`;
+  const frameLabel = frameCount > 0 ? `${frameIndex}/${Math.max(0, frameCount - 1)}` : `${frameIndex}/live-sim`;
 
   return (
     <div className="viewer-toolbar">

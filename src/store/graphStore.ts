@@ -3,16 +3,24 @@ import { generateGraph } from "../engine/gridGenerators";
 import { GraphModel } from "../engine/graph";
 import { preparePresetGraph, type PresetGraphPreparationOptions } from "../engine/presetGraphPreparation";
 import {
+  type BoundaryMode,
   DEFAULT_ATTENUATION,
   DEFAULT_SAMPLE_RATE,
   DEFAULT_SQUARE_ATTENUATION,
   type GridParams,
+  type StiffnessNormalizationMode,
   type GridType,
   type SerializedGraph,
   type SimulationParams,
   type SimulationResult,
   type ToolMode,
+  type WeightDistributionMode,
 } from "../engine/types";
+import {
+  DEFAULT_SIMULATION_METHOD,
+  DEFAULT_SIMULATION_SUBSTEPS,
+  DEFAULT_SIMULATION_SUBSTEPS_MODE,
+} from "../engine/simulationDefaults";
 
 export interface Rect {
   x1: number;
@@ -60,6 +68,11 @@ interface GraphStore {
   defaultStiffness: number;
   fixedBorder: boolean;
   stiffnessType: GridParams["stiffnessType"];
+  boundaryMode: BoundaryMode;
+  stiffnessNormalizationMode: StiffnessNormalizationMode;
+  weightDistributionMode: WeightDistributionMode;
+  rimWeightRatio: number;
+  rimDampingFactor: number;
   insertDialog: DialogState<null>;
   cellTemplateDialog: DialogState<null>;
   hexTemplateDialog: DialogState<null>;
@@ -120,6 +133,11 @@ interface GraphStore {
     defaultStiffness?: number;
     fixedBorder?: boolean;
     stiffnessType?: GridParams["stiffnessType"];
+    boundaryMode?: BoundaryMode;
+    stiffnessNormalizationMode?: StiffnessNormalizationMode;
+    weightDistributionMode?: WeightDistributionMode;
+    rimWeightRatio?: number;
+    rimDampingFactor?: number;
   }) => void;
   setSimulationParams: (values: Partial<SimulationParams>) => void;
   setSimulationState: (values: Partial<Pick<GraphStore, "isSimulating" | "simulationProgress" | "simulationResult">>) => void;
@@ -130,10 +148,12 @@ interface GraphStore {
 const defaultSimulationParams: SimulationParams = {
   sampleRate: DEFAULT_SAMPLE_RATE,
   lengthK: 8,
-  method: "euler",
+  method: DEFAULT_SIMULATION_METHOD,
   attenuation: DEFAULT_ATTENUATION,
   squareAttenuation: DEFAULT_SQUARE_ATTENUATION,
   playingPoint: 0,
+  substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
+  substeps: DEFAULT_SIMULATION_SUBSTEPS,
 };
 
 const defaultHammerSettings: HammerSettings = {
@@ -171,6 +191,11 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   defaultStiffness: 1,
   fixedBorder: false,
   stiffnessType: "isotropic",
+  boundaryMode: "free",
+  stiffnessNormalizationMode: "none",
+  weightDistributionMode: "uniform",
+  rimWeightRatio: 1.5,
+  rimDampingFactor: 0.7,
   insertDialog: { open: false, payload: null },
   cellTemplateDialog: { open: false, payload: null },
   hexTemplateDialog: { open: false, payload: null },
@@ -315,6 +340,11 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       defaultStiffness: values.defaultStiffness ?? state.defaultStiffness,
       fixedBorder: values.fixedBorder ?? state.fixedBorder,
       stiffnessType: values.stiffnessType ?? state.stiffnessType,
+      boundaryMode: values.boundaryMode ?? state.boundaryMode,
+      stiffnessNormalizationMode: values.stiffnessNormalizationMode ?? state.stiffnessNormalizationMode,
+      weightDistributionMode: values.weightDistributionMode ?? state.weightDistributionMode,
+      rimWeightRatio: values.rimWeightRatio ?? state.rimWeightRatio,
+      rimDampingFactor: values.rimDampingFactor ?? state.rimDampingFactor,
     })),
   setSimulationParams: (values) =>
     set((state) => ({

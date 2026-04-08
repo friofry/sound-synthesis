@@ -6,6 +6,11 @@ import type {
   SimulationWorkerRequest,
 } from "../../engine/types";
 import type { HammerSettings } from "../../store/graphStore";
+import {
+  DEFAULT_SIMULATION_BACKEND,
+  DEFAULT_SIMULATION_METHOD,
+  DEFAULT_SIMULATION_PRECISION,
+} from "../../engine/simulationDefaults";
 
 type HammerOneShotOptions = {
   graph: GraphModel;
@@ -22,9 +27,9 @@ type HammerOneShotResult = {
 };
 
 const FIXED_DURATION_MS = 500;
-const FIXED_METHOD = "runge-kutta";
-const FIXED_BACKEND: SimulationBackend = "wasm-hotloop";
-const FIXED_PRECISION: SimulationPrecision = 64;
+const FIXED_METHOD = DEFAULT_SIMULATION_METHOD;
+const FIXED_BACKEND: SimulationBackend = DEFAULT_SIMULATION_BACKEND;
+const FIXED_PRECISION: SimulationPrecision = DEFAULT_SIMULATION_PRECISION;
 
 export async function generateHammerOneShot(options: HammerOneShotOptions): Promise<HammerOneShotResult> {
   const sampleRate = options.sampleRate ?? 44_100;

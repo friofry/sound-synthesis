@@ -1,13 +1,20 @@
 import type {
   FloatArray,
   GraphData,
-  SimulationCaptureMode,
   SimulationParams,
   SimulationResult,
   SimulationState,
 } from "./types";
-
-const DEFAULT_EDGE_FADE_MS = 2;
+import type {
+  RunSimulationOptions as SharedRunSimulationOptions,
+  RuntimeSimulationStepper as SharedRuntimeSimulationStepper,
+} from "./simulationRuntimeTypes";
+import { forEachSpringLine } from "./simulationAssembly";
+import { applyVelocityDamping } from "./simulationDamping";
+import { applyEndFadeOut, applyStartFadeIn } from "./simulationFade";
+import { createIntegratorStep } from "./simulationIntegratorBridge";
+import { clampFixedNodes, collectFixedIndices, initializeStateFromGraph } from "./simulationState";
+import { resolveSampleSubsteps, substepsFromStiffnessRatio } from "./simulationSubsteps";
 
 type EdgeList = {
   edgeI: Uint32Array;
@@ -32,14 +39,23 @@ type RungeKuttaWorkspace = {
   k4v: Float64Array;
 };
 
-export type RuntimeSimulationStepper = {
-  state: SimulationState;
-  step: (steps?: number) => void;
-};
+export type RuntimeSimulationStepper = SharedRuntimeSimulationStepper;
 
-type RunSimulationOptions = {
-  capture?: SimulationCaptureMode;
-};
+function estimateAdaptiveSubstepsFromEdges(edges: EdgeList, sampleRate: number): number {
+  if (sampleRate <= 0) {
+    return 1;
+  }
+  let maxCoeff = 0;
+  for (let i = 0; i < edges.kOverMassI.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(edges.kOverMassI[i]), Math.abs(edges.kOverMassJ[i]));
+  }
+  for (let i = 0; i < edges.diagValue.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(edges.diagValue[i]));
+  }
+  return substepsFromStiffnessRatio(Math.sqrt(maxCoeff) / sampleRate);
+}
+
+type RunSimulationOptions = Pick<SharedRunSimulationOptions, "capture">;
 
 export function runSimulationEdgeList(
   graph: GraphData,
@@ -103,33 +119,29 @@ export function createEdgeListRuntimeStepper(graph: GraphData, params: Simulatio
   const dt = 1 / params.sampleRate;
   const edges = createEdgeList(graph);
   const fixedIndices = collectFixedIndices(graph);
-  const state: SimulationState = {
-    u: new Float64Array(totalDots),
-    v: new Float64Array(totalDots),
-  };
-
-  for (let i = 0; i < totalDots; i += 1) {
-    const dot = graph.dots[i];
-    state.u[i] = dot.fixed ? 0 : dot.u;
-    state.v[i] = dot.fixed ? 0 : dot.v;
-  }
+  const state: SimulationState = initializeStateFromGraph(graph);
 
   const eulerSpring = new Float64Array(totalDots);
   const rk = createRungeKuttaWorkspace(totalDots);
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromEdges(edges, params.sampleRate);
+  const resolveSubsteps = resolveSampleSubsteps(params, adaptiveSubsteps);
+  const integrateOne = createIntegratorStep(
+    params.method,
+    (stepDt: number) =>
+      eulerCramerStepEdgeList(state, edges, stepDt, params.attenuation, params.squareAttenuation, eulerSpring),
+    (stepDt: number) =>
+      rungeKuttaStepEdgeList(state, edges, stepDt, params.attenuation, params.squareAttenuation, rk),
+  );
 
   return {
     state,
     step(steps = 1) {
       for (let s = 0; s < steps; s += 1) {
-        if (params.method === "runge-kutta") {
-          rungeKuttaStepEdgeList(state, edges, dt, params.attenuation, params.squareAttenuation, rk);
-        } else {
-          eulerCramerStepEdgeList(state, edges, dt, params.attenuation, params.squareAttenuation, eulerSpring);
-        }
-
-        for (const index of fixedIndices) {
-          state.u[index] = 0;
-          state.v[index] = 0;
+        const sampleSubsteps = resolveSubsteps();
+        const sampleDt = dt / sampleSubsteps;
+        for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+          integrateOne(sampleDt);
+          clampFixedNodes(state, fixedIndices);
         }
       }
     },
@@ -144,19 +156,13 @@ function createEdgeList(graph: GraphData): EdgeList {
   const diagIndex: number[] = [];
   const diagValue: number[] = [];
 
-  for (const line of graph.lines) {
-    const d1 = graph.dots[line.dot1];
-    const d2 = graph.dots[line.dot2];
-    if (!d1 || !d2) {
-      continue;
-    }
-
+  forEachSpringLine(graph, (line, d1, d2) => {
     if (!d1.fixed && !d2.fixed) {
       edgeI.push(line.dot1);
       edgeJ.push(line.dot2);
       kOverMassI.push(line.k / d1.weight);
       kOverMassJ.push(line.k / d2.weight);
-      continue;
+      return;
     }
 
     if (!d1.fixed) {
@@ -167,7 +173,7 @@ function createEdgeList(graph: GraphData): EdgeList {
       diagIndex.push(line.dot2);
       diagValue.push(-line.k / d2.weight);
     }
-  }
+  });
 
   return {
     edgeI: Uint32Array.from(edgeI),
@@ -177,16 +183,6 @@ function createEdgeList(graph: GraphData): EdgeList {
     diagIndex: Uint32Array.from(diagIndex),
     diagValue: Float64Array.from(diagValue),
   };
-}
-
-function collectFixedIndices(graph: GraphData): number[] {
-  const fixed: number[] = [];
-  for (let i = 0; i < graph.dots.length; i += 1) {
-    if (graph.dots[i].fixed) {
-      fixed.push(i);
-    }
-  }
-  return fixed;
 }
 
 function computeSpringAcceleration(u: FloatArray, edges: EdgeList, out: FloatArray): FloatArray {
@@ -208,12 +204,6 @@ function computeSpringAcceleration(u: FloatArray, edges: EdgeList, out: FloatArr
   return out;
 }
 
-function applySquareAttenuation(acceleration: FloatArray, velocity: FloatArray, squareAttenuation: number): void {
-  for (let i = 0; i < velocity.length; i += 1) {
-    acceleration[i] -= squareAttenuation * Math.abs(velocity[i]) * velocity[i];
-  }
-}
-
 function eulerCramerStepEdgeList(
   state: SimulationState,
   edges: EdgeList,
@@ -224,10 +214,7 @@ function eulerCramerStepEdgeList(
 ): void {
   const { u, v } = state;
   const spring = computeSpringAcceleration(u, edges, springScratch);
-  for (let i = 0; i < u.length; i += 1) {
-    spring[i] -= attenuation * v[i];
-  }
-  applySquareAttenuation(spring, v, squareAttenuation);
+  applyVelocityDamping(spring, v, attenuation, squareAttenuation);
 
   for (let i = 0; i < u.length; i += 1) {
     v[i] += spring[i] * dt;
@@ -287,10 +274,7 @@ function buildAcceleration(
   out: FloatArray,
 ): FloatArray {
   const acceleration = computeSpringAcceleration(u, edges, out);
-  for (let i = 0; i < u.length; i += 1) {
-    acceleration[i] -= attenuation * v[i];
-  }
-  applySquareAttenuation(acceleration, v, squareAttenuation);
+  applyVelocityDamping(acceleration, v, attenuation, squareAttenuation);
   return acceleration;
 }
 
@@ -310,35 +294,3 @@ function createRungeKuttaWorkspace(n: number): RungeKuttaWorkspace {
   };
 }
 
-function applyStartFadeIn(buffer: Float32Array, sampleRate: number, fadeInMs = DEFAULT_EDGE_FADE_MS): void {
-  if (buffer.length === 0 || sampleRate <= 0 || fadeInMs <= 0) {
-    return;
-  }
-
-  const requestedSamples = Math.round((sampleRate * fadeInMs) / 1000);
-  const fadeSamples = Math.min(buffer.length, Math.max(2, requestedSamples));
-  if (fadeSamples <= 1) {
-    buffer[0] = 0;
-    return;
-  }
-  for (let i = 0; i < fadeSamples; i += 1) {
-    buffer[i] *= i / (fadeSamples - 1);
-  }
-}
-
-function applyEndFadeOut(buffer: Float32Array, sampleRate: number, fadeOutMs = DEFAULT_EDGE_FADE_MS): void {
-  if (buffer.length === 0 || sampleRate <= 0 || fadeOutMs <= 0) {
-    return;
-  }
-
-  const requestedSamples = Math.round((sampleRate * fadeOutMs) / 1000);
-  const fadeSamples = Math.min(buffer.length, Math.max(2, requestedSamples));
-  if (fadeSamples <= 1) {
-    buffer[buffer.length - 1] = 0;
-    return;
-  }
-  const start = buffer.length - fadeSamples;
-  for (let i = 0; i < fadeSamples; i += 1) {
-    buffer[start + i] *= (fadeSamples - 1 - i) / (fadeSamples - 1);
-  }
-}

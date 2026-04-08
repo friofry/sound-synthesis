@@ -21,6 +21,7 @@ import type {
 } from "../engine/types";
 import type { GenerateNotesDialogValues } from "../components/PianoPlayer/GenerateNotesDialog";
 import { usePianoStore } from "../store/pianoStore";
+import { resolveDefaultSimulationBackend } from "../engine/simulationDefaults";
 
 type InstrumentBundle = {
   type: "sound-synthesis-instrument";
@@ -101,12 +102,13 @@ function runSimulationInWorker(
   graph: GraphModel,
   params: SimulationParams,
   outputMode: SimulationCaptureMode = "full",
-  backend: SimulationBackend = "fused-loop",
+  backend?: SimulationBackend,
   precision: SimulationPrecision = 64,
   onProgress?: (completed: number, total: number) => void,
   signal?: AbortSignal,
   sharedWorker?: Worker,
 ): Promise<SimulationResult> {
+  const resolvedBackend = backend ?? resolveDefaultSimulationBackend(params.method, precision);
   return new Promise((resolve, reject) => {
     const worker = sharedWorker ?? new Worker(new URL("../engine/simulation.worker.ts", import.meta.url), { type: "module" });
     const ownsWorker = !sharedWorker;
@@ -191,7 +193,7 @@ function runSimulationInWorker(
       graph: graph.toGraphData(),
       params,
       outputMode,
-      backend,
+      backend: resolvedBackend,
       precision,
     });
   });
@@ -414,6 +416,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       const safeMethod = values.method === "runge-kutta" ? "runge-kutta" : "euler";
       const safeBackend: SimulationBackend = values.backend;
       const safePrecision: SimulationPrecision = values.precision === 32 ? 32 : 64;
+      const safeSubstepsMode = values.substepsMode === "adaptive" ? "adaptive" : "fixed";
+      const safeSubsteps = Number.isFinite(values.substeps) ? Math.max(1, Math.round(values.substeps)) : 1;
       const safeNoteCount = safeOctaves * 12;
 
       setGenerateNotesSettings({
@@ -426,6 +430,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
         method: safeMethod,
         backend: safeBackend,
         precision: safePrecision,
+        substepsMode: safeSubstepsMode,
+        substeps: safeSubsteps,
       });
       setGenerateNotesDialogOpen(false);
       setInstrumentGenerationState({
@@ -469,6 +475,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
               squareAttenuation: safeSquareAttenuation,
               method: safeMethod,
               playingPoint: calibrationGraph.playingPoint ?? 0,
+              substepsMode: safeSubstepsMode,
+              substeps: safeSubsteps,
             },
             "playing-point-only",
             safeBackend,
@@ -522,6 +530,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
                   squareAttenuation: safeSquareAttenuation,
                   method: safeMethod,
                   playingPoint: noteGraph.playingPoint ?? 0,
+                  substepsMode: safeSubstepsMode,
+                  substeps: safeSubsteps,
                 },
                 "playing-point-only",
                 safeBackend,

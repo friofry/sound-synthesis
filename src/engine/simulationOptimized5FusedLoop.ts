@@ -1,14 +1,21 @@
 import type {
   FloatArray,
   GraphData,
-  SimulationCaptureMode,
   SimulationParams,
   SimulationPrecision,
   SimulationResult,
   SimulationState,
 } from "./types";
-
-const DEFAULT_EDGE_FADE_MS = 2;
+import type {
+  RunSimulationOptions as SharedRunSimulationOptions,
+  RuntimeSimulationStepper as SharedRuntimeSimulationStepper,
+} from "./simulationRuntimeTypes";
+import { forEachSpringLine } from "./simulationAssembly";
+import { applyVelocityDamping } from "./simulationDamping";
+import { applyEndFadeOut, applyStartFadeIn } from "./simulationFade";
+import { createIntegratorStep } from "./simulationIntegratorBridge";
+import { rungeKuttaStepShared } from "./simulationRk4";
+import { resolveSampleSubsteps, substepsFromStiffnessRatio } from "./simulationSubsteps";
 
 type FreeFreeEdges = {
   edgeI: Uint32Array;
@@ -34,24 +41,21 @@ type FreeNodeMapping = {
   initialV: FloatArray;
 };
 
-type RungeKuttaWorkspace = {
-  k1u: FloatArray;
-  k1v: FloatArray;
-  u2: FloatArray;
-  v2: FloatArray;
-  u3: FloatArray;
-  v3: FloatArray;
-  u4: FloatArray;
-  v4: FloatArray;
-  k2v: FloatArray;
-  k3v: FloatArray;
-  k4v: FloatArray;
-};
+export type RuntimeSimulationStepper = SharedRuntimeSimulationStepper;
 
-export type RuntimeSimulationStepper = {
-  state: SimulationState;
-  step: (steps?: number) => void;
-};
+function estimateAdaptiveSubstepsFromEdges(edges: SplitEdges, sampleRate: number): number {
+  if (sampleRate <= 0) {
+    return 1;
+  }
+  let maxCoeff = 0;
+  for (let i = 0; i < edges.freeFree.kOverMassI.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(edges.freeFree.kOverMassI[i]), Math.abs(edges.freeFree.kOverMassJ[i]));
+  }
+  for (let i = 0; i < edges.freeFixed.kOverMass.length; i += 1) {
+    maxCoeff = Math.max(maxCoeff, Math.abs(edges.freeFixed.kOverMass[i]));
+  }
+  return substepsFromStiffnessRatio(Math.sqrt(maxCoeff) / sampleRate);
+}
 
 export type CompiledSimulationGraph = {
   totalDots: number;
@@ -65,10 +69,7 @@ export type CompiledSimulationGraph = {
   playingPointFree: number;
 };
 
-type RunSimulationOptions = {
-  capture?: SimulationCaptureMode;
-  precision?: SimulationPrecision;
-};
+type RunSimulationOptions = Pick<SharedRunSimulationOptions, "capture" | "precision">;
 
 function createFloatArray(length: number, precision: SimulationPrecision): FloatArray {
   return precision === 32 ? new Float32Array(length) : new Float64Array(length);
@@ -120,16 +121,25 @@ export function runSimulationFusedLoop(
   const springScratch = createFloatArray(compiled.freeCount, precision);
   const rk = createRungeKuttaWorkspace(compiled.freeCount, precision);
   const dt = 1 / params.sampleRate;
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromEdges(compiled.edges, params.sampleRate);
+  const resolveSubsteps = resolveSampleSubsteps(params, adaptiveSubsteps);
+  const integrateOne = createIntegratorStep(
+    params.method,
+    (stepDt: number) =>
+      eulerCramerStep(state, compiled.edges, stepDt, params.attenuation, params.squareAttenuation, springScratch),
+    (stepDt: number) =>
+      rungeKuttaStep(state, compiled.edges, stepDt, params.attenuation, params.squareAttenuation, rk),
+  );
 
   const frames = captureFull ? new Array<FloatArray>(totalSamples) : [];
   const playingPointBuffer = new Float32Array(totalSamples);
   const packedHistory = captureFull ? createFloatArray(totalSamples * compiled.totalDots, precision) : null;
 
   for (let sample = 0; sample < totalSamples; sample += 1) {
-    if (params.method === "runge-kutta") {
-      rungeKuttaStep(state, compiled.edges, dt, params.attenuation, params.squareAttenuation, rk);
-    } else {
-      eulerCramerStep(state, compiled.edges, dt, params.attenuation, params.squareAttenuation, springScratch);
+    const sampleSubsteps = resolveSubsteps();
+    const sampleDt = dt / sampleSubsteps;
+    for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+      integrateOne(sampleDt);
     }
 
     if (packedHistory) {
@@ -205,29 +215,38 @@ export function createFusedLoopRuntimeStepper(
 
   const springScratch = createFloatArray(compiled.freeCount, precision);
   const rk = createRungeKuttaWorkspace(compiled.freeCount, precision);
+  const adaptiveSubsteps = estimateAdaptiveSubstepsFromEdges(compiled.edges, params.sampleRate);
+  const resolveSubsteps = resolveSampleSubsteps(params, adaptiveSubsteps);
+  const integrateOne = createIntegratorStep(
+    params.method,
+    (stepDt: number) =>
+      eulerCramerStep(
+        dynamicState,
+        compiled.edges,
+        stepDt,
+        params.attenuation,
+        params.squareAttenuation,
+        springScratch,
+      ),
+    (stepDt: number) =>
+      rungeKuttaStep(
+        dynamicState,
+        compiled.edges,
+        stepDt,
+        params.attenuation,
+        params.squareAttenuation,
+        rk,
+      ),
+  );
 
   return {
     state,
     step(steps = 1) {
       for (let s = 0; s < steps; s += 1) {
-        if (params.method === "runge-kutta") {
-          rungeKuttaStep(
-            dynamicState,
-            compiled.edges,
-            dt,
-            params.attenuation,
-            params.squareAttenuation,
-            rk,
-          );
-        } else {
-          eulerCramerStep(
-            dynamicState,
-            compiled.edges,
-            dt,
-            params.attenuation,
-            params.squareAttenuation,
-            springScratch,
-          );
+        const sampleSubsteps = resolveSubsteps();
+        const sampleDt = dt / sampleSubsteps;
+        for (let sub = 0; sub < sampleSubsteps; sub += 1) {
+          integrateOne(sampleDt);
         }
       }
 
@@ -264,19 +283,13 @@ function createSplitEdges(
   const freeIndex: number[] = [];
   const kOverMass: number[] = [];
 
-  for (const line of graph.lines) {
-    const d1 = graph.dots[line.dot1];
-    const d2 = graph.dots[line.dot2];
-    if (!d1 || !d2) {
-      continue;
-    }
-
+  forEachSpringLine(graph, (line, d1, d2) => {
     if (!d1.fixed && !d2.fixed) {
       edgeI.push(globalToFree[line.dot1]);
       edgeJ.push(globalToFree[line.dot2]);
       kOverMassI.push(line.k / d1.weight);
       kOverMassJ.push(line.k / d2.weight);
-      continue;
+      return;
     }
 
     if (!d1.fixed) {
@@ -287,7 +300,7 @@ function createSplitEdges(
       freeIndex.push(globalToFree[line.dot2]);
       kOverMass.push(-line.k / d2.weight);
     }
-  }
+  });
 
   return {
     freeFree: {
@@ -364,9 +377,7 @@ function buildAcceleration(
   out: FloatArray,
 ): void {
   computeSpringAcceleration(u, edges, out);
-  for (let i = 0; i < u.length; i += 1) {
-    out[i] = out[i] - attenuation * v[i] - squareAttenuation * Math.abs(v[i]) * v[i];
-  }
+  applyVelocityDamping(out, v, attenuation, squareAttenuation);
 }
 
 // ---------------------------------------------------------------------------
@@ -383,9 +394,10 @@ function eulerCramerStep(
 ): void {
   const { u, v } = state;
   computeSpringAcceleration(u, edges, springScratch);
+  applyVelocityDamping(springScratch, v, attenuation, squareAttenuation);
 
   for (let i = 0; i < u.length; i += 1) {
-    const acc = springScratch[i] - attenuation * v[i] - squareAttenuation * Math.abs(v[i]) * v[i];
+    const acc = springScratch[i];
     v[i] += acc * dt;
     u[i] += v[i] * dt;
   }
@@ -399,39 +411,9 @@ function rungeKuttaStep(
   squareAttenuation: number,
   workspace: RungeKuttaWorkspace,
 ): void {
-  const n = state.u.length;
-  const { k1u, k1v, u2, v2, u3, v3, u4, v4, k2v, k3v, k4v } = workspace;
-  buildAcceleration(state.u, state.v, edges, attenuation, squareAttenuation, k1v);
-
-  for (let i = 0; i < n; i += 1) {
-    k1u[i] = state.v[i];
-  }
-
-  for (let i = 0; i < n; i += 1) {
-    u2[i] = state.u[i] + (k1u[i] * dt) / 2;
-    v2[i] = state.v[i] + (k1v[i] * dt) / 2;
-  }
-  const k2u = v2;
-  buildAcceleration(u2, v2, edges, attenuation, squareAttenuation, k2v);
-
-  for (let i = 0; i < n; i += 1) {
-    u3[i] = state.u[i] + (k2u[i] * dt) / 2;
-    v3[i] = state.v[i] + (k2v[i] * dt) / 2;
-  }
-  const k3u = v3;
-  buildAcceleration(u3, v3, edges, attenuation, squareAttenuation, k3v);
-
-  for (let i = 0; i < n; i += 1) {
-    u4[i] = state.u[i] + k3u[i] * dt;
-    v4[i] = state.v[i] + k3v[i] * dt;
-  }
-  const k4u = v4;
-  buildAcceleration(u4, v4, edges, attenuation, squareAttenuation, k4v);
-
-  for (let i = 0; i < n; i += 1) {
-    state.u[i] += (dt / 6) * (k1u[i] + 2 * k2u[i] + 2 * k3u[i] + k4u[i]);
-    state.v[i] += (dt / 6) * (k1v[i] + 2 * k2v[i] + 2 * k3v[i] + k4v[i]);
-  }
+  rungeKuttaStepShared(state, dt, workspace, (u, v, out) =>
+    void buildAcceleration(u, v, edges, attenuation, squareAttenuation, out),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -458,35 +440,3 @@ function createRungeKuttaWorkspace(n: number, precision: SimulationPrecision): R
 // Edge fades
 // ---------------------------------------------------------------------------
 
-function applyStartFadeIn(buffer: Float32Array, sampleRate: number, fadeInMs = DEFAULT_EDGE_FADE_MS): void {
-  if (buffer.length === 0 || sampleRate <= 0 || fadeInMs <= 0) {
-    return;
-  }
-
-  const requestedSamples = Math.round((sampleRate * fadeInMs) / 1000);
-  const fadeSamples = Math.min(buffer.length, Math.max(2, requestedSamples));
-  if (fadeSamples <= 1) {
-    buffer[0] = 0;
-    return;
-  }
-  for (let i = 0; i < fadeSamples; i += 1) {
-    buffer[i] *= i / (fadeSamples - 1);
-  }
-}
-
-function applyEndFadeOut(buffer: Float32Array, sampleRate: number, fadeOutMs = DEFAULT_EDGE_FADE_MS): void {
-  if (buffer.length === 0 || sampleRate <= 0 || fadeOutMs <= 0) {
-    return;
-  }
-
-  const requestedSamples = Math.round((sampleRate * fadeOutMs) / 1000);
-  const fadeSamples = Math.min(buffer.length, Math.max(2, requestedSamples));
-  if (fadeSamples <= 1) {
-    buffer[buffer.length - 1] = 0;
-    return;
-  }
-  const start = buffer.length - fadeSamples;
-  for (let i = 0; i < fadeSamples; i += 1) {
-    buffer[start + i] *= (fadeSamples - 1 - i) / (fadeSamples - 1);
-  }
-}

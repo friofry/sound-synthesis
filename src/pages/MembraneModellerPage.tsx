@@ -21,6 +21,13 @@ import { LegacyOscillogrammSpectrum } from "../components/PianoPlayer/LegacyOsci
 import { MfcSplitView } from "../components/ui/MfcSplitView";
 import { graphFromBinary } from "../engine/fileIO/graphFile";
 import type { GridType, StiffnessType } from "../engine/types";
+import {
+  DEFAULT_SIMULATION_BACKEND,
+  DEFAULT_SIMULATION_METHOD,
+  DEFAULT_SIMULATION_PRECISION,
+  DEFAULT_SIMULATION_SUBSTEPS,
+  DEFAULT_SIMULATION_SUBSTEPS_MODE,
+} from "../engine/simulationDefaults";
 import { useGraphStore } from "../store/graphStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
 
@@ -28,7 +35,6 @@ export function MembraneModellerPage() {
   const skipAutoRandomInit = import.meta.env.VITE_E2E === "1";
   const fuzzyGraphInitializedRef = useRef(false);
   const {
-    simulationResult,
     simulationParams,
     graph,
     insertDialog,
@@ -78,6 +84,7 @@ export function MembraneModellerPage() {
 
     initialState.setDefaults({
       fixedBorder: true,
+      boundaryMode: "fixed",
       stiffnessType: randomPreset.stiffnessType,
       defaultStiffness: randomPreset.stiffness,
     });
@@ -90,6 +97,9 @@ export function MembraneModellerPage() {
       weight: initialState.defaultWeight,
       fixedBorder: true,
       stiffnessType: randomPreset.stiffnessType,
+      boundaryMode: "fixed",
+      stiffnessNormalizationMode: "none",
+      weightDistributionMode: "uniform",
       width,
       height,
     }, {
@@ -111,9 +121,11 @@ export function MembraneModellerPage() {
       durationMs: 150,
       tillSilence: false,
       sampleRate: 44100,
-      method: "runge-kutta",
-      backend: "wasm-hotloop",
-      precision: 64,
+      method: DEFAULT_SIMULATION_METHOD,
+      backend: DEFAULT_SIMULATION_BACKEND,
+      precision: DEFAULT_SIMULATION_PRECISION,
+      substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
+      substeps: DEFAULT_SIMULATION_SUBSTEPS,
     }, preparedGraph);
   }, [
     generateNotesSettings.attenuation,
@@ -140,6 +152,7 @@ export function MembraneModellerPage() {
 
     setDefaults({
       fixedBorder: true,
+      boundaryMode: "fixed",
       stiffnessType: randomPreset.stiffnessType,
       defaultStiffness: randomPreset.stiffness,
     });
@@ -152,6 +165,9 @@ export function MembraneModellerPage() {
       weight: currentState.defaultWeight,
       fixedBorder: true,
       stiffnessType: randomPreset.stiffnessType,
+      boundaryMode: "fixed",
+      stiffnessNormalizationMode: "none",
+      weightDistributionMode: "uniform",
       width,
       height,
     }, {
@@ -174,9 +190,11 @@ export function MembraneModellerPage() {
       durationMs: 150,
       tillSilence: false,
       sampleRate: 44100,
-      method: "runge-kutta",
-      backend: "wasm-hotloop",
-      precision: 64,
+      method: DEFAULT_SIMULATION_METHOD,
+      backend: DEFAULT_SIMULATION_BACKEND,
+      precision: DEFAULT_SIMULATION_PRECISION,
+      substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
+      substeps: DEFAULT_SIMULATION_SUBSTEPS,
     }, preparedGraph);
   }, [
     createPresetGraph,
@@ -224,14 +242,14 @@ export function MembraneModellerPage() {
           </section>
           <section className="right-panel oscill-panel">
             <LegacyOscillogrammWaveform
-              buffer={activeBuffer ?? simulationResult?.playingPointBuffer ?? null}
+              buffer={activeBuffer}
               sampleRate={activeSampleRate || simulationParams.sampleRate}
             />
           </section>
           <section className="right-panel frequency-panel">
             <LegacyOscillogrammSpectrum
               analyser={audioEngine.analyser}
-              buffer={activeBuffer ?? simulationResult?.playingPointBuffer ?? null}
+              buffer={activeBuffer}
               sampleRate={activeSampleRate || simulationParams.sampleRate}
               compact
             />
@@ -286,9 +304,11 @@ export function MembraneModellerPage() {
             durationMs: 150,
             tillSilence: false,
             sampleRate: 44100,
-            method: "runge-kutta",
-            backend: "wasm-hotloop",
-            precision: 64,
+            method: DEFAULT_SIMULATION_METHOD,
+            backend: DEFAULT_SIMULATION_BACKEND,
+            precision: DEFAULT_SIMULATION_PRECISION,
+            substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
+            substeps: DEFAULT_SIMULATION_SUBSTEPS,
           });
         }}
         onClose={closeInsertDialog}
@@ -317,7 +337,7 @@ function createRandomPresetConfig(): {
   amplitude: number;
   stiffnessType: StiffnessType;
 } {
-  const graphTypes: GridType[] = ["cell", "triangle", "astra", "hexagon"];
+  const graphTypes: GridType[] = ["cell", "triangle", "astra", "hexagon", "disk-hex"];
   return {
     graphType: graphTypes[randomInt(0, graphTypes.length - 1)],
     size: randomInt(30, 50),

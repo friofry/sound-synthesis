@@ -1,5 +1,18 @@
 import { create } from "zustand";
-import type { RawInstrumentNote, SimMethod, SimulationBackend, SimulationPrecision } from "../engine/types";
+import type {
+  RawInstrumentNote,
+  SimMethod,
+  SimulationBackend,
+  SimulationPrecision,
+  SimulationSubstepsMode,
+} from "../engine/types";
+import {
+  DEFAULT_SIMULATION_METHOD,
+  DEFAULT_SIMULATION_PRECISION,
+  DEFAULT_SIMULATION_SUBSTEPS,
+  DEFAULT_SIMULATION_SUBSTEPS_MODE,
+  resolveDefaultSimulationBackend,
+} from "../engine/simulationDefaults";
 
 export type PianoGenerateSettings = {
   octaves: 1 | 2 | 3;
@@ -11,6 +24,8 @@ export type PianoGenerateSettings = {
   method: SimMethod;
   backend: SimulationBackend;
   precision: SimulationPrecision;
+  substepsMode: SimulationSubstepsMode;
+  substeps: number;
 };
 
 type PianoStore = {
@@ -60,9 +75,11 @@ export const usePianoStore = create<PianoStore>((set) => ({
     durationMs: 150,
     tillSilence: false,
     sampleRate: 44100,
-    method: "euler",
-    backend: "wasm-hotloop",
-    precision: 64,
+    method: DEFAULT_SIMULATION_METHOD,
+    backend: resolveDefaultSimulationBackend(DEFAULT_SIMULATION_METHOD, DEFAULT_SIMULATION_PRECISION),
+    precision: DEFAULT_SIMULATION_PRECISION,
+    substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
+    substeps: DEFAULT_SIMULATION_SUBSTEPS,
   },
   isGeneratingInstrument: false,
   generationProgressDialogOpen: false,

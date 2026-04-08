@@ -83,6 +83,7 @@ export function CellTemplateDialog() {
           defaultWeight: safeWeight,
           defaultStiffness: safeStiffness,
           fixedBorder: values.fixedBorder,
+          boundaryMode: values.fixedBorder ? "fixed" : "free",
         });
         createPresetGraph("cell", {
           n,

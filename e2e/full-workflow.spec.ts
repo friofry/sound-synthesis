@@ -32,10 +32,11 @@ test.describe("Full Workflow", () => {
 
     const simDialog = page.locator(".mfc-window");
     await expect(simDialog).toBeVisible();
-    await expect(simDialog.locator(".mfc-title")).toHaveText("Create Buffer Dialog");
+    await expect(simDialog.locator(".mfc-title")).toHaveText("Simulation Output");
 
-    // Step 6: Click Generate to run simulation
-    await simDialog.locator("button:text('Generate')").click();
+    // Step 6: Switch to full output and run simulation
+    await simDialog.locator("text=Full frames (viewer replay)").click();
+    await simDialog.locator("button:text('Run Full Simulation')").click();
 
     // Step 7: Wait for simulation to complete (dialog should close)
     await expect(simDialog).not.toBeVisible({ timeout: 30_000 });

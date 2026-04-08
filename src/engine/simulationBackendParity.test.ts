@@ -41,6 +41,11 @@ describe("simulation backend parity", () => {
       "fused-loop",
       "sorted-edge-csr",
       "wasm-hotloop",
+      "wasm-hotloop-simd",
+      "wasm-hotloop-simd-packed",
+      "wasm-hotloop-simd-intrinsics",
+      "csr-layout-hybrid",
+      "wasm-csr",
     ] as const;
 
     for (const method of methods) {
@@ -82,6 +87,11 @@ describe("simulation backend parity", () => {
       "fused-loop",
       "sorted-edge-csr",
       "wasm-hotloop",
+      "wasm-hotloop-simd",
+      "wasm-hotloop-simd-packed",
+      "wasm-hotloop-simd-intrinsics",
+      "csr-layout-hybrid",
+      "wasm-csr",
     ] as const;
 
     for (const method of methods) {
@@ -104,5 +114,28 @@ describe("simulation backend parity", () => {
         expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, 8);
       }
     }
+  });
+
+  it("stays close to legacy in playing-point-only capture for euler with wasm-csr f32", () => {
+    const graph = buildParityGraphData();
+    const params: SimulationParams = {
+      sampleRate: 8_000,
+      lengthK: 2,
+      method: "euler",
+      attenuation: 4,
+      squareAttenuation: 0.08,
+      playingPoint: graph.playingPoint,
+    };
+
+    const legacy = runSimulation(graph, params, undefined, { capture: "playing-point-only", backend: "legacy" });
+    const actual = runSimulation(graph, params, undefined, {
+      capture: "playing-point-only",
+      backend: "wasm-csr",
+      precision: 32,
+    });
+
+    expect(actual.frames.length).toBe(0);
+    expect(actual.allPointBuffers.length).toBe(0);
+    expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, 5);
   });
 });

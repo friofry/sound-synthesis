@@ -18,9 +18,21 @@ export const DEFAULT_ATTENUATION = 4;
 export const DEFAULT_SQUARE_ATTENUATION = (1 / 50) * DEFAULT_ATTENUATION;
 
 export type StiffnessType = "isotropic" | "tetradic";
-export type GridType = "cell" | "perimeter" | "empty" | "triangle" | "astra" | "hexagon";
+export type StiffnessNormalizationMode = "none" | "by-edge-length" | "by-rest-area";
+export type WeightDistributionMode = "uniform" | "by-node-area" | "edge-light";
+export type BoundaryMode = "free" | "fixed" | "rim-damped" | "rim-heavy";
+export type GridType = "cell" | "perimeter" | "empty" | "triangle" | "astra" | "hexagon" | "disk-hex";
+export type GridTopologyParams =
+  | { type: "cell"; rows: number; cols: number }
+  | { type: "perimeter"; rows: number; cols: number }
+  | { type: "empty"; rows: number; cols: number }
+  | { type: "triangle"; rows: number; cols: number }
+  | { type: "astra"; rays: number; layers: number }
+  | { type: "hexagon"; layers: number }
+  | { type: "disk-hex"; layers: number };
 export type SimMethod = "euler" | "runge-kutta";
 export type SimulationPrecision = 32 | 64;
+export type SimulationSubstepsMode = "fixed" | "adaptive";
 export type FloatArray = Float32Array | Float64Array;
 
 export type ToolMode =
@@ -89,6 +101,13 @@ export interface GridParams {
   stiffnessType: StiffnessType;
   width: number;
   height: number;
+  stiffnessNormalizationMode?: StiffnessNormalizationMode;
+  weightDistributionMode?: WeightDistributionMode;
+  boundaryMode?: BoundaryMode;
+  rimWeightRatio?: number;
+  rimDampingFactor?: number;
+  defaultAttenuation?: number;
+  defaultSquareAttenuation?: number;
 }
 
 export interface KoeffStr {
@@ -104,6 +123,8 @@ export interface SimulationParams {
   attenuation: number;
   squareAttenuation: number;
   playingPoint: number;
+  substepsMode?: SimulationSubstepsMode;
+  substeps?: number;
 }
 
 export interface SimulationState {
@@ -126,7 +147,12 @@ export type SimulationBackend =
   | "compiled"
   | "fused-loop"
   | "sorted-edge-csr"
-  | "wasm-hotloop";
+  | "wasm-hotloop"
+  | "wasm-hotloop-simd"
+  | "wasm-hotloop-simd-packed"
+  | "wasm-hotloop-simd-intrinsics"
+  | "csr-layout-hybrid"
+  | "wasm-csr";
 
 export type SimulationBackendOption = {
   value: SimulationBackend;
@@ -142,6 +168,11 @@ export const SIMULATION_BACKEND_OPTIONS = [
   { value: "fused-loop", label: "Fused Loop" },
   { value: "sorted-edge-csr", label: "Sorted Edge CSR" },
   { value: "wasm-hotloop", label: "WASM Hotloop" },
+  { value: "wasm-hotloop-simd", label: "WASM Hotloop SIMD" },
+  { value: "wasm-hotloop-simd-packed", label: "WASM Hotloop SIMD Packed" },
+  { value: "wasm-hotloop-simd-intrinsics", label: "WASM Hotloop SIMD Intrinsics" },
+  { value: "csr-layout-hybrid", label: "CSR Layout Hybrid" },
+  { value: "wasm-csr", label: "WASM CSR" },
 ] as const satisfies readonly SimulationBackendOption[];
 
 export interface SimulationWorkerRequest {
