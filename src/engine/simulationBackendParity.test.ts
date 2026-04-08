@@ -45,7 +45,7 @@ describe("simulation backend parity", () => {
       "wasm-hotloop-simd-packed",
       "wasm-hotloop-simd-intrinsics",
       "csr-layout-hybrid",
-      "wasm-csr-f32",
+      "wasm-csr",
     ] as const;
 
     for (const method of methods) {
@@ -61,9 +61,8 @@ describe("simulation backend parity", () => {
       const legacy = runSimulation(graph, params, undefined, { capture: "full", backend: "legacy" });
       for (const backend of comparedBackends) {
         const actual = runSimulation(graph, params, undefined, { capture: "full", backend });
-        const precision = backend === "wasm-csr-f32" ? 5 : 8;
 
-        expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, precision);
+        expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, 8);
         expect(actual.frames.length).toBe(legacy.frames.length);
         expect(actual.allPointBuffers.length).toBe(legacy.allPointBuffers.length);
 
@@ -71,7 +70,7 @@ describe("simulation backend parity", () => {
         for (const sampleIndex of sampleIndices) {
           const legacyFrame = legacy.frames[sampleIndex];
           const actualFrame = actual.frames[sampleIndex];
-          expectCloseArray(actualFrame, legacyFrame, precision);
+          expectCloseArray(actualFrame, legacyFrame, 8);
         }
       }
     }
@@ -92,7 +91,7 @@ describe("simulation backend parity", () => {
       "wasm-hotloop-simd-packed",
       "wasm-hotloop-simd-intrinsics",
       "csr-layout-hybrid",
-      "wasm-csr-f32",
+      "wasm-csr",
     ] as const;
 
     for (const method of methods) {
@@ -110,11 +109,33 @@ describe("simulation backend parity", () => {
       expect(legacy.allPointBuffers.length).toBe(0);
       for (const backend of comparedBackends) {
         const actual = runSimulation(graph, params, undefined, { capture: "playing-point-only", backend });
-        const precision = backend === "wasm-csr-f32" ? 5 : 8;
         expect(actual.frames.length).toBe(0);
         expect(actual.allPointBuffers.length).toBe(0);
-        expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, precision);
+        expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, 8);
       }
     }
+  });
+
+  it("stays close to legacy in playing-point-only capture for euler with wasm-csr f32", () => {
+    const graph = buildParityGraphData();
+    const params: SimulationParams = {
+      sampleRate: 8_000,
+      lengthK: 2,
+      method: "euler",
+      attenuation: 4,
+      squareAttenuation: 0.08,
+      playingPoint: graph.playingPoint,
+    };
+
+    const legacy = runSimulation(graph, params, undefined, { capture: "playing-point-only", backend: "legacy" });
+    const actual = runSimulation(graph, params, undefined, {
+      capture: "playing-point-only",
+      backend: "wasm-csr",
+      precision: 32,
+    });
+
+    expect(actual.frames.length).toBe(0);
+    expect(actual.allPointBuffers.length).toBe(0);
+    expectCloseArray(actual.playingPointBuffer, legacy.playingPointBuffer, 5);
   });
 });

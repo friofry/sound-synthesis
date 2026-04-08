@@ -65,10 +65,11 @@ import {
   type RuntimeSimulationStepper as CsrLayoutRuntimeSimulationStepper,
 } from "./simulationOptimized11CsrLayout";
 import {
-  createWasmCsrF32RuntimeStepperBackend,
-  runSimulationWasmCsrF32Backend,
-  type RuntimeSimulationStepper as WasmCsrF32RuntimeSimulationStepper,
-} from "./simulationOptimized12WasmCsrF32";
+  createWasmCsrRuntimeStepperBackend,
+  runSimulationWasmCsrBackend,
+  type RuntimeSimulationStepper as WasmCsrRuntimeSimulationStepper,
+} from "./simulationOptimized12WasmCsr";
+import { DEFAULT_SIMULATION_BACKEND } from "./simulationDefaults";
 
 const DEFAULT_EDGE_FADE_MS = 2;
 
@@ -294,7 +295,7 @@ export function runSimulation(
   onProgress?: (completed: number, total: number) => void,
   options?: RunSimulationOptions,
 ): SimulationResult {
-  const backend = options?.backend ?? "optimized";
+  const backend = options?.backend ?? DEFAULT_SIMULATION_BACKEND;
   if (backend === "optimized") {
     return runSimulationOptimized(graph, params, onProgress, options);
   }
@@ -328,8 +329,8 @@ export function runSimulation(
   if (backend === "csr-layout-hybrid") {
     return runSimulationCsrLayoutBackend(graph, params, onProgress, options);
   }
-  if (backend === "wasm-csr-f32") {
-    return runSimulationWasmCsrF32Backend(graph, params, onProgress, options);
+  if (backend === "wasm-csr") {
+    return runSimulationWasmCsrBackend(graph, params, onProgress, options);
   }
   return runSimulationLegacy(graph, params, onProgress, options);
 }
@@ -337,7 +338,7 @@ export function runSimulation(
 export function createRuntimeSimulationStepper(
   graph: GraphData,
   params: SimulationParams,
-  backend: SimulationBackend = "optimized",
+  backend: SimulationBackend = DEFAULT_SIMULATION_BACKEND,
 ): RuntimeSimulationStepper {
   if (backend === "optimized") {
     return createOptimizedRuntimeStepper(graph, params) as OptimizedRuntimeSimulationStepper;
@@ -372,8 +373,8 @@ export function createRuntimeSimulationStepper(
   if (backend === "csr-layout-hybrid") {
     return createCsrLayoutRuntimeStepperBackend(graph, params) as CsrLayoutRuntimeSimulationStepper;
   }
-  if (backend === "wasm-csr-f32") {
-    return createWasmCsrF32RuntimeStepperBackend(graph, params) as WasmCsrF32RuntimeSimulationStepper;
+  if (backend === "wasm-csr") {
+    return createWasmCsrRuntimeStepperBackend(graph, params) as WasmCsrRuntimeSimulationStepper;
   }
   return createLegacyRuntimeStepper(graph, params);
 }

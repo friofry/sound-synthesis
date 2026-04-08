@@ -131,7 +131,7 @@ export type SimulationBackend =
   | "wasm-hotloop-simd-packed"
   | "wasm-hotloop-simd-intrinsics"
   | "csr-layout-hybrid"
-  | "wasm-csr-f32";
+  | "wasm-csr";
 
 export type SimulationBackendOption = {
   value: SimulationBackend;
@@ -151,7 +151,7 @@ export const SIMULATION_BACKEND_OPTIONS = [
   { value: "wasm-hotloop-simd-packed", label: "WASM Hotloop SIMD Packed" },
   { value: "wasm-hotloop-simd-intrinsics", label: "WASM Hotloop SIMD Intrinsics" },
   { value: "csr-layout-hybrid", label: "CSR Layout Hybrid" },
-  { value: "wasm-csr-f32", label: "WASM CSR F32 (Euler)" },
+  { value: "wasm-csr", label: "WASM CSR" },
 ] as const satisfies readonly SimulationBackendOption[];
 
 export interface SimulationWorkerRequest {

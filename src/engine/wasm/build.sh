@@ -75,7 +75,6 @@ build_wasm_csr() {
   local output_wasm="$2"
   local output_base64_ts="$3"
   local const_name="$4"
-  local align_exports="$5"
 
   "${CLANG}" \
   --target=wasm32 \
@@ -113,5 +112,5 @@ build_wasm "${INPUT_C_F64}" "${OUTPUT_WASM_F64}" "${OUTPUT_BASE64_TS_F64}" "SIM_
 build_wasm "${INPUT_C_F32}" "${OUTPUT_WASM_F32}" "${OUTPUT_BASE64_TS_F32}" "SIM_HOTLOOP_F32_WASM_BASE64"
 build_wasm "${INPUT_C_SIMD_F64}" "${OUTPUT_WASM_SIMD_F64}" "${OUTPUT_BASE64_TS_SIMD_F64}" "SIM_HOTLOOP_SIMD_WASM_BASE64" "-msimd128"
 build_wasm "${INPUT_C_SIMD_F32}" "${OUTPUT_WASM_SIMD_F32}" "${OUTPUT_BASE64_TS_SIMD_F32}" "SIM_HOTLOOP_SIMD_F32_WASM_BASE64" "-msimd128"
-build_wasm_csr "${INPUT_C_CSR_F64}" "${OUTPUT_WASM_CSR_F64}" "${OUTPUT_BASE64_TS_CSR_F64}" "SIM_HOTLOOP_CSR_WASM_BASE64" "f64"
-build_wasm_csr "${INPUT_C_CSR_F32}" "${OUTPUT_WASM_CSR_F32}" "${OUTPUT_BASE64_TS_CSR_F32}" "SIM_HOTLOOP_CSR_F32_WASM_BASE64" "f32"
+build_wasm_csr "${INPUT_C_CSR_F64}" "${OUTPUT_WASM_CSR_F64}" "${OUTPUT_BASE64_TS_CSR_F64}" "SIM_HOTLOOP_CSR_WASM_BASE64"
+build_wasm_csr "${INPUT_C_CSR_F32}" "${OUTPUT_WASM_CSR_F32}" "${OUTPUT_BASE64_TS_CSR_F32}" "SIM_HOTLOOP_CSR_F32_WASM_BASE64"
