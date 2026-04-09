@@ -40,8 +40,8 @@ export type HammerPlayingPointMode = "impact-point" | "graph-center";
 export type HammerSettings = {
   distribution: HammerDistributionMode;
   weight: number;
-  amplitude: number;
   velocity: number;
+  restitution: number;
   attenuation: number;
   squareAttenuation: number;
   radius: number;
@@ -158,9 +158,9 @@ const defaultSimulationParams: SimulationParams = {
 
 const defaultHammerSettings: HammerSettings = {
   distribution: "smoothed",
-  weight: 0.000001,
-  amplitude: 0.8,
+  weight: 0.02,
   velocity: 0.35,
+  restitution: 0.5,
   attenuation: DEFAULT_ATTENUATION,
   squareAttenuation: DEFAULT_SQUARE_ATTENUATION,
   radius: 36,

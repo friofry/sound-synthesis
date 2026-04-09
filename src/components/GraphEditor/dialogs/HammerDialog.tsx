@@ -13,10 +13,10 @@ type HammerFormProps = {
 
 const WEIGHT_MIN = 0.000001;
 const WEIGHT_MAX = 2;
-const AMPLITUDE_MIN = 0;
-const AMPLITUDE_MAX = 2;
 const VELOCITY_MIN = -2;
 const VELOCITY_MAX = 2;
+const RESTITUTION_MIN = 0;
+const RESTITUTION_MAX = 1;
 const ATTENUATION_MIN = 0;
 const ATTENUATION_MAX = 20;
 const SQUARE_ATTENUATION_MIN = 0;
@@ -27,8 +27,8 @@ const RADIUS_MAX = 240;
 export function HammerDialogForm({ initialValues, onApply, onClose }: HammerFormProps) {
   const [distribution, setDistribution] = useState<HammerDistributionMode>(initialValues.distribution);
   const [weight, setWeight] = useState(initialValues.weight);
-  const [amplitude, setAmplitude] = useState(initialValues.amplitude);
   const [velocity, setVelocity] = useState(initialValues.velocity);
+  const [restitution, setRestitution] = useState(initialValues.restitution);
   const [attenuation, setAttenuation] = useState(initialValues.attenuation);
   const [squareAttenuation, setSquareAttenuation] = useState(initialValues.squareAttenuation);
   const [radius, setRadius] = useState(initialValues.radius);
@@ -44,8 +44,8 @@ export function HammerDialogForm({ initialValues, onApply, onClose }: HammerForm
         onApply({
           distribution,
           weight,
-          amplitude,
           velocity,
+          restitution,
           attenuation,
           squareAttenuation,
           radius,
@@ -68,7 +68,7 @@ export function HammerDialogForm({ initialValues, onApply, onClose }: HammerForm
             <option value="smoothed">Smoothed</option>
           </select>
         </MfcField>
-        <MfcField label="Weight" labelWidth={130}>
+        <MfcField label="Hammer Mass" labelWidth={130}>
           <div className="mfc-slider-field">
             <MfcNumberInput step="0.000001" min={WEIGHT_MIN} value={weight} onChange={setWeight} />
             <input
@@ -78,19 +78,6 @@ export function HammerDialogForm({ initialValues, onApply, onClose }: HammerForm
               step={0.000001}
               value={clamp(weight, WEIGHT_MIN, WEIGHT_MAX)}
               onChange={(event) => setWeight(Number(event.target.value))}
-            />
-          </div>
-        </MfcField>
-        <MfcField label="Amplitude" labelWidth={130}>
-          <div className="mfc-slider-field">
-            <MfcNumberInput step="0.001" min={AMPLITUDE_MIN} value={amplitude} onChange={setAmplitude} />
-            <input
-              type="range"
-              min={AMPLITUDE_MIN}
-              max={AMPLITUDE_MAX}
-              step={0.001}
-              value={clamp(amplitude, AMPLITUDE_MIN, AMPLITUDE_MAX)}
-              onChange={(event) => setAmplitude(Number(event.target.value))}
             />
           </div>
         </MfcField>
@@ -104,6 +91,19 @@ export function HammerDialogForm({ initialValues, onApply, onClose }: HammerForm
               step={0.001}
               value={clamp(velocity, VELOCITY_MIN, VELOCITY_MAX)}
               onChange={(event) => setVelocity(Number(event.target.value))}
+            />
+          </div>
+        </MfcField>
+        <MfcField label="Restitution" labelWidth={130}>
+          <div className="mfc-slider-field">
+            <MfcNumberInput step="0.001" min={RESTITUTION_MIN} max={RESTITUTION_MAX} value={restitution} onChange={setRestitution} />
+            <input
+              type="range"
+              min={RESTITUTION_MIN}
+              max={RESTITUTION_MAX}
+              step={0.001}
+              value={clamp(restitution, RESTITUTION_MIN, RESTITUTION_MAX)}
+              onChange={(event) => setRestitution(Number(event.target.value))}
             />
           </div>
         </MfcField>
@@ -180,8 +180,8 @@ export function HammerDialog() {
         setHammerSettings({
           distribution: values.distribution,
           weight: Number.isFinite(values.weight) ? values.weight : hammerSettings.weight,
-          amplitude: Number.isFinite(values.amplitude) ? values.amplitude : hammerSettings.amplitude,
           velocity: Number.isFinite(values.velocity) ? values.velocity : hammerSettings.velocity,
+          restitution: Number.isFinite(values.restitution) ? values.restitution : hammerSettings.restitution,
           attenuation: Number.isFinite(values.attenuation) ? values.attenuation : hammerSettings.attenuation,
           squareAttenuation: Number.isFinite(values.squareAttenuation)
             ? values.squareAttenuation

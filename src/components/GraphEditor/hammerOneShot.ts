@@ -36,7 +36,9 @@ export async function generateHammerOneShot(options: HammerOneShotOptions): Prom
   const lengthK = resolveLengthK(FIXED_DURATION_MS, sampleRate);
   const graph = options.graph.clone();
   const radius = Math.max(1, options.settings.radius);
-  const effectiveAmplitude = Math.max(0, options.settings.amplitude * clamp(options.charge, 0, 1));
+  const hammerMass = Math.max(0.000001, options.settings.weight);
+  const restitution = clamp(options.settings.restitution, 0, 1);
+  const effectiveVelocity = options.settings.velocity * clamp(options.charge, 0, 1);
   const activeDotIndices: number[] = [];
 
   for (let index = 0; index < graph.dots.length; index += 1) {
@@ -49,10 +51,11 @@ export async function generateHammerOneShot(options: HammerOneShotOptions): Prom
       continue;
     }
     const factor = options.settings.distribution === "smoothed" ? Math.max(0, 1 - dist / radius) : 1;
+    const dotMass = Math.max(0.000001, dot.weight);
+    const impactVelocity = (((1 + restitution) * hammerMass) / (hammerMass + dotMass)) * effectiveVelocity * factor;
     graph.setDotProps(index, {
-      u: effectiveAmplitude * factor,
-      v: options.settings.velocity * factor,
-      weight: Math.max(0.000001, options.settings.weight * Math.max(0.1, factor)),
+      u: 0,
+      v: impactVelocity,
     });
     activeDotIndices.push(index);
   }

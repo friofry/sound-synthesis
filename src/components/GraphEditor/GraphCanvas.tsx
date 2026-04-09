@@ -17,8 +17,9 @@ type GraphCanvasProps = {
     charge: number;
     settings: {
       distribution: "equivalent" | "smoothed";
-      amplitude: number;
+      weight: number;
       velocity: number;
+      restitution: number;
       radius: number;
     };
   }) => void;
@@ -518,8 +519,9 @@ export function GraphCanvas({ onHammerPreview, onHammerImpact }: GraphCanvasProp
         charge,
         settings: {
           distribution: hammerSettings.distribution,
-          amplitude: hammerSettings.amplitude,
+          weight: hammerSettings.weight,
           velocity: hammerSettings.velocity,
+          restitution: hammerSettings.restitution,
           radius: hammerSettings.radius,
         },
       });

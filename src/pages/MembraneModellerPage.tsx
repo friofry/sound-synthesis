@@ -129,6 +129,7 @@ export function MembraneModellerPage() {
         radiusRatio: randomPreset.centerGroupRadiusRatio,
       },
     });
+    initialState.setTool("hammer");
     const preparedGraph = useGraphStore.getState().graph.clone();
     void handleConfirmGenerateNotes({
       octaves: 2,
@@ -204,6 +205,7 @@ export function MembraneModellerPage() {
         radiusRatio: randomPreset.centerGroupRadiusRatio,
       },
     });
+    currentState.setTool("hammer");
 
     const preparedGraph = useGraphStore.getState().graph.clone();
     void handleConfirmGenerateNotes({
@@ -246,8 +248,9 @@ export function MembraneModellerPage() {
     charge: number;
     settings: {
       distribution: "equivalent" | "smoothed";
-      amplitude: number;
+      weight: number;
       velocity: number;
+      restitution: number;
       radius: number;
     };
   }) => {
@@ -255,7 +258,9 @@ export function MembraneModellerPage() {
     const { resetFrame, play } = useViewerStore.getState();
     const radius = Math.max(1, payload.settings.radius);
     const sigma = Math.max(1, radius * 0.45);
-    const effectiveAmplitude = Math.max(0, payload.settings.amplitude * payload.charge);
+    const effectiveVelocity = payload.settings.velocity * clamp(payload.charge, 0, 1);
+    const restitution = clamp(payload.settings.restitution, 0, 1);
+    const hammerMass = Math.max(0.000001, payload.settings.weight);
 
     setActiveSource("editor");
     updateActiveSnapshotGraph((nextGraph) => {
@@ -272,10 +277,12 @@ export function MembraneModellerPage() {
           payload.settings.distribution === "smoothed"
             ? Math.exp(-(dist * dist) / (2 * sigma * sigma))
             : 1;
-        const nextU = dot.u + effectiveAmplitude * factor;
-        const nextV = dot.v + payload.settings.velocity * factor;
+        const dotMass = Math.max(0.000001, dot.weight);
+        const impactVelocity =
+          (((1 + restitution) * hammerMass) / (hammerMass + dotMass)) * effectiveVelocity * factor;
+        const nextV = dot.v + impactVelocity;
         nextGraph.setDotProps(index, {
-          u: Math.max(-1, Math.min(1, nextU)),
+          u: dot.u,
           v: Math.max(-1, Math.min(1, nextV)),
         });
       }
@@ -395,6 +402,10 @@ function randomInt(min: number, max: number): number {
 
 function randomFloat(min: number, max: number): number {
   return min + Math.random() * (max - min);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 function createRandomPresetConfig(): {
