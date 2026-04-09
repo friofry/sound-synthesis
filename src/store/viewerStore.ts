@@ -20,10 +20,10 @@ interface ViewerStore {
 
 export const useViewerStore = create<ViewerStore>((set, get) => ({
   frameIndex: 0,
-  playing: false,
-  speed: 1,
-  amplitudeScale: 1,
-  heatmapEnabled: false,
+  playing: true,
+  speed: 16,
+  amplitudeScale: 1.5,
+  heatmapEnabled: true,
   play: () => set({ playing: true }),
   pause: () => set({ playing: false }),
   stop: () => set({ playing: false, frameIndex: 0 }),

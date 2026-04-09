@@ -10,7 +10,8 @@ import {
   LineBasicMaterial,
   LineSegments,
   Mesh,
-  MeshBasicMaterial,
+  MeshStandardMaterial,
+  type Side,
 } from "three";
 import { GraphModel } from "../../engine/graph";
 import { createRuntimeSimulationStepper } from "../../engine/simulation";
@@ -49,6 +50,7 @@ const VIEWER_LIVE_BACKEND: SimulationBackend = DEFAULT_VIEWER_STEPPER_SETTINGS.b
 const FALLBACK_COLOR: [number, number, number] = [0.7, 0.7, 0.7];
 const PLAIN_EDGE_COLOR: [number, number, number] = [0.0, 0.72, 1.0];
 const PLAIN_SURFACE_COLOR: [number, number, number] = [0.14, 0.16, 0.2];
+const HOT_EMISSIVE_COLOR: [number, number, number] = [0.2, 0.36, 0.7];
 
 type MembraneHeatmapMeshProps = {
   heatmapEnabled: boolean;
@@ -71,11 +73,11 @@ export function MembraneHeatmapMesh({ heatmapEnabled }: MembraneHeatmapMeshProps
   );
   const surfaceMaterial = useMemo(
     () =>
-      new MeshBasicMaterial({
+      createHeatResponsiveSurfaceMaterial({
         vertexColors: true,
         side: DoubleSide,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.88,
         depthWrite: false,
       }),
     [],
@@ -248,29 +250,34 @@ export function MembraneHeatmapMesh({ heatmapEnabled }: MembraneHeatmapMeshProps
     const amplitudeScale = useViewerStore.getState().amplitudeScale;
     const positions = new Float32Array(normalizedDots.length * 3);
     const colors = new Float32Array(normalizedDots.length * 3);
+    const heat = new Float32Array(normalizedDots.length);
 
     for (let index = 0; index < normalizedDots.length; index += 1) {
       const dot = normalizedDots[index];
       const color = heatmapEnabled ? (surfaceColorTriples[index] ?? FALLBACK_COLOR) : PLAIN_SURFACE_COLOR;
+      const heatValue = heatmapEnabled ? clamp01(combinedHeatValues[index] ?? 0) : 0;
+      const glowBoost = heatmapEnabled ? Math.pow(heatValue, 2) * 0.2 : 0;
       const base = index * 3;
       positions[base] = dot.x;
       positions[base + 1] = dot.fixed ? 0 : dot.u * amplitudeScale;
       positions[base + 2] = dot.z;
-      colors[base] = color[0];
-      colors[base + 1] = color[1];
-      colors[base + 2] = color[2];
+      colors[base] = clamp01(color[0] + HOT_EMISSIVE_COLOR[0] * glowBoost);
+      colors[base + 1] = clamp01(color[1] + HOT_EMISSIVE_COLOR[1] * glowBoost);
+      colors[base + 2] = clamp01(color[2] + HOT_EMISSIVE_COLOR[2] * glowBoost);
+      heat[index] = heatValue;
     }
 
     const geometry = new BufferGeometry();
     geometry.setAttribute("position", new BufferAttribute(positions, 3).setUsage(DynamicDrawUsage));
     geometry.setAttribute("color", new BufferAttribute(colors, 3));
+    geometry.setAttribute("heat", new BufferAttribute(heat, 1));
     geometry.setIndex(Array.from(surfaceIndices));
     geometry.computeVertexNormals();
     geometry.computeBoundingSphere();
     surfaceGeometryRef.current = geometry;
     surfacePositionsRef.current = positions;
     surfaceMesh.geometry = geometry;
-  }, [heatmapEnabled, normalizedDots, surfaceColorTriples, surfaceIndices]);
+  }, [combinedHeatValues, heatmapEnabled, normalizedDots, surfaceColorTriples, surfaceIndices]);
 
   useEffect(() => {
     const structureChanged =
@@ -395,6 +402,74 @@ function buildViewerLiveSimulationParams(playingPoint: number): SimulationParams
     substepsMode: DEFAULT_VIEWER_STEPPER_SETTINGS.substepsMode,
     substeps: DEFAULT_VIEWER_STEPPER_SETTINGS.substeps,
   };
+}
+
+function createHeatResponsiveSurfaceMaterial({
+  vertexColors,
+  side,
+  transparent,
+  opacity,
+  depthWrite,
+}: {
+  vertexColors?: boolean;
+  side?: Side;
+  transparent?: boolean;
+  opacity?: number;
+  depthWrite?: boolean;
+}) {
+  const material = new MeshStandardMaterial({
+    vertexColors,
+    side,
+    transparent,
+    opacity,
+    depthWrite,
+    roughness: 0.8,
+    metalness: 0.22,
+    emissive: "#0a1022",
+    emissiveIntensity: 0.22,
+  });
+
+  material.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <common>",
+      `#include <common>
+attribute float heat;
+varying float vHeat;`,
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <begin_vertex>",
+      `#include <begin_vertex>
+vHeat = clamp(heat, 0.0, 1.0);`,
+    );
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <common>",
+      `#include <common>
+varying float vHeat;`,
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <roughnessmap_fragment>",
+      `#include <roughnessmap_fragment>
+roughnessFactor = clamp(mix(0.9, 0.18, pow(vHeat, 1.1)), 0.04, 1.0);`,
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <metalnessmap_fragment>",
+      `#include <metalnessmap_fragment>
+metalnessFactor = clamp(mix(0.18, 0.62, pow(vHeat, 1.05)), 0.0, 1.0);`,
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "vec3 totalEmissiveRadiance = emissive;",
+      `vec3 totalEmissiveRadiance = emissive;
+totalEmissiveRadiance += vec3(0.08, 0.2, 0.52) * pow(vHeat, 1.8) * 0.6;`,
+    );
+  };
+  material.customProgramCacheKey = () => "heatmap-surface-standard-v1";
+
+  return material;
+}
+
+function clamp01(value: number): number {
+  return Math.min(1, Math.max(0, value));
 }
 
 const EMPTY_GRAPH = new GraphModel();

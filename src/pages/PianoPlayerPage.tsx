@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { GenerationProgressDialog } from "../components/PianoPlayer/GenerationProgressDialog";
 import { GenerateNotesDialog } from "../components/PianoPlayer/GenerateNotesDialog";
 import { FrequencyAnalyzer } from "../components/PianoPlayer/FrequencyAnalyzer";
@@ -5,6 +6,7 @@ import { OscillogramView } from "../components/PianoPlayer/OscillogramView";
 import { PianoKeyboard } from "../components/PianoPlayer/PianoKeyboard";
 import { PianoToolbar } from "../components/PianoPlayer/PianoToolbar";
 import { useGraphStore } from "../store/graphStore";
+import { useAudioAnalyserStore } from "../store/audioAnalyserStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
 
 export function PianoPlayerPage() {
@@ -37,6 +39,12 @@ export function PianoPlayerPage() {
     handleSaveSnc,
     handleLoadSncFile,
   } = usePianoToolbar({ graph, simulationParams });
+
+  const setAnalyser = useAudioAnalyserStore((s) => s.setAnalyser);
+  useEffect(() => {
+    setAnalyser(audioEngine.analyser);
+    return () => setAnalyser(null);
+  }, [audioEngine.analyser, setAnalyser]);
 
   return (
     <div className="piano-page">

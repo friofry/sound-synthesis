@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DoubleSide } from "three";
 import { GraphModel } from "../../engine/graph";
 import { scaleGraphForPitchRatio } from "../../engine/gridGenerators";
+import { HeatmapSceneShell } from "./HeatmapSceneShell";
 import { MembraneMesh } from "./MembraneMesh";
 import { MembraneHeatmapMesh } from "./MembraneHeatmapMesh";
 import { ViewerToolbar } from "./ViewerToolbar";
@@ -300,6 +301,7 @@ export function MembraneViewer() {
             gl.domElement.oncontextmenu = (e) => e.preventDefault();
           }}
         >
+          <HeatmapSceneShell enabled={heatmapEnabled} membraneDots={normalizedDots} />
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}
             onPointerDown={handleBrushPointerDown}

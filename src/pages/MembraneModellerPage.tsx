@@ -37,6 +37,7 @@ import { useGraphStore } from "../store/graphStore";
 import { useMembraneViewerStore } from "../store/membraneViewerStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
 import { useViewerStore } from "../store/viewerStore";
+import { useAudioAnalyserStore } from "../store/audioAnalyserStore";
 import { e2eRecordHammerPreview, e2eSetLastHammerImpact, installE2EHarness } from "../e2e/e2eHarness";
 
 export function MembraneModellerPage() {
@@ -82,6 +83,12 @@ export function MembraneModellerPage() {
     handleSaveSnc,
     handleLoadSncFile,
   } = usePianoToolbar({ graph, simulationParams });
+
+  const setAnalyser = useAudioAnalyserStore((s) => s.setAnalyser);
+  useEffect(() => {
+    setAnalyser(audioEngine.analyser);
+    return () => setAnalyser(null);
+  }, [audioEngine.analyser, setAnalyser]);
 
   const buildQuickGenerateSettings = useCallback(
     (
