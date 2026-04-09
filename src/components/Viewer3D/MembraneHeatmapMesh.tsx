@@ -102,7 +102,7 @@ export function MembraneHeatmapMesh({ heatmapEnabled }: MembraneHeatmapMeshProps
       fixed: dot.fixed,
       weight: dot.weight,
     }));
-  }, [graph, sourcePerturbation, snapshotRevision]);
+  }, [graph, sourcePerturbation]);
 
   const stiffnessRange = useMemo(() => computeRange(graph.lines.map((line) => line.k)), [graph.lines]);
 

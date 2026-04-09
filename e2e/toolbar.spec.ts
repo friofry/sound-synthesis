@@ -101,6 +101,7 @@ test.describe("Editor Toolbar", () => {
       playingPoint: null,
       editorPerturbation: {
         kind: "instant",
+        playingPoint: null,
         points: [
           { u: 1.25, v: -2.5 },
           { u: 3.5, v: 4.75 },

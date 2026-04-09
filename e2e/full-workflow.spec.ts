@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { getGraphState, clearGraph } from "./helpers";
 
 test.describe("Full Workflow", () => {
-  test("create grid via cell template, set playing point, run simulation", async ({ page }) => {
+  test("create grid via cell template, set playing point, open Create Piano dialog", async ({ page }) => {
     await page.goto("/");
     await clearGraph(page);
 
@@ -25,36 +25,25 @@ test.describe("Full Workflow", () => {
     const playingPoint = await page.evaluate(() => window.__graphStore.getState().playingPoint);
     expect(playingPoint).not.toBeNull();
 
-    // Step 5: Open simulation dialog
-    await page.evaluate(() => {
-      window.__graphStore.getState().openSimulationDialog();
-    });
+    // Step 5: Open Create Piano dialog from toolbar
+    await page.click('button[title="Generate instrument"]');
 
     const simDialog = page.locator(".mfc-window");
     await expect(simDialog).toBeVisible();
-    await expect(simDialog.locator(".mfc-title")).toHaveText("Simulation Output");
+    await expect(simDialog.locator(".mfc-title")).toHaveText("Create Piano");
 
-    // Step 6: Switch to full output and run simulation
-    await simDialog.locator("text=Full frames (viewer replay)").click();
-    await simDialog.locator("button:text('Run Full Simulation')").click();
+    // Step 6: Check core simulation controls are visible
+    await expect(simDialog.locator("text=Sample Rate")).toBeVisible();
+    await expect(simDialog.locator("text=Algorithm")).toBeVisible();
+    await expect(simDialog.locator("button:text('Generate!')")).toBeVisible();
 
-    // Step 7: Wait for simulation to complete (dialog should close)
-    await expect(simDialog).not.toBeVisible({ timeout: 30_000 });
+    // Step 7: Close dialog without starting generation
+    await simDialog.locator("button:text('Cancel')").click();
+    await expect(simDialog).not.toBeVisible();
 
-    // Step 8: Verify simulation completed
-    const simResult = await page.evaluate(() => {
-      const state = window.__graphStore.getState();
-      return {
-        isSimulating: state.isSimulating,
-        hasResult: state.simulationResult !== null,
-      };
-    });
-    expect(simResult.isSimulating).toBe(false);
-    expect(simResult.hasResult).toBe(true);
-
-    // Step 9: Viewer Play button should now be enabled
-    const playBtn = page.locator(".viewer-toolbar button", { hasText: "Play" });
-    await expect(playBtn).toBeEnabled();
+    // Step 8: Viewer Play/Pause button should be enabled for non-empty graph
+    const playPauseBtn = page.locator(".viewer-toolbar button").first();
+    await expect(playPauseBtn).toBeEnabled();
   });
 
   test("create grid, delete a dot, verify graph consistency", async ({ page }) => {

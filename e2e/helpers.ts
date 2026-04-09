@@ -197,9 +197,21 @@ export async function createPresetGrid(
 }
 
 export async function clearGraph(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    window.__graphStore.getState().clearGraph();
-  });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await page.waitForFunction(() => Boolean(window.__graphStore), undefined, { timeout: 10_000 });
+      await page.evaluate(() => {
+        window.__graphStore.getState().clearGraph();
+      });
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("Execution context was destroyed") || attempt === 2) {
+        throw error;
+      }
+      await page.waitForLoadState("domcontentloaded");
+    }
+  }
 }
 
 export async function rightClickCanvas(page: Page, x: number, y: number): Promise<void> {

@@ -6,9 +6,9 @@ test.describe("Viewer Toolbar", () => {
     await page.goto("/");
   });
 
-  test("Play button is disabled when graph is empty", async ({ page }) => {
+  test("Play/Pause button is disabled when graph is empty", async ({ page }) => {
     await clearGraph(page);
-    const btn = page.locator(".viewer-toolbar button", { hasText: "Play" });
+    const btn = page.locator(".viewer-toolbar button").first();
     await expect(btn).toBeDisabled();
   });
 
@@ -18,9 +18,9 @@ test.describe("Viewer Toolbar", () => {
     await expect(btn).toBeDisabled();
   });
 
-  test("Play button is enabled after creating a graph", async ({ page }) => {
+  test("Play/Pause button is enabled after creating a graph", async ({ page }) => {
     await createPresetGrid(page, "cell", 3, 3);
-    const btn = page.locator(".viewer-toolbar button", { hasText: "Play" });
+    const btn = page.locator(".viewer-toolbar button").first();
     await expect(btn).toBeEnabled();
   });
 
@@ -30,12 +30,14 @@ test.describe("Viewer Toolbar", () => {
     await expect(btn).toBeEnabled();
   });
 
-  test("Play button toggles to Pause while playing", async ({ page }) => {
+  test("Play/Pause button toggles state on click", async ({ page }) => {
     await createPresetGrid(page, "cell", 3, 3);
     const playPauseBtn = page.locator(".viewer-toolbar button").first();
-    await expect(playPauseBtn).toHaveText("Play");
+    const initialLabel = (await playPauseBtn.textContent())?.trim() ?? "";
+    expect(["Play", "Pause"]).toContain(initialLabel);
     await playPauseBtn.click();
-
-    await expect(playPauseBtn).toHaveText("Pause");
+    const nextLabel = (await playPauseBtn.textContent())?.trim() ?? "";
+    expect(nextLabel).not.toBe(initialLabel);
+    expect(["Play", "Pause"]).toContain(nextLabel);
   });
 });

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { clickCanvas, createPresetGrid, dragOnCanvas, getGraphState, rightClickCanvas, selectTool } from "./helpers";
+import { clickCanvas, createPresetGrid, dragOnCanvas, getGraphState, selectTool } from "./helpers";
 
 test.describe("Dialogs", () => {
   const dialogByTitle = (page: Page, title: string) => page.locator(`.mfc-window:has(.mfc-title:has-text("${title}"))`);
@@ -19,10 +19,26 @@ test.describe("Dialogs", () => {
     await createPresetGrid(page, "cell", 3, 3);
     const state = await getGraphState(page);
     const dot = pickEditableDot(state.dots);
-
-    await rightClickCanvas(page, dot.x, dot.y);
+    await page.evaluate(() => {
+      window.__graphStore.getState().resetViewport();
+    });
+    const canvas = page.locator("canvas.graph-canvas");
+    const candidates = [
+      { x: Math.round(dot.x), y: Math.round(dot.y) },
+      { x: Math.round(dot.x) + 2, y: Math.round(dot.y) + 2 },
+      { x: Math.round(dot.x) - 2, y: Math.round(dot.y) - 2 },
+    ];
 
     const dialog = dialogByTitle(page, "Point parameters");
+    for (const candidate of candidates) {
+      await canvas.click({
+        button: "right",
+        position: { x: candidate.x, y: candidate.y },
+      });
+      if (await dialog.isVisible()) {
+        break;
+      }
+    }
     await expect(dialog).toBeVisible();
     await expect(dialog.locator(".mfc-title")).toHaveText("Point parameters");
   });
@@ -142,27 +158,23 @@ test.describe("Dialogs", () => {
     await expect(dialog.locator("text=Distribution")).toBeVisible();
   });
 
-  test("SimulationDialog can be opened from store action", async ({ page }) => {
+  test("Create Piano dialog can be opened from toolbar action", async ({ page }) => {
     await createPresetGrid(page, "cell", 3, 3);
-    await page.evaluate(() => {
-      window.__graphStore.getState().openSimulationDialog();
-    });
+    await page.click('button[title="Generate instrument"]');
 
-    const dialog = dialogByTitle(page, "Simulation Output");
+    const dialog = dialogByTitle(page, "Create Piano");
     await expect(dialog).toBeVisible();
-    await expect(dialog.locator(".mfc-title")).toHaveText("Simulation Output");
+    await expect(dialog.locator(".mfc-title")).toHaveText("Create Piano");
   });
 
-  test("SimulationDialog has Sample Rate and Algorithm fields", async ({ page }) => {
+  test("Create Piano dialog has Sample Rate and Algorithm fields", async ({ page }) => {
     await createPresetGrid(page, "cell", 3, 3);
-    await page.evaluate(() => {
-      window.__graphStore.getState().openSimulationDialog();
-    });
+    await page.click('button[title="Generate instrument"]');
 
-    const dialog = dialogByTitle(page, "Simulation Output");
+    const dialog = dialogByTitle(page, "Create Piano");
     await expect(dialog.locator("text=Sample Rate")).toBeVisible();
-    await expect(dialog.locator("text=Samples (K)")).toBeVisible();
-    await expect(dialog.locator("text=Linear Damping")).toBeVisible();
+    await expect(dialog.locator("text=Linear")).toBeVisible();
+    await expect(dialog.locator("text=Square")).toBeVisible();
     await expect(dialog.locator("text=Algorithm")).toBeVisible();
   });
 

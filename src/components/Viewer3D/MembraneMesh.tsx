@@ -68,7 +68,7 @@ export function MembraneMesh() {
       u: dot.u,
       fixed: dot.fixed,
     }));
-  }, [graph, sourcePerturbation, snapshotRevision]);
+  }, [graph, sourcePerturbation]);
   const structureSignature = useMemo(
     () => `${activeSource}#${snapshotRevision}#${buildGraphStructureSignature(graph, sourcePerturbation)}`,
     [activeSource, graph, sourcePerturbation, snapshotRevision],

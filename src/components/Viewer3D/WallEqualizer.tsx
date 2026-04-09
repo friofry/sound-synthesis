@@ -115,7 +115,7 @@ export function WallEqualizer({
   const smoothedRef = useRef<Float32Array>(new Float32Array(BAR_COUNT));
   const floatBufRef = useRef<Float32Array | null>(null);
 
-  const { geometry, material, spectrumTexture } = useMemo(() => {
+  const { geometry, material } = useMemo(() => {
     const geo = new PlaneGeometry(width, height);
 
     const texData = new Float32Array(BAR_COUNT);
@@ -140,7 +140,7 @@ export function WallEqualizer({
       depthWrite: false,
     });
 
-    return { geometry: geo, material: mat, spectrumTexture: tex };
+    return { geometry: geo, material: mat };
   }, [width, height, colorScheme]);
 
   useFrame(({ clock }) => {
@@ -195,6 +195,7 @@ export function WallEqualizer({
       }
     }
 
+    const spectrumTexture = matRef.current.uniforms.uSpectrum.value as DataTexture;
     const texData = spectrumTexture.image.data as Float32Array;
     texData.set(smoothed);
     spectrumTexture.needsUpdate = true;

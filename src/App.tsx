@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
 import "./App.css";
 import { MfcMenuBar, type MfcMenuBarItem } from "./components/ui/MfcMenu";
 import { MembraneModellerPage } from "./pages/MembraneModellerPage";
@@ -36,14 +36,14 @@ function App() {
     }
   };
 
-  const handleSaveGraph = () => {
+  const handleSaveGraph = useCallback(() => {
     try {
       const serializedGraph = serializeGraph();
       downloadGraphFile("graph.gph", graphToBinary(serializedGraph));
     } catch (error) {
       window.alert(`Failed to save graph file: ${(error as Error).message}`);
     }
-  };
+  }, [serializeGraph]);
 
   const menuItems = useMemo<MfcMenuBarItem[]>(
     () => [

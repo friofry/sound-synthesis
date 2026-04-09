@@ -24,9 +24,6 @@ const TABLE_Y = -0.12;
 const LEG_H = 1.1;
 const LEG_RADIUS = 0.07;
 
-const FRAME_W = 4.15;
-const FRAME_D = 2.15;
-const FRAME_BAR = 0.1;
 const FRAME_H = 0.06;
 const FRAME_OFFSET = 0.05;
 
@@ -173,7 +170,6 @@ function PerimeterFrame({ hull, y }: { hull: Point2D[]; y: number }) {
     }
 
     const barWidth = 0.1;
-    const barHeight = FRAME_H;
     const result: { px: number; pz: number; length: number; angle: number }[] = [];
 
     for (let i = 0; i < hull.length; i++) {

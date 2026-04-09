@@ -128,12 +128,6 @@ export function MfcNumberInput({ value, onChange, step, min, ...rest }: MfcNumbe
   const displayValue = isEditing ? raw : formattedValue;
 
   useEffect(() => {
-    if (!isEditing) {
-      setRaw(formattedValue);
-    }
-  }, [formattedValue, isEditing]);
-
-  useEffect(() => {
     if (isEditing || !Number.isFinite(value)) {
       return;
     }
