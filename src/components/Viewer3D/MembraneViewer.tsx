@@ -103,8 +103,33 @@ export function MembraneViewer() {
     }
     return Math.max(12, Math.max(bounds.width, bounds.height) * 0.06);
   }, [bounds]);
-  const stiffnessRange = useMemo(() => computeRange(graph.lines.map((line) => line.k)), [graph.lines]);
-  const weightRange = useMemo(() => computeRange(graph.dots.map((dot) => dot.weight)), [graph.dots]);
+  const dotAverageStiffness = useMemo(() => {
+    if (graph.dots.length === 0) {
+      return [];
+    }
+    const sum = new Array<number>(graph.dots.length).fill(0);
+    const count = new Array<number>(graph.dots.length).fill(0);
+    for (const line of graph.lines) {
+      if (line.dot1 < graph.dots.length) {
+        sum[line.dot1] += line.k;
+        count[line.dot1] += 1;
+      }
+      if (line.dot2 < graph.dots.length) {
+        sum[line.dot2] += line.k;
+        count[line.dot2] += 1;
+      }
+    }
+    return sum.map((value, index) => (count[index] > 0 ? value / count[index] : 0));
+  }, [graph.dots.length, graph.lines]);
+
+  const combinedRange = useMemo(() => {
+    const rawValues = graph.dots.map((dot, index) => {
+      const avgK = dotAverageStiffness[index] ?? 0;
+      const mass = Math.max(dot.weight, 1e-9);
+      return Math.sqrt(Math.max(0, avgK / mass));
+    });
+    return computeRange(rawValues);
+  }, [dotAverageStiffness, graph.dots]);
 
   const normalizedDots = useMemo(() => {
     if (!bounds) {
@@ -290,19 +315,11 @@ export function MembraneViewer() {
         {heatmapEnabled ? (
           <div className="viewer-heatmap-legend" aria-hidden="true">
             <div className="viewer-heatmap-legend-row">
-              <div className="viewer-heatmap-legend-title">Edge stiffness (k)</div>
-              <div className="viewer-heatmap-legend-scale viewer-heatmap-legend-scale-stiffness" />
+              <div className="viewer-heatmap-legend-title">Local frequency sqrt(k/m)</div>
+              <div className="viewer-heatmap-legend-scale viewer-heatmap-legend-scale-combined" />
               <div className="viewer-heatmap-legend-values">
-                <span>{formatLegendValue(stiffnessRange.min)}</span>
-                <span>{formatLegendValue(stiffnessRange.max)}</span>
-              </div>
-            </div>
-            <div className="viewer-heatmap-legend-row">
-              <div className="viewer-heatmap-legend-title">Point weight</div>
-              <div className="viewer-heatmap-legend-scale viewer-heatmap-legend-scale-weight" />
-              <div className="viewer-heatmap-legend-values">
-                <span>{formatLegendValue(weightRange.min)}</span>
-                <span>{formatLegendValue(weightRange.max)}</span>
+                <span>{formatLegendValue(combinedRange.min)}</span>
+                <span>{formatLegendValue(combinedRange.max)}</span>
               </div>
             </div>
           </div>

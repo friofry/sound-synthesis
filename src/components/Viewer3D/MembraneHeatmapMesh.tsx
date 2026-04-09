@@ -4,17 +4,12 @@ import Delaunator from "delaunator";
 import {
   BufferAttribute,
   BufferGeometry,
-  Color,
   DoubleSide,
   DynamicDrawUsage,
-  InstancedBufferAttribute,
-  InstancedMesh,
   LineBasicMaterial,
   LineSegments,
   Mesh,
   MeshBasicMaterial,
-  Object3D,
-  SphereGeometry,
 } from "three";
 import { GraphModel } from "../../engine/graph";
 import { createRuntimeSimulationStepper } from "../../engine/simulation";
@@ -51,7 +46,6 @@ function computeBounds(points: { x: number; y: number }[]) {
 
 const VIEWER_LIVE_METHOD: SimulationParams["method"] = "runge-kutta";
 const VIEWER_LIVE_BACKEND: SimulationBackend = "edge-list";
-const POINT_RADIUS = 0.042;
 const FALLBACK_COLOR: [number, number, number] = [0.7, 0.7, 0.7];
 const PLAIN_EDGE_COLOR: [number, number, number] = [0.0, 0.72, 1.0];
 const PLAIN_SURFACE_COLOR: [number, number, number] = [0.14, 0.16, 0.2];
@@ -67,12 +61,9 @@ export function MembraneHeatmapMesh({ heatmapEnabled }: MembraneHeatmapMeshProps
   const surfaceMeshRef = useRef<Mesh>(null);
   const surfaceGeometryRef = useRef<BufferGeometry | null>(null);
   const surfacePositionsRef = useRef<Float32Array | null>(null);
-  const pointsRef = useRef<InstancedMesh>(null);
   const runtimeStepperRef = useRef<RuntimeSimulationStepper | null>(null);
   const prevPlayingRef = useRef(false);
   const prevStructureSignatureRef = useRef<string | null>(null);
-  const tempObject = useMemo(() => new Object3D(), []);
-  const tempColor = useMemo(() => new Color(), []);
 
   const edgeMaterial = useMemo(
     () => new LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.95 }),
@@ -89,34 +80,6 @@ export function MembraneHeatmapMesh({ heatmapEnabled }: MembraneHeatmapMeshProps
       }),
     [],
   );
-  const pointMaterial = useMemo(() => {
-    const material = new MeshBasicMaterial({
-      vertexColors: true,
-      transparent: true,
-      opacity: 1,
-      depthWrite: false,
-    });
-    material.onBeforeCompile = (shader) => {
-      shader.vertexShader = `
-attribute float instanceAlpha;
-varying float vInstanceAlpha;
-${shader.vertexShader}
-`.replace(
-        "#include <begin_vertex>",
-        `#include <begin_vertex>
-vInstanceAlpha = instanceAlpha;`,
-      );
-      shader.fragmentShader = `
-varying float vInstanceAlpha;
-${shader.fragmentShader}
-`.replace(
-        "vec4 diffuseColor = vec4( diffuse, opacity );",
-        "vec4 diffuseColor = vec4( diffuse, opacity * vInstanceAlpha );",
-      );
-    };
-    return material;
-  }, []);
-  const pointGeometry = useMemo(() => new SphereGeometry(1, 10, 10), []);
 
   const activeSource = useMembraneViewerStore((state) => state.activeSource);
   const activeSnapshot = useMembraneViewerStore((state) => state.snapshots[state.activeSource]);
@@ -138,7 +101,6 @@ ${shader.fragmentShader}
   }, [graph.dots]);
 
   const stiffnessRange = useMemo(() => computeRange(graph.lines.map((line) => line.k)), [graph.lines]);
-  const weightRange = useMemo(() => computeRange(graph.dots.map((dot) => dot.weight)), [graph.dots]);
 
   const dotAverageStiffness = useMemo(() => {
     if (graph.dots.length === 0) {
@@ -159,25 +121,28 @@ ${shader.fragmentShader}
     return sum.map((value, index) => (count[index] > 0 ? value / count[index] : stiffnessRange.min));
   }, [graph.dots.length, graph.lines, stiffnessRange]);
 
+  const combinedHeatValues = useMemo(() => {
+    const rawValues = normalizedDots.map((dot, index) => {
+      const avgK = dotAverageStiffness[index] ?? stiffnessRange.min;
+      const mass = Math.max(dot.weight, 1e-9);
+      const ratio = avgK / mass;
+      return Math.sqrt(Math.max(0, ratio));
+    });
+    const range = computeRange(rawValues);
+    return rawValues.map((value) => normalizeByRange(value, range));
+  }, [dotAverageStiffness, normalizedDots, stiffnessRange]);
+
   const surfaceColorTriples = useMemo(
-    () =>
-      dotAverageStiffness.map((value) => heatmapColor(normalizeByRange(value, stiffnessRange))),
-    [dotAverageStiffness, stiffnessRange],
+    () => combinedHeatValues.map((value) => heatmapColor(value)),
+    [combinedHeatValues],
   );
   const edgeColorTriples = useMemo(
-    () => graph.lines.map((line) => heatmapColor(normalizeByRange(line.k, stiffnessRange))),
-    [graph.lines, stiffnessRange],
-  );
-  const pointVisuals = useMemo(
     () =>
-      normalizedDots.map((dot) => {
-        const t = normalizeByRange(dot.weight, weightRange);
-        return {
-          rgb: heatmapColor(0.15 + t * 0.7),
-          alpha: 0.2 + t * 0.75,
-        };
+      graph.lines.map((line) => {
+        const t = ((combinedHeatValues[line.dot1] ?? 0.5) + (combinedHeatValues[line.dot2] ?? 0.5)) * 0.5;
+        return heatmapColor(t);
       }),
-    [normalizedDots, weightRange],
+    [combinedHeatValues, graph.lines],
   );
 
   const surfaceIndices = useMemo(() => {
@@ -306,43 +271,6 @@ ${shader.fragmentShader}
   }, [heatmapEnabled, normalizedDots, surfaceColorTriples, surfaceIndices]);
 
   useEffect(() => {
-    const pointsMesh = pointsRef.current;
-    if (!pointsMesh) {
-      return;
-    }
-
-    pointsMesh.count = normalizedDots.length;
-    pointsMesh.instanceMatrix.setUsage(DynamicDrawUsage);
-
-    const amplitudeScale = useViewerStore.getState().amplitudeScale;
-    for (let index = 0; index < normalizedDots.length; index += 1) {
-      const dot = normalizedDots[index];
-      const point = pointVisuals[index];
-      tempObject.position.set(dot.x, dot.fixed ? 0 : dot.u * amplitudeScale, dot.z);
-      tempObject.scale.setScalar(POINT_RADIUS);
-      tempObject.updateMatrix();
-      pointsMesh.setMatrixAt(index, tempObject.matrix);
-
-      if (point && heatmapEnabled) {
-        tempColor.setRGB(point.rgb[0], point.rgb[1], point.rgb[2]);
-        pointsMesh.setColorAt(index, tempColor);
-      }
-    }
-
-    const alphas = new Float32Array(Math.max(1, normalizedDots.length));
-    for (let index = 0; index < normalizedDots.length; index += 1) {
-      alphas[index] = heatmapEnabled ? (pointVisuals[index]?.alpha ?? 0.2) : 0;
-    }
-    const geometry = pointsMesh.geometry as BufferGeometry;
-    geometry.setAttribute("instanceAlpha", new InstancedBufferAttribute(alphas, 1));
-
-    if (pointsMesh.instanceColor) {
-      pointsMesh.instanceColor.needsUpdate = true;
-    }
-    pointsMesh.instanceMatrix.needsUpdate = true;
-  }, [heatmapEnabled, normalizedDots, pointVisuals, tempColor, tempObject]);
-
-  useEffect(() => {
     const structureChanged =
       prevStructureSignatureRef.current !== null && prevStructureSignatureRef.current !== structureSignature;
 
@@ -364,7 +292,6 @@ ${shader.fragmentShader}
     const edgeGeometry = edgeGeometryRef.current;
     const surfacePositions = surfacePositionsRef.current;
     const surfaceGeometry = surfaceGeometryRef.current;
-    const pointsMesh = pointsRef.current;
 
     if (!edgePositions || !edgeGeometry || graph.dots.length === 0) {
       return;
@@ -417,22 +344,6 @@ ${shader.fragmentShader}
       }
     }
 
-    if (pointsMesh) {
-      pointsMesh.count = normalizedDots.length;
-      for (let index = 0; index < normalizedDots.length; index += 1) {
-        const dot = normalizedDots[index];
-        tempObject.position.set(
-          dot.x,
-          dot.fixed ? 0 : (runtimeState.u[index] ?? 0) * amplitudeScale,
-          dot.z,
-        );
-        tempObject.scale.setScalar(POINT_RADIUS);
-        tempObject.updateMatrix();
-        pointsMesh.setMatrixAt(index, tempObject.matrix);
-      }
-      pointsMesh.instanceMatrix.needsUpdate = true;
-    }
-
     const edgeAttribute = edgeGeometry.getAttribute("position") as BufferAttribute;
     edgeAttribute.needsUpdate = true;
     edgeGeometry.computeBoundingSphere();
@@ -453,10 +364,6 @@ ${shader.fragmentShader}
     <group>
       <mesh ref={surfaceMeshRef} material={surfaceMaterial} />
       <lineSegments ref={edgeMeshRef} material={edgeMaterial} />
-      <instancedMesh
-        ref={pointsRef}
-        args={[pointGeometry, pointMaterial, Math.max(1, normalizedDots.length)]}
-      />
     </group>
   );
 }

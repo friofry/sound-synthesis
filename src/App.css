@@ -410,25 +410,18 @@
   border: 1px solid rgb(255 255 255 / 45%);
 }
 
-.viewer-heatmap-legend-scale-stiffness {
+.viewer-heatmap-legend-scale-combined {
   background: linear-gradient(
     90deg,
     #30123b 0%,
-    #4668e0 22%,
-    #22b8c8 38%,
-    #7ad151 58%,
-    #fde725 78%,
-    #d94801 100%
-  );
-}
-
-.viewer-heatmap-legend-scale-weight {
-  background: linear-gradient(
-    90deg,
-    rgb(70 90 200 / 25%) 0%,
-    rgb(35 200 200 / 45%) 35%,
-    rgb(255 206 82 / 70%) 65%,
-    rgb(220 76 27 / 96%) 100%
+    #4543b5 13%,
+    #3385f2 25%,
+    #24c0b0 38%,
+    #70de53 50%,
+    #cce11e 63%,
+    #fab927 75%,
+    #e85f1f 88%,
+    #910d08 100%
   );
 }
 
