@@ -6,6 +6,7 @@ interface ViewerStore {
   speed: number;
   amplitudeScale: number;
   heatmapEnabled: boolean;
+  hammerBootstrapPending: boolean;
   play: () => void;
   pause: () => void;
   stop: () => void;
@@ -16,6 +17,8 @@ interface ViewerStore {
   toggleHeatmap: () => void;
   resetFrame: () => void;
   advanceFrame: (frameCount: number) => void;
+  armHammerBootstrap: () => void;
+  consumeHammerBootstrap: () => boolean;
 }
 
 export const useViewerStore = create<ViewerStore>((set, get) => ({
@@ -24,6 +27,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   speed: 1,
   amplitudeScale: 1,
   heatmapEnabled: false,
+  hammerBootstrapPending: false,
   play: () => set({ playing: true }),
   pause: () => set({ playing: false }),
   stop: () => set({ playing: false, frameIndex: 0 }),
@@ -48,5 +52,13 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
       return;
     }
     set({ frameIndex: next });
+  },
+  armHammerBootstrap: () => set({ hammerBootstrapPending: true }),
+  consumeHammerBootstrap: () => {
+    const pending = get().hammerBootstrapPending;
+    if (pending) {
+      set({ hammerBootstrapPending: false });
+    }
+    return pending;
   },
 }));

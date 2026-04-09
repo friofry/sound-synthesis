@@ -39,6 +39,7 @@ import { useGraphStore } from "../store/graphStore";
 import { useMembraneViewerStore } from "../store/membraneViewerStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
 import { useViewerStore } from "../store/viewerStore";
+import { e2eRecordHammerPreview, e2eSetLastHammerImpact, installE2EHarness } from "../e2e/e2eHarness";
 
 export function MembraneModellerPage() {
   const skipAutoRandomInit = import.meta.env.VITE_E2E === "1";
@@ -161,6 +162,10 @@ export function MembraneModellerPage() {
     InitializeFuzzyGraph();
   }, [InitializeFuzzyGraph, skipAutoRandomInit]);
 
+  useEffect(() => {
+    installE2EHarness();
+  }, []);
+
   const handleReprepareAndGenerate = useCallback(() => {
     const randomPreset = createRandomPresetConfig();
     const currentState = useGraphStore.getState();
@@ -254,8 +259,14 @@ export function MembraneModellerPage() {
       radius: number;
     };
   }) => {
+    e2eSetLastHammerImpact({
+      impactX: payload.impactX,
+      impactY: payload.impactY,
+      charge: payload.charge,
+      radius: payload.settings.radius,
+    });
     const { setActiveSource, updateActiveSnapshotGraph } = useMembraneViewerStore.getState();
-    const { resetFrame, play } = useViewerStore.getState();
+    const { resetFrame, play, armHammerBootstrap } = useViewerStore.getState();
     const radius = Math.max(1, payload.settings.radius);
     const sigma = Math.max(1, radius * 0.45);
     const effectiveVelocity = payload.settings.velocity * clamp(payload.charge, 0, 1);
@@ -287,9 +298,18 @@ export function MembraneModellerPage() {
         });
       }
     });
+    armHammerBootstrap();
     resetFrame();
     play();
   }, []);
+
+  const handleHammerPreviewForE2E = useCallback(
+    (buffer: Float32Array, sampleRate: number) => {
+      e2eRecordHammerPreview(buffer, sampleRate);
+      void handlePlayPreviewBuffer(buffer, sampleRate);
+    },
+    [handlePlayPreviewBuffer],
+  );
 
   return (
     <section className="workspace-layout">
@@ -300,7 +320,7 @@ export function MembraneModellerPage() {
               <EditorToolbar onReprepareAndGenerate={handleReprepareAndGenerate} />
             </aside>
             <div className="graph-stage">
-              <GraphCanvas onHammerPreview={handlePlayPreviewBuffer} onHammerImpact={handleHammerImpactToViewer} />
+              <GraphCanvas onHammerPreview={handleHammerPreviewForE2E} onHammerImpact={handleHammerImpactToViewer} />
               <StatusBar />
             </div>
           </section>

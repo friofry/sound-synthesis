@@ -151,6 +151,12 @@ export function MembraneMesh() {
         buildViewerLiveSimulationParams(graph.playingPoint ?? graph.findFirstPlayableDot()),
         VIEWER_LIVE_BACKEND,
       );
+      if (useViewerStore.getState().consumeHammerBootstrap()) {
+        const runtimeState = runtimeStepperRef.current.state;
+        for (let index = 0; index < runtimeState.u.length; index += 1) {
+          runtimeState.u[index] = 0;
+        }
+      }
     }
 
     const runtimeStepper = runtimeStepperRef.current;
