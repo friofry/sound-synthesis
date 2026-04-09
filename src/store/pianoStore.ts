@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { APP_DEFAULTS, DEFAULT_CREATE_PIANO_SETTINGS } from "../config/defaults";
 import type {
   RawInstrumentNote,
   SimMethod,
@@ -7,13 +8,6 @@ import type {
   SimulationPrecision,
   SimulationSubstepsMode,
 } from "../engine/types";
-import {
-  DEFAULT_SIMULATION_METHOD,
-  DEFAULT_SIMULATION_PRECISION,
-  DEFAULT_SIMULATION_SUBSTEPS,
-  DEFAULT_SIMULATION_SUBSTEPS_MODE,
-  resolveDefaultSimulationBackend,
-} from "../engine/simulationDefaults";
 
 export const VIEWER_BASE_GRAPH_SNAPSHOT_IDS = {
   instrument: "instrument:latest",
@@ -72,27 +66,15 @@ type PianoStore = {
 };
 
 export const usePianoStore = create<PianoStore>((set) => ({
-  noteCount: 24,
+  noteCount: APP_DEFAULTS.piano.noteCount,
   pressedKeys: new Set<number>(),
   lastPressedKeyIndex: null,
   viewerBaseGraphSnapshots: {},
   activeBuffer: null,
-  activeSampleRate: 48_000,
+  activeSampleRate: APP_DEFAULTS.piano.activeSampleRate,
   instrumentNotes: [],
   generateNotesDialogOpen: false,
-  generateNotesSettings: {
-    octaves: 2,
-    attenuation: 4,
-    squareAttenuation: 0.08,
-    durationMs: 150,
-    tillSilence: false,
-    sampleRate: 44100,
-    method: DEFAULT_SIMULATION_METHOD,
-    backend: resolveDefaultSimulationBackend(DEFAULT_SIMULATION_METHOD, DEFAULT_SIMULATION_PRECISION),
-    precision: DEFAULT_SIMULATION_PRECISION,
-    substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
-    substeps: DEFAULT_SIMULATION_SUBSTEPS,
-  },
+  generateNotesSettings: { ...DEFAULT_CREATE_PIANO_SETTINGS },
   isGeneratingInstrument: false,
   generationProgressDialogOpen: false,
   instrumentGenerationProgress: 0,

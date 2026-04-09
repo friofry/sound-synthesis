@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { DEFAULT_CELL_TEMPLATE_DIALOG_SETTINGS } from "../../config/defaults";
 import { CellTemplateForm } from "./dialogs/CellTemplateDialog";
 
 const meta = {
@@ -14,7 +15,7 @@ const meta = {
       </div>
     ),
   ],
-  args: { onClose: fn(), onApply: fn() },
+  args: { initialValues: DEFAULT_CELL_TEMPLATE_DIALOG_SETTINGS, onClose: fn(), onApply: fn() },
 } satisfies Meta<typeof CellTemplateForm>;
 
 export default meta;

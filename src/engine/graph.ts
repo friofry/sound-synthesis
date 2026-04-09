@@ -21,7 +21,7 @@ export class GraphModel {
   private mergedDotsCache: Dot[] | null = null;
   lines: Line[] = [];
   playingPoint: number | null = null;
-  editorPerturbation: GraphPerturbation = { kind: "instant", points: [] };
+  editorPerturbation: GraphPerturbation = { kind: "instant", playingPoint: null, points: [] };
 
   get dots(): Dot[] {
     if (!this.mergedDotsCache) {
@@ -46,7 +46,7 @@ export class GraphModel {
     this.topologyDots = [];
     this.lines = [];
     this.playingPoint = null;
-    this.editorPerturbation = { kind: "instant", points: [] };
+    this.editorPerturbation = { kind: "instant", playingPoint: null, points: [] };
     this.invalidateDotsCache();
   }
 
@@ -115,6 +115,13 @@ export class GraphModel {
         this.playingPoint -= 1;
       }
     }
+    if (this.editorPerturbation.playingPoint !== null && this.editorPerturbation.playingPoint !== undefined) {
+      if (this.editorPerturbation.playingPoint === index) {
+        this.editorPerturbation.playingPoint = null;
+      } else if (this.editorPerturbation.playingPoint > index) {
+        this.editorPerturbation.playingPoint -= 1;
+      }
+    }
     this.rebuildDotLines();
     this.invalidateDotsCache();
   }
@@ -148,6 +155,9 @@ export class GraphModel {
       if (fixed && this.playingPoint === index) {
         this.playingPoint = null;
       }
+      if (fixed && this.editorPerturbation.playingPoint === index) {
+        this.editorPerturbation.playingPoint = null;
+      }
       this.invalidateDotsCache();
     }
   }
@@ -170,6 +180,12 @@ export class GraphModel {
       u: partial.u ?? point.u,
       v: partial.v ?? point.v,
     };
+    if ((partial.fixed ?? topology.fixed) && this.editorPerturbation.playingPoint === index) {
+      this.editorPerturbation.playingPoint = null;
+    }
+    if ((partial.fixed ?? topology.fixed) && this.playingPoint === index) {
+      this.playingPoint = null;
+    }
     this.invalidateDotsCache();
   }
 
@@ -286,11 +302,11 @@ export class GraphModel {
   }
 
   toGraphData(perturbation: GraphPerturbation | null = this.editorPerturbation): GraphData {
-    const playingPoint = this.playingPoint ?? this.findFirstPlayableDot();
+    const resolvedPerturbation = perturbation ?? this.editorPerturbation;
     return {
-      dots: this.getDotsForPerturbation(perturbation ?? this.editorPerturbation).map(stripDotLines),
+      dots: this.getDotsForPerturbation(resolvedPerturbation).map(stripDotLines),
       lines: this.lines.map((line) => ({ ...line })),
-      playingPoint,
+      playingPoint: this.resolvePlayingPoint(resolvedPerturbation),
     };
   }
 
@@ -326,6 +342,24 @@ export class GraphModel {
     this.setEditorPerturbation(createZeroPerturbation(this.topologyDots.length));
   }
 
+  resolvePlayingPoint(perturbation: GraphPerturbation | null = this.editorPerturbation): number {
+    if (this.dots.length === 0) {
+      return 0;
+    }
+    const candidate = perturbation?.playingPoint ?? this.playingPoint;
+    if (
+      candidate !== null &&
+      candidate !== undefined &&
+      Number.isInteger(candidate) &&
+      candidate >= 0 &&
+      candidate < this.dots.length &&
+      !this.dots[candidate]?.fixed
+    ) {
+      return candidate;
+    }
+    return this.findFirstPlayableDot();
+  }
+
   findFirstPlayableDot(): number {
     const index = this.dots.findIndex((dot) => !dot.fixed);
     return index >= 0 ? index : 0;
@@ -342,8 +376,8 @@ export class GraphModel {
       lines: [],
     }));
     graph.lines = payload.lines.map((line) => ({ ...line }));
-    graph.playingPoint = payload.playingPoint ?? null;
     graph.editorPerturbation = normalizePerturbationForDotCount(graph.topologyDots.length, payload.editorPerturbation);
+    graph.playingPoint = payload.playingPoint ?? graph.editorPerturbation.playingPoint ?? null;
     graph.rebuildDotLines();
     graph.invalidateDotsCache();
     return graph;
@@ -390,6 +424,7 @@ function stripDotLines(dot: Dot): SerializedDot {
 export function createZeroPerturbation(dotCount: number): GraphPerturbation {
   return {
     kind: "instant",
+    playingPoint: null,
     points: Array.from({ length: dotCount }, () => ({ u: START_U, v: START_V })),
   };
 }
@@ -403,8 +438,11 @@ export function normalizePerturbationForDotCount(
   perturbation: GraphPerturbation | null | undefined,
 ): GraphPerturbation {
   const sourcePoints = perturbation?.points ?? [];
+  const rawPlayingPoint = perturbation?.playingPoint;
   return {
     kind: "instant",
+    playingPoint:
+      Number.isInteger(rawPlayingPoint) && rawPlayingPoint >= 0 && rawPlayingPoint < dotCount ? rawPlayingPoint : null,
     points: Array.from({ length: dotCount }, (_, index) => ({
       u: sourcePoints[index]?.u ?? START_U,
       v: sourcePoints[index]?.v ?? START_V,

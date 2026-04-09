@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DEFAULT_HAMMER_DIALOG_SETTINGS } from "../../../config/defaults";
 import type { HammerDistributionMode, HammerPlayingPointMode, HammerSettings } from "../../../store/graphStore";
 import { useGraphStore } from "../../../store/graphStore";
 import { MfcButton, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput } from "../../ui/MfcDialog";
@@ -13,8 +14,8 @@ type HammerFormProps = {
 
 const WEIGHT_MIN = 0.000001;
 const WEIGHT_MAX = 2;
-const VELOCITY_MIN = -2;
-const VELOCITY_MAX = 2;
+const VELOCITY_MIN = -5000;
+const VELOCITY_MAX = 5000;
 const RESTITUTION_MIN = 0;
 const RESTITUTION_MAX = 1;
 const ATTENUATION_MIN = 0;
@@ -83,12 +84,12 @@ export function HammerDialogForm({ initialValues, onApply, onClose }: HammerForm
         </MfcField>
         <MfcField label="Velocity" labelWidth={130}>
           <div className="mfc-slider-field">
-            <MfcNumberInput step="0.001" min={VELOCITY_MIN} value={velocity} onChange={setVelocity} />
+            <MfcNumberInput step="1" min={VELOCITY_MIN} max={VELOCITY_MAX} value={velocity} onChange={setVelocity} />
             <input
               type="range"
               min={VELOCITY_MIN}
               max={VELOCITY_MAX}
-              step={0.001}
+              step={1}
               value={clamp(velocity, VELOCITY_MIN, VELOCITY_MAX)}
               onChange={(event) => setVelocity(Number(event.target.value))}
             />
@@ -175,7 +176,7 @@ export function HammerDialog() {
 
   return (
     <HammerDialogForm
-      initialValues={hammerSettings}
+      initialValues={hammerSettings ?? DEFAULT_HAMMER_DIALOG_SETTINGS}
       onApply={(values) => {
         setHammerSettings({
           distribution: values.distribution,

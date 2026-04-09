@@ -1,0 +1,173 @@
+simulation:
+  backendResolution:
+    euler:
+      "32": wasm-hotloop
+      "64": wasm-hotloop-simd
+    runge-kutta:
+      "32": csr-layout-hybrid
+      "64": wasm-hotloop-simd-packed
+
+  graphStore:
+    sampleRate: 44100
+    lengthK: 8
+    attenuation: 4
+    squareAttenuation: 0.08
+    playingPoint: 0
+
+  dialogDefaults:
+    piano:
+      octaves: 2
+      durationMs: 150
+      tillSilence: false
+      sampleRate: 44100
+      attenuation: 4
+      squareAttenuation: 0.08
+      method: runge-kutta
+      backend: wasm-hotloop-simd
+      precision: 64
+      substepsMode: fixed
+      substeps: 1
+
+    hammer:
+      distribution: smoothed
+      weight: 1
+      velocity: 200
+      restitution: 0.5
+      attenuation: 4
+      squareAttenuation: 0.08
+      radius: 36
+      playingPointMode: impact-point
+
+    cellTemplate:
+      widthPoints: 3
+      heightPoints: 3
+      stiffness: 1
+      weight: 1
+      boundaryMode: free
+
+    hexTemplate:
+      layers: 2
+      stiffness: 1
+      weight: 1
+      boundaryMode: free
+
+    groupModify:
+      maxAmplitude: 0.2
+      maxWeight: 0.000001
+      stiffness: 1
+      distribution: equivalent
+      fixMode: none
+
+    insertGraph:
+      initialType: hexagon
+      topologyState:
+        cell:
+          rows: 25
+          cols: 25
+        perimeter:
+          rows: 25
+          cols: 25
+        empty:
+          rows: 25
+          cols: 25
+        triangle:
+          rows: 25
+          cols: 25
+        astra:
+          rays: 12
+          layers: 5
+        hexagon:
+          layers: 5
+        diskHex:
+          layers: 5
+      playingPointMode: center
+      applyCenterGroup: true
+      maxAmplitude: 0.75
+      distribution: smoothed
+      fixMode: none
+      generateOctaves123: false
+      generateOctavesCount: 3
+
+  simulationDefaults:
+    randomTool:
+      octaves: 2
+      durationMs: 150
+      tillSilence: false
+      sampleRate: 44100
+      attenuation: 4
+      squareAttenuation: 0.08
+      method: euler
+      backend: wasm-hotloop
+
+      precision: 32
+      substepsMode: fixed
+      substeps: 1
+
+    initialPreset:
+      octaves: 2
+      durationMs: 150
+      tillSilence: false
+      sampleRate: 44100
+      attenuation: 4
+      squareAttenuation: 0.08
+      method: euler
+      backend: wasm-hotloop
+      precision: 32
+      substepsMode: fixed
+      substeps: 1
+
+    insertGraphDialog:
+      octaves: 2
+      durationMs: 150
+      tillSilence: false
+      sampleRate: 44100
+      attenuation: 4
+      squareAttenuation: 0.08
+      method: euler
+      backend: wasm-hotloop-simd
+      precision: 64
+      substepsMode: fixed
+      substeps: 1
+
+    viewerLiveSimulation:
+      octaves: 1
+      durationMs: 150
+      tillSilence: false
+      sampleRate: 44100
+      attenuation: 4
+      squareAttenuation: 0.08
+      method: runge-kutta
+      backend: edge-list
+      precision: 64
+      substepsMode: fixed
+      substeps: 1
+
+    oneNoteGenerator:
+      octaves: 1
+      durationMs: 150
+      tillSilence: false
+      sampleRate: 44100
+      attenuation: 4
+      squareAttenuation: 0.08
+      method: euler
+      backend: wasm-hotloop-simd
+      precision: 64
+      substepsMode: fixed
+      substeps: 1
+
+    hammerOneShot:
+      octaves: 1
+      durationMs: 500
+      tillSilence: false
+      sampleRate: 44100
+      attenuation: 4
+      squareAttenuation: 0.08
+      method: runge-kutta
+      backend: wasm-hotloop-simd-packed
+      precision: 64
+      substepsMode: fixed
+      substeps: 1
+
+piano:
+  noteCount: 24
+  activeSampleRate: 48000

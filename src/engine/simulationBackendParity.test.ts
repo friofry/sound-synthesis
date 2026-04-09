@@ -10,10 +10,10 @@ function buildParityGraphData(): GraphData {
     layers: 1,
     stiffness: 1,
     weight: 0.000001,
-    fixedBorder: true,
     stiffnessType: "isotropic",
     width: 1200,
     height: 700,
+    boundaryMode: "fixed",
   };
   const graph = generateGraph("cell", params);
   const center = Math.floor(params.n / 2) * params.m + Math.floor(params.m / 2);

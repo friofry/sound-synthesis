@@ -5,6 +5,8 @@ import { useGraphStore, type Rect } from "../../store/graphStore";
 const MIN_GROUP_SIZE = 8;
 const LINE_HIT_THRESHOLD = 10;
 const HAMMER_CHARGE_MS = 1200;
+const HAMMER_CHARGE_MIN = 1;
+const HAMMER_CHARGE_MAX = 10;
 const HAMMER_CURSOR =
   'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%271%27 y=%2718%27 font-size=%2718%27%3E%F0%9F%94%A8%3C/text%3E%3C/svg%3E") 4 20, crosshair';
 
@@ -19,6 +21,7 @@ type GraphCanvasProps = {
       velocity: number;
       restitution: number;
       radius: number;
+      playingPointMode: "impact-point" | "graph-center";
     };
   }) => void;
 };
@@ -76,7 +79,7 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
     if (tool !== "hammer") {
       hammerPressStartRef.current = null;
       setHammerPreviewPoint(null);
-      setHammerCharge(0);
+      setHammerCharge(HAMMER_CHARGE_MIN);
     }
   }, [setHammerCharge, setHammerPreviewPoint, tool]);
 
@@ -88,7 +91,7 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
       if (hammerPressStartRef.current === null) {
         return;
       }
-      const charge = clamp((performance.now() - hammerPressStartRef.current) / HAMMER_CHARGE_MS, 0, 1);
+      const charge = resolveHammerCharge(hammerPressStartRef.current);
       setHammerCharge(charge);
     }, 50);
     return () => window.clearInterval(timer);
@@ -164,9 +167,7 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
     }
     if (tool === "hammer" && hammerPreviewPoint) {
       const liveCharge =
-        hammerPressStartRef.current === null
-          ? hammerCharge
-          : clamp((performance.now() - hammerPressStartRef.current) / HAMMER_CHARGE_MS, 0, 1);
+        hammerPressStartRef.current === null ? hammerCharge : resolveHammerCharge(hammerPressStartRef.current);
       drawHammerPreview(ctx, hammerPreviewPoint, Math.max(1, hammerSettings.radius), liveCharge, viewportScale);
     }
     ctx.restore();
@@ -245,7 +246,7 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
     if (tool === "hammer") {
       setHammerPreviewPoint(point);
       if (hammerPressStartRef.current !== null) {
-        setHammerCharge(clamp((performance.now() - hammerPressStartRef.current) / HAMMER_CHARGE_MS, 0, 1));
+        setHammerCharge(resolveHammerCharge(hammerPressStartRef.current));
       }
     }
 
@@ -375,7 +376,7 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
     if (tool === "hammer") {
       setHammerPreviewPoint(point);
       hammerPressStartRef.current = performance.now();
-      setHammerCharge(0);
+      setHammerCharge(HAMMER_CHARGE_MIN);
       return;
     }
 
@@ -502,13 +503,11 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
 
     if (tool === "hammer") {
       const charge =
-        hammerPressStartRef.current === null
-          ? hammerCharge
-          : clamp((performance.now() - hammerPressStartRef.current) / HAMMER_CHARGE_MS, 0, 1);
+        hammerPressStartRef.current === null ? hammerCharge : resolveHammerCharge(hammerPressStartRef.current);
       hammerPressStartRef.current = null;
-      setHammerCharge(0);
+      setHammerCharge(HAMMER_CHARGE_MIN);
       setHammerPreviewPoint(point);
-      if (graph.dots.length === 0 || charge <= 0) {
+      if (graph.dots.length === 0) {
         return;
       }
       onHammerImpact?.({
@@ -521,6 +520,7 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
           velocity: hammerSettings.velocity,
           restitution: hammerSettings.restitution,
           radius: hammerSettings.radius,
+          playingPointMode: hammerSettings.playingPointMode,
         },
       });
       return;
@@ -578,7 +578,7 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
           setDragDotIndex(null);
           setDragStart(null);
           setHammerPreviewPoint(null);
-          setHammerCharge(0);
+          setHammerCharge(HAMMER_CHARGE_MIN);
           hammerPressStartRef.current = null;
         }}
         style={{ cursor: cursorMap[tool] ?? "default" }}
@@ -618,7 +618,8 @@ function drawHammerPreview(
   charge: number,
   scale = 1,
 ): void {
-  const alpha = 0.15 + clamp(charge, 0, 1) * 0.35;
+  const normalizedCharge = normalizeHammerCharge(charge);
+  const alpha = 0.15 + normalizedCharge * 0.35;
   ctx.save();
   ctx.setLineDash([]);
   ctx.lineWidth = 1.5 / scale;
@@ -633,4 +634,13 @@ function drawHammerPreview(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function resolveHammerCharge(pressStartTime: number): number {
+  const normalizedProgress = clamp((performance.now() - pressStartTime) / HAMMER_CHARGE_MS, 0, 1);
+  return HAMMER_CHARGE_MIN + normalizedProgress * (HAMMER_CHARGE_MAX - HAMMER_CHARGE_MIN);
+}
+
+function normalizeHammerCharge(charge: number): number {
+  return clamp((charge - HAMMER_CHARGE_MIN) / (HAMMER_CHARGE_MAX - HAMMER_CHARGE_MIN), 0, 1);
 }

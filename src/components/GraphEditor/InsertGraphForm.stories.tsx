@@ -26,7 +26,6 @@ export const Default: Story = {
     defaults: {
       weight: 0.000001,
       stiffness: 1,
-      fixedBorder: false,
       stiffnessType: "isotropic",
       boundaryMode: "free",
       stiffnessNormalizationMode: "none",
@@ -46,7 +45,6 @@ export const Hexagonal: Story = {
     defaults: {
       weight: 0.000001,
       stiffness: 1,
-      fixedBorder: true,
       stiffnessType: "tetradic",
       boundaryMode: "fixed",
       stiffnessNormalizationMode: "by-edge-length",

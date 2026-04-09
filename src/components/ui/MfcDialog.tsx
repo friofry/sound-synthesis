@@ -120,21 +120,53 @@ type MfcNumberInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | 
   onChange: (value: number) => void;
 };
 
-export function MfcNumberInput({ value, onChange, ...rest }: MfcNumberInputProps) {
+export function MfcNumberInput({ value, onChange, step, min, ...rest }: MfcNumberInputProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [raw, setRaw] = useState(() => (Number.isFinite(value) ? String(value) : ""));
-  const displayValue = isEditing ? raw : Number.isFinite(value) ? String(value) : "";
+  const normalizedValue = normalizeNumberInputValue(value, step, min);
+  const formattedValue = formatNumberInputValue(value, step, min);
+  const [raw, setRaw] = useState(() => formattedValue);
+  const displayValue = isEditing ? raw : formattedValue;
+
+  useEffect(() => {
+    if (!isEditing) {
+      setRaw(formattedValue);
+    }
+  }, [formattedValue, isEditing]);
+
+  useEffect(() => {
+    if (isEditing || !Number.isFinite(value)) {
+      return;
+    }
+    if (!numbersMatchForInput(value, normalizedValue, step)) {
+      onChange(normalizedValue);
+    }
+  }, [isEditing, normalizedValue, onChange, step, value]);
 
   return (
     <input
       type="number"
       {...rest}
+      step={step}
+      min={min}
       value={displayValue}
       onFocus={() => {
         setIsEditing(true);
-        setRaw(Number.isFinite(value) ? String(value) : "");
+        setRaw(formattedValue);
       }}
-      onBlur={() => setIsEditing(false)}
+      onBlur={() => {
+        setIsEditing(false);
+        if (raw === "") {
+          return;
+        }
+        const nextValue = Number(raw);
+        if (!Number.isFinite(nextValue)) {
+          return;
+        }
+        const nextNormalizedValue = normalizeNumberInputValue(nextValue, step, min);
+        if (!numbersMatchForInput(nextValue, nextNormalizedValue, step)) {
+          onChange(nextNormalizedValue);
+        }
+      }}
       onChange={(event) => {
         const nextRaw = event.target.value;
         setRaw(nextRaw);
@@ -148,6 +180,84 @@ export function MfcNumberInput({ value, onChange, ...rest }: MfcNumberInputProps
       }}
     />
   );
+}
+
+function formatNumberInputValue(
+  value: number,
+  step: InputHTMLAttributes<HTMLInputElement>["step"],
+  min: InputHTMLAttributes<HTMLInputElement>["min"],
+): string {
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+  const stepValue = parseInputStep(step);
+  if (stepValue === null) {
+    return String(value);
+  }
+  const precision = getInputStepPrecision(step);
+  return trimTrailingZeroes(normalizeNumberInputValue(value, step, min).toFixed(precision));
+}
+
+function normalizeNumberInputValue(
+  value: number,
+  step: InputHTMLAttributes<HTMLInputElement>["step"],
+  min: InputHTMLAttributes<HTMLInputElement>["min"],
+): number {
+  if (!Number.isFinite(value)) {
+    return value;
+  }
+  const stepValue = parseInputStep(step);
+  if (stepValue === null) {
+    return value;
+  }
+  const base = parseNumericInputValue(min) ?? 0;
+  const precision = getInputStepPrecision(step);
+  const normalized = base + Math.round((value - base) / stepValue) * stepValue;
+  return Number(normalized.toFixed(precision));
+}
+
+function numbersMatchForInput(
+  left: number,
+  right: number,
+  step: InputHTMLAttributes<HTMLInputElement>["step"],
+): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+  const stepValue = parseInputStep(step);
+  const tolerance = stepValue === null ? 1e-12 : Math.max(1e-12, stepValue / 1_000_000);
+  return Math.abs(left - right) <= tolerance;
+}
+
+function parseInputStep(step: InputHTMLAttributes<HTMLInputElement>["step"]): number | null {
+  if (step === undefined || step === "" || step === "any") {
+    return null;
+  }
+  const parsed = typeof step === "number" ? step : Number(step);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseNumericInputValue(value: InputHTMLAttributes<HTMLInputElement>["min"]): number | null {
+  if (value === undefined || value === "") {
+    return null;
+  }
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getInputStepPrecision(step: InputHTMLAttributes<HTMLInputElement>["step"]): number {
+  if (step === undefined || step === "" || step === "any") {
+    return 0;
+  }
+  const text = String(step).toLowerCase();
+  const [coefficient, exponentText] = text.split("e");
+  const exponent = exponentText ? Number(exponentText) : 0;
+  const decimalPartLength = coefficient.includes(".") ? coefficient.length - coefficient.indexOf(".") - 1 : 0;
+  return Math.max(0, decimalPartLength - exponent);
+}
+
+function trimTrailingZeroes(value: string): string {
+  return value.replace(/(\.\d*?[1-9])0+$/u, "$1").replace(/\.0+$/u, "");
 }
 
 export function MfcGroupBox({ legend, children }: MfcGroupBoxProps) {

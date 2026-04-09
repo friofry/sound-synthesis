@@ -2,12 +2,10 @@ import { create } from "zustand";
 import { generateGraph } from "../engine/gridGenerators";
 import { clonePerturbation, GraphModel } from "../engine/graph";
 import { preparePresetGraph, type PresetGraphPreparationOptions } from "../engine/presetGraphPreparation";
+import { DEFAULT_GRAPH_STORE_SIMULATION_PARAMS, DEFAULT_HAMMER_DIALOG_SETTINGS } from "../config/defaults";
 import {
   type BoundaryMode,
   type GraphPerturbation,
-  DEFAULT_ATTENUATION,
-  DEFAULT_SAMPLE_RATE,
-  DEFAULT_SQUARE_ATTENUATION,
   type GridParams,
   type StiffnessNormalizationMode,
   type GridType,
@@ -17,11 +15,6 @@ import {
   type ToolMode,
   type WeightDistributionMode,
 } from "../engine/types";
-import {
-  DEFAULT_SIMULATION_METHOD,
-  DEFAULT_SIMULATION_SUBSTEPS,
-  DEFAULT_SIMULATION_SUBSTEPS_MODE,
-} from "../engine/simulationDefaults";
 
 export interface Rect {
   x1: number;
@@ -67,7 +60,6 @@ interface GraphStore {
   pendingGroupRect: Rect | null;
   defaultWeight: number;
   defaultStiffness: number;
-  fixedBorder: boolean;
   stiffnessType: GridParams["stiffnessType"];
   boundaryMode: BoundaryMode;
   stiffnessNormalizationMode: StiffnessNormalizationMode;
@@ -86,7 +78,6 @@ interface GraphStore {
   hammerPreviewPoint: { x: number; y: number } | null;
   hammerCharge: number;
   toolPerturbation: GraphPerturbation | null;
-  simulationDialogOpen: boolean;
   simulationParams: SimulationParams;
   isSimulating: boolean;
   simulationProgress: number;
@@ -130,12 +121,9 @@ interface GraphStore {
   clearToolPerturbation: () => void;
   openCommunityGraphsDialog: () => void;
   closeCommunityGraphsDialog: () => void;
-  openSimulationDialog: () => void;
-  closeSimulationDialog: () => void;
   setDefaults: (values: {
     defaultWeight?: number;
     defaultStiffness?: number;
-    fixedBorder?: boolean;
     stiffnessType?: GridParams["stiffnessType"];
     boundaryMode?: BoundaryMode;
     stiffnessNormalizationMode?: StiffnessNormalizationMode;
@@ -149,31 +137,15 @@ interface GraphStore {
   loadGraph: (payload: SerializedGraph) => void;
 }
 
-const defaultSimulationParams: SimulationParams = {
-  sampleRate: DEFAULT_SAMPLE_RATE,
-  lengthK: 8,
-  method: DEFAULT_SIMULATION_METHOD,
-  attenuation: DEFAULT_ATTENUATION,
-  squareAttenuation: DEFAULT_SQUARE_ATTENUATION,
-  playingPoint: 0,
-  substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
-  substeps: DEFAULT_SIMULATION_SUBSTEPS,
-};
+const defaultSimulationParams: SimulationParams = { ...DEFAULT_GRAPH_STORE_SIMULATION_PARAMS };
 
-const defaultHammerSettings: HammerSettings = {
-  distribution: "smoothed",
-  weight: 0.02,
-  velocity: 0.35,
-  restitution: 0.5,
-  attenuation: DEFAULT_ATTENUATION,
-  squareAttenuation: DEFAULT_SQUARE_ATTENUATION,
-  radius: 36,
-  playingPointMode: "impact-point",
-};
+const defaultHammerSettings: HammerSettings = { ...DEFAULT_HAMMER_DIALOG_SETTINGS };
 
 const DEFAULT_VIEWPORT_SCALE = 1;
 const MIN_VIEWPORT_SCALE = 0.25;
 const MAX_VIEWPORT_SCALE = 8;
+const HAMMER_CHARGE_MIN = 1;
+const HAMMER_CHARGE_MAX = 10;
 
 export const useGraphStore = create<GraphStore>((set, get) => ({
   graph: new GraphModel(),
@@ -193,7 +165,6 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   pendingGroupRect: null,
   defaultWeight: 0.000001,
   defaultStiffness: 1,
-  fixedBorder: false,
   stiffnessType: "isotropic",
   boundaryMode: "free",
   stiffnessNormalizationMode: "none",
@@ -210,9 +181,8 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   communityGraphsDialog: { open: false, payload: null },
   hammerSettings: defaultHammerSettings,
   hammerPreviewPoint: null,
-  hammerCharge: 0,
+  hammerCharge: HAMMER_CHARGE_MIN,
   toolPerturbation: null,
-  simulationDialogOpen: false,
   simulationParams: defaultSimulationParams,
   isSimulating: false,
   simulationProgress: 0,
@@ -258,12 +228,15 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   setSelectedLineIndex: (index) => set({ selectedLineIndex: index }),
   setPlayingPoint: (index) =>
     set((state) => {
+      const nextPerturbation = state.graph.getEditorPerturbation();
+      nextPerturbation.playingPoint = index;
+      state.graph.setEditorPerturbation(nextPerturbation);
       state.graph.playingPoint = index;
       return {
         playingPoint: index,
         simulationParams: {
           ...state.simulationParams,
-          playingPoint: index ?? 0,
+          playingPoint: state.graph.resolvePlayingPoint(),
         },
       };
     }),
@@ -274,7 +247,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     set({
       graph,
       toolPerturbation: null,
-      playingPoint: graph.playingPoint,
+      playingPoint: graph.getEditorPerturbation().playingPoint ?? graph.playingPoint,
       selectedDotA: null,
       selectedDotB: null,
       selectedLineIndex: null,
@@ -282,14 +255,22 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       hoveredLineIndex: null,
       simulationParams: {
         ...get().simulationParams,
-        playingPoint: graph.playingPoint ?? graph.findFirstPlayableDot(),
+        playingPoint: graph.resolvePlayingPoint(),
       },
     }),
   updateGraph: (updater) =>
     set((state) => {
       const graph = state.graph.clone();
       updater(graph);
-      return { graph, toolPerturbation: null };
+      return {
+        graph,
+        toolPerturbation: null,
+        playingPoint: graph.getEditorPerturbation().playingPoint ?? graph.playingPoint,
+        simulationParams: {
+          ...state.simulationParams,
+          playingPoint: graph.resolvePlayingPoint(),
+        },
+      };
     }),
   clearGraph: () =>
     set({
@@ -310,10 +291,10 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       selectedDotA: null,
       selectedDotB: null,
       selectedLineIndex: null,
-      playingPoint: graph.playingPoint,
+      playingPoint: graph.getEditorPerturbation().playingPoint ?? graph.playingPoint,
       simulationParams: {
         ...get().simulationParams,
-        playingPoint: graph.playingPoint ?? 0,
+        playingPoint: graph.resolvePlayingPoint(),
       },
       simulationResult: null,
     });
@@ -337,7 +318,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       hammerSettings: { ...state.hammerSettings, ...values },
     })),
   setHammerPreviewPoint: (point) => set({ hammerPreviewPoint: point }),
-  setHammerCharge: (value) => set({ hammerCharge: clamp(value, 0, 1) }),
+  setHammerCharge: (value) => set({ hammerCharge: clamp(value, HAMMER_CHARGE_MIN, HAMMER_CHARGE_MAX) }),
   setToolPerturbation: (perturbation) =>
     set({
       toolPerturbation: perturbation ? clonePerturbation(perturbation) : null,
@@ -345,13 +326,10 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   clearToolPerturbation: () => set({ toolPerturbation: null }),
   openCommunityGraphsDialog: () => set({ communityGraphsDialog: { open: true, payload: null } }),
   closeCommunityGraphsDialog: () => set({ communityGraphsDialog: { open: false, payload: null } }),
-  openSimulationDialog: () => set({ simulationDialogOpen: true }),
-  closeSimulationDialog: () => set({ simulationDialogOpen: false }),
   setDefaults: (values) =>
     set((state) => ({
       defaultWeight: values.defaultWeight ?? state.defaultWeight,
       defaultStiffness: values.defaultStiffness ?? state.defaultStiffness,
-      fixedBorder: values.fixedBorder ?? state.fixedBorder,
       stiffnessType: values.stiffnessType ?? state.stiffnessType,
       boundaryMode: values.boundaryMode ?? state.boundaryMode,
       stiffnessNormalizationMode: values.stiffnessNormalizationMode ?? state.stiffnessNormalizationMode,
@@ -384,10 +362,10 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
       selectedDotA: null,
       selectedDotB: null,
       selectedLineIndex: null,
-      playingPoint: graph.playingPoint,
+      playingPoint: graph.getEditorPerturbation().playingPoint ?? graph.playingPoint,
       simulationParams: {
         ...get().simulationParams,
-        playingPoint: graph.playingPoint ?? graph.findFirstPlayableDot(),
+        playingPoint: graph.resolvePlayingPoint(),
       },
       simulationResult: null,
     });

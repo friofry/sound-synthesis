@@ -23,7 +23,7 @@ import type {
 } from "../engine/types";
 import type { GenerateNotesDialogValues } from "../components/PianoPlayer/GenerateNotesDialog";
 import { usePianoStore, VIEWER_BASE_GRAPH_SNAPSHOT_IDS } from "../store/pianoStore";
-import { resolveDefaultSimulationBackend } from "../engine/simulationDefaults";
+import { DEFAULT_ONE_NOTE_GENERATION_SETTINGS, resolveDefaultSimulationBackend } from "../config/defaults";
 
 type InstrumentBundle = {
   type: "sound-synthesis-instrument";
@@ -429,15 +429,23 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       const snapshotId = options?.snapshotId ?? VIEWER_BASE_GRAPH_SNAPSHOT_IDS.singleNote;
       const perturbation = clonePerturbation(options?.perturbation ?? targetGraph.getEditorPerturbation());
       setViewerBaseGraphSnapshot(snapshotId, targetGraph.toJSON());
+      const oneNoteSettings = DEFAULT_ONE_NOTE_GENERATION_SETTINGS;
+      const oneNoteLengthK = resolveLengthK(
+        oneNoteSettings.durationMs,
+        oneNoteSettings.sampleRate,
+        oneNoteSettings.tillSilence,
+      );
       const note = generateInstrumentFromGraph(targetGraph, {
         noteCount: 1,
-        sampleRate: simulationParams.sampleRate,
-        lengthK: simulationParams.lengthK,
-        attenuation: simulationParams.attenuation,
-        squareAttenuation: simulationParams.squareAttenuation,
-        method: simulationParams.method,
-        substepsMode: simulationParams.substepsMode,
-        substeps: simulationParams.substeps,
+        sampleRate: oneNoteSettings.sampleRate,
+        lengthK: oneNoteLengthK,
+        attenuation: oneNoteSettings.attenuation,
+        squareAttenuation: oneNoteSettings.squareAttenuation,
+        method: oneNoteSettings.method,
+        backend: oneNoteSettings.backend,
+        precision: oneNoteSettings.precision,
+        substepsMode: oneNoteSettings.substepsMode,
+        substeps: oneNoteSettings.substeps,
         baseGraphSnapshotId: snapshotId,
         perturbation,
       })[0];
@@ -448,11 +456,15 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       }
       return note;
     },
-    [audioEngine, graph, setActiveBuffer, setViewerBaseGraphSnapshot, simulationParams],
+    [audioEngine, graph, setActiveBuffer, setViewerBaseGraphSnapshot],
   );
 
   const handleConfirmGenerateNotes = useCallback(
-    async (values: GenerateNotesDialogValues, sourceGraph?: GraphModel) => {
+    async (
+      values: GenerateNotesDialogValues,
+      sourceGraph?: GraphModel,
+      options?: { persistSettings?: boolean },
+    ) => {
       const targetGraph = sourceGraph ?? graph;
       const basePerturbation = clonePerturbation(targetGraph.getEditorPerturbation());
       const safeOctaves = Math.max(1, Math.min(3, Math.round(values.octaves))) as 1 | 2 | 3;
@@ -470,19 +482,21 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       const safeSubsteps = Number.isFinite(values.substeps) ? Math.max(1, Math.round(values.substeps)) : 1;
       const safeNoteCount = safeOctaves * 12;
 
-      setGenerateNotesSettings({
-        octaves: safeOctaves,
-        attenuation: safeAttenuation,
-        squareAttenuation: safeSquareAttenuation,
-        durationMs: safeDurationMs,
-        tillSilence: safeTillSilence,
-        sampleRate: safeSampleRate,
-        method: safeMethod,
-        backend: safeBackend,
-        precision: safePrecision,
-        substepsMode: safeSubstepsMode,
-        substeps: safeSubsteps,
-      });
+      if (options?.persistSettings ?? true) {
+        setGenerateNotesSettings({
+          octaves: safeOctaves,
+          attenuation: safeAttenuation,
+          squareAttenuation: safeSquareAttenuation,
+          durationMs: safeDurationMs,
+          tillSilence: safeTillSilence,
+          sampleRate: safeSampleRate,
+          method: safeMethod,
+          backend: safeBackend,
+          precision: safePrecision,
+          substepsMode: safeSubstepsMode,
+          substeps: safeSubsteps,
+        });
+      }
       setGenerateNotesDialogOpen(false);
       setInstrumentGenerationState({
         isGeneratingInstrument: true,

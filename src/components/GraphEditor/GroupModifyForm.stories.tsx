@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { DEFAULT_GROUP_MODIFY_DIALOG_SETTINGS } from "../../config/defaults";
 import { GroupModifyForm } from "./dialogs/GroupModifyDialog";
 
 const meta = {
@@ -14,7 +15,7 @@ const meta = {
       </div>
     ),
   ],
-  args: { onClose: fn(), onApply: fn() },
+  args: { initialValues: DEFAULT_GROUP_MODIFY_DIALOG_SETTINGS, onClose: fn(), onApply: fn() },
 } satisfies Meta<typeof GroupModifyForm>;
 
 export default meta;

@@ -7,7 +7,7 @@ import {
   type SimulationPrecision,
   type SimulationSubstepsMode,
 } from "../../engine/types";
-import { resolveDefaultSimulationBackend } from "../../engine/simulationDefaults";
+import { resolveDefaultSimulationBackend } from "../../config/defaults";
 import "./GenerateNotesDialog.css";
 
 export type GenerateNotesDialogValues = {

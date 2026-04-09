@@ -1,4 +1,5 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
+import { DEFAULT_INSERT_GRAPH_DIALOG_SETTINGS } from "../../../config/defaults";
 import type {
   BoundaryMode,
   GridParams,
@@ -28,10 +29,10 @@ import {
 export type InsertGraphFormProps = {
   open: boolean;
   initialType?: GridType;
+  formDefaults?: typeof DEFAULT_INSERT_GRAPH_DIALOG_SETTINGS;
   defaults: {
     weight: number;
     stiffness: number;
-    fixedBorder: boolean;
     stiffnessType: StiffnessType;
     boundaryMode: BoundaryMode;
     stiffnessNormalizationMode: StiffnessNormalizationMode;
@@ -45,7 +46,6 @@ export type InsertGraphFormProps = {
     topology: GridTopologyParams;
     weight: number;
     stiffness: number;
-    fixedBorder: boolean;
     stiffnessType: StiffnessType;
     boundaryMode: BoundaryMode;
     stiffnessNormalizationMode: StiffnessNormalizationMode;
@@ -64,20 +64,15 @@ export type InsertGraphFormProps = {
 
 export function InsertGraphForm({
   open,
-  initialType = "hexagon",
+  initialType = DEFAULT_INSERT_GRAPH_DIALOG_SETTINGS.initialType,
+  formDefaults = DEFAULT_INSERT_GRAPH_DIALOG_SETTINGS,
   defaults,
   onApply,
   onClose,
 }: InsertGraphFormProps) {
   const [type, setType] = useState<GridType>(initialType);
   const [topologyState, setTopologyState] = useState<TopologyFormState>({
-    cell: { rows: 25, cols: 25 },
-    perimeter: { rows: 25, cols: 25 },
-    empty: { rows: 25, cols: 25 },
-    triangle: { rows: 25, cols: 25 },
-    astra: { rays: 12, layers: 5 },
-    hexagon: { layers: 5 },
-    diskHex: { layers: 5 },
+    ...formDefaults.topologyState,
   });
   const [weight, setWeight] = useState(defaults.weight);
   const [stiffness, setStiffness] = useState(defaults.stiffness);
@@ -90,17 +85,17 @@ export function InsertGraphForm({
   const [rimDampingFactor, setRimDampingFactor] = useState(defaults.rimDampingFactor);
   const [attenuation, setAttenuation] = useState(defaults.attenuation);
   const [squareAttenuation, setSquareAttenuation] = useState(defaults.squareAttenuation);
-  const [playingPointMode, setPlayingPointMode] = useState<PlayingPointMode>("center");
-  const [applyCenterGroup, setApplyCenterGroup] = useState(true);
-  const [maxAmplitude, setMaxAmplitude] = useState(0.75);
-  const [distribution, setDistribution] = useState<DistributionMode>("smoothed");
-  const [fixMode, setFixMode] = useState<FixMode>("none");
+  const [playingPointMode, setPlayingPointMode] = useState<PlayingPointMode>(formDefaults.playingPointMode);
+  const [applyCenterGroup, setApplyCenterGroup] = useState(formDefaults.applyCenterGroup);
+  const [maxAmplitude, setMaxAmplitude] = useState(formDefaults.maxAmplitude);
+  const [distribution, setDistribution] = useState<DistributionMode>(formDefaults.distribution);
+  const [fixMode, setFixMode] = useState<FixMode>(formDefaults.fixMode);
   const [groupWeight, setGroupWeight] = useState(defaults.weight);
   const [groupWeightTouched, setGroupWeightTouched] = useState(false);
   const [groupStiffness, setGroupStiffness] = useState(defaults.stiffness);
   const [groupStiffnessTouched, setGroupStiffnessTouched] = useState(false);
-  const [generateOctaves123, setGenerateOctaves123] = useState(false);
-  const [generateOctavesCount, setGenerateOctavesCount] = useState<1 | 2 | 3>(3);
+  const [generateOctaves123, setGenerateOctaves123] = useState(formDefaults.generateOctaves123);
+  const [generateOctavesCount, setGenerateOctavesCount] = useState<1 | 2 | 3>(formDefaults.generateOctavesCount);
 
   const effectiveGroupWeight = groupWeightTouched ? groupWeight : weight;
   const effectiveGroupStiffness = groupStiffnessTouched ? groupStiffness : stiffness;
@@ -119,7 +114,6 @@ export function InsertGraphForm({
           topology: buildTopologyParams(type, topologyState),
           stiffness: Number.isFinite(stiffness) ? stiffness : 1,
           weight: Number.isFinite(weight) ? weight : 0.000001,
-          fixedBorder: boundaryMode === "fixed",
           stiffnessType: stiffType,
           boundaryMode,
           stiffnessNormalizationMode,
@@ -485,7 +479,7 @@ type InsertGraphDialogProps = {
 
 export function InsertGraphDialog({
   open,
-  initialType = "hexagon",
+  initialType = DEFAULT_INSERT_GRAPH_DIALOG_SETTINGS.initialType,
   canvasSize,
   onGenerateOctaves123,
   onClose,
@@ -493,7 +487,6 @@ export function InsertGraphDialog({
   const {
     defaultWeight,
     defaultStiffness,
-    fixedBorder,
     stiffnessType,
     boundaryMode,
     stiffnessNormalizationMode,
@@ -514,10 +507,10 @@ export function InsertGraphDialog({
     <InsertGraphForm
       open={open}
       initialType={initialType}
+      formDefaults={DEFAULT_INSERT_GRAPH_DIALOG_SETTINGS}
       defaults={{
         weight: defaultWeight,
         stiffness: defaultStiffness,
-        fixedBorder,
         stiffnessType,
         boundaryMode,
         stiffnessNormalizationMode,
@@ -531,7 +524,6 @@ export function InsertGraphDialog({
         const gridParams = toGridParams(values.topology, {
           stiffness: values.stiffness,
           weight: values.weight,
-          fixedBorder: values.fixedBorder,
           stiffnessType: values.stiffnessType,
           width: canvasSize.width,
           height: canvasSize.height,
@@ -546,7 +538,6 @@ export function InsertGraphDialog({
         setDefaults({
           defaultWeight: values.weight,
           defaultStiffness: values.stiffness,
-          fixedBorder: values.fixedBorder,
           stiffnessType: values.stiffnessType,
           boundaryMode: values.boundaryMode,
           stiffnessNormalizationMode: values.stiffnessNormalizationMode,

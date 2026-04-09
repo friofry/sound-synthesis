@@ -59,6 +59,7 @@ describe("GraphModel", () => {
     graph.addDot(20, 20, 0, 0, 1, true);
     graph.setEditorPerturbation({
       kind: "instant",
+      playingPoint: 1,
       points: [
         { u: 1.25, v: -2.5 },
         { u: -3.75, v: 4.125 },
@@ -71,5 +72,23 @@ describe("GraphModel", () => {
 
     expect(restored.getEditorPerturbation()).toEqual(serialized.editorPerturbation);
     expect(restored.dots.map((dot) => ({ u: dot.u, v: dot.v }))).toEqual(serialized.editorPerturbation!.points);
+  });
+
+  it("lets perturbation override the graph playing point", () => {
+    const graph = new GraphModel();
+    const a = graph.addDot(0, 0, 0, 0, 1, false);
+    const b = graph.addDot(10, 0, 0, 0, 1, false);
+    graph.playingPoint = a;
+    graph.setEditorPerturbation({
+      kind: "instant",
+      playingPoint: b,
+      points: [
+        { u: 0, v: 0 },
+        { u: 0, v: 1 },
+      ],
+    });
+
+    expect(graph.resolvePlayingPoint(graph.getEditorPerturbation())).toBe(b);
+    expect(graph.toGraphData().playingPoint).toBe(b);
   });
 });

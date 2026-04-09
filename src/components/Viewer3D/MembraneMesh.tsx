@@ -1,5 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
+import { DEFAULT_VIEWER_STEPPER_SETTINGS } from "../../config/defaults";
 import {
   BufferAttribute,
   BufferGeometry,
@@ -8,7 +9,6 @@ import {
 } from "three";
 import { GraphModel } from "../../engine/graph";
 import type { SimulationParams } from "../../engine/types";
-import { DEFAULT_ATTENUATION, DEFAULT_SQUARE_ATTENUATION } from "../../engine/types";
 import type { SimulationBackend } from "../../engine/types";
 import { useMembraneViewerStore } from "../../store/membraneViewerStore";
 import { useViewerStore } from "../../store/viewerStore";
@@ -42,8 +42,8 @@ function computeBounds(points: { x: number; y: number }[]) {
 }
 
 const material = new LineBasicMaterial({ color: "#00b8ff" });
-const VIEWER_LIVE_METHOD: SimulationParams["method"] = "runge-kutta";
-const VIEWER_LIVE_BACKEND: SimulationBackend = "edge-list";
+const VIEWER_LIVE_METHOD: SimulationParams["method"] = DEFAULT_VIEWER_STEPPER_SETTINGS.method;
+const VIEWER_LIVE_BACKEND: SimulationBackend = DEFAULT_VIEWER_STEPPER_SETTINGS.backend;
 
 export function MembraneMesh() {
   const meshRef = useRef<LineSegments>(null);
@@ -148,9 +148,10 @@ export function MembraneMesh() {
 
     const shouldReinitialize = (justStarted && frameIndex === 0) || !runtimeStepperRef.current;
     if (shouldReinitialize || !runtimeStepperRef.current) {
+      const playingPoint = graph.resolvePlayingPoint(sourcePerturbation);
       runtimeStepperRef.current = createRuntimeSimulationStepper(
         graph.toGraphData(sourcePerturbation),
-        buildViewerLiveSimulationParams(graph.playingPoint ?? graph.findFirstPlayableDot()),
+        buildViewerLiveSimulationParams(playingPoint),
         VIEWER_LIVE_BACKEND,
       );
     }
@@ -204,20 +205,31 @@ function buildGraphStructureSignature(graph: GraphModel, perturbation: Parameter
     .map((dot) => `${Number(dot.fixed)}:${dot.weight}:${dot.u}:${dot.v}`)
     .join("|");
   const lines = graph.lines.map((line) => `${line.dot1}:${line.dot2}:${line.k}`).join("|");
-  return `${graph.playingPoint ?? -1}#${dots}#${lines}`;
+  return `${graph.resolvePlayingPoint(perturbation)}#${dots}#${lines}`;
 }
 
 function buildViewerLiveSimulationParams(playingPoint: number): SimulationParams {
   return {
-    sampleRate: 44_100,
-    lengthK: 8,
+    sampleRate: DEFAULT_VIEWER_STEPPER_SETTINGS.sampleRate,
+    lengthK: resolveLengthK(
+      DEFAULT_VIEWER_STEPPER_SETTINGS.durationMs,
+      DEFAULT_VIEWER_STEPPER_SETTINGS.sampleRate,
+      DEFAULT_VIEWER_STEPPER_SETTINGS.tillSilence,
+    ),
     method: VIEWER_LIVE_METHOD,
-    attenuation: DEFAULT_ATTENUATION,
-    squareAttenuation: DEFAULT_SQUARE_ATTENUATION,
+    attenuation: DEFAULT_VIEWER_STEPPER_SETTINGS.attenuation,
+    squareAttenuation: DEFAULT_VIEWER_STEPPER_SETTINGS.squareAttenuation,
     playingPoint,
-    substepsMode: "fixed",
-    substeps: 1,
+    substepsMode: DEFAULT_VIEWER_STEPPER_SETTINGS.substepsMode,
+    substeps: DEFAULT_VIEWER_STEPPER_SETTINGS.substeps,
   };
 }
 
 const EMPTY_GRAPH = new GraphModel();
+
+function resolveLengthK(durationMs: number, sampleRate: number, tillSilence: boolean): number {
+  const safeDurationMs = Math.max(1, durationMs);
+  const effectiveDurationMs = tillSilence ? Math.max(safeDurationMs * 3, 1000) : safeDurationMs;
+  const sampleCount = Math.ceil((sampleRate * effectiveDurationMs) / 1000);
+  return Math.max(1, Math.ceil(sampleCount / 1024));
+}

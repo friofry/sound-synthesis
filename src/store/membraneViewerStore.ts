@@ -128,5 +128,5 @@ export function buildGraphSnapshotSignature(graph: GraphModel, perturbation: Gra
     })
     .join("|");
   const lines = graph.lines.map((line) => `${line.dot1}:${line.dot2}:${line.k}`).join("|");
-  return `${graph.playingPoint ?? -1}#${dots}#${lines}`;
+  return `${graph.resolvePlayingPoint(perturbation)}#${dots}#${lines}`;
 }

@@ -74,7 +74,7 @@ import {
 import {
   DEFAULT_SIMULATION_PRECISION,
   resolveDefaultSimulationBackend,
-} from "./simulationDefaults";
+} from "../config/defaults";
 import { forEachSpringLine } from "./simulationAssembly";
 import { applyVelocityDamping } from "./simulationDamping";
 import { applyEndFadeOut, applyStartFadeIn } from "./simulationFade";

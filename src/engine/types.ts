@@ -1,3 +1,5 @@
+import { APP_DEFAULTS } from "../config/defaults";
+
 export const GRAPH_COLORS = {
   canvas: "#ffffff",
   line: "#44bebe",
@@ -13,9 +15,9 @@ export const START_W = 0.000001;
 export const START_K = 1;
 export const IGNORE_RADIUS = 100;
 export const DOT_RADIUS = 5;
-export const DEFAULT_SAMPLE_RATE = 8000;
-export const DEFAULT_ATTENUATION = 4;
-export const DEFAULT_SQUARE_ATTENUATION = (1 / 50) * DEFAULT_ATTENUATION;
+export const DEFAULT_SAMPLE_RATE = APP_DEFAULTS.simulation.graphStore.sampleRate;
+export const DEFAULT_ATTENUATION = APP_DEFAULTS.simulation.graphStore.attenuation;
+export const DEFAULT_SQUARE_ATTENUATION = APP_DEFAULTS.simulation.graphStore.squareAttenuation;
 
 export type StiffnessType = "isotropic" | "tetradic";
 export type StiffnessNormalizationMode = "none" | "by-edge-length" | "by-rest-area";
@@ -85,6 +87,7 @@ export interface PerturbationPoint {
 
 export interface InstantGraphPerturbation {
   kind: "instant";
+  playingPoint?: number | null;
   points: PerturbationPoint[];
 }
 
@@ -125,13 +128,12 @@ export interface GridParams {
   layers: number;
   stiffness: number;
   weight: number;
-  fixedBorder: boolean;
   stiffnessType: StiffnessType;
   width: number;
   height: number;
   stiffnessNormalizationMode?: StiffnessNormalizationMode;
   weightDistributionMode?: WeightDistributionMode;
-  boundaryMode?: BoundaryMode;
+  boundaryMode: BoundaryMode;
   rimWeightRatio?: number;
   rimDampingFactor?: number;
   defaultAttenuation?: number;

@@ -9,10 +9,10 @@ const GRID_PARAMS: GridParams = {
   layers: 5,
   stiffness: 2,
   weight: 0.000001,
-  fixedBorder: false,
   stiffnessType: "isotropic",
   width: 500,
   height: 500,
+  boundaryMode: "free",
 };
 
 describe("preparePresetGraph", () => {

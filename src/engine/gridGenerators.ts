@@ -272,7 +272,7 @@ function axialToPixel(q: number, r: number, step: number, cx: number, cy: number
 
 function applyBoundaryMode(graph: GraphModel, type: GridType, params: GridParams): void {
   const boundary = detectBoundaryDots(graph, type, params);
-  const mode = resolveBoundaryMode(params);
+  const mode = params.boundaryMode;
 
   for (let i = 0; i < graph.dots.length; i += 1) {
     graph.setDotProps(i, { fixed: mode === "fixed" ? boundary.has(i) : false });
@@ -373,13 +373,6 @@ function applyWeightDistribution(graph: GraphModel, type: GridType, params: Grid
     const areaRatio = Math.max(0.4, Math.min(2.5, ratio * ratio));
     graph.setDotProps(i, { weight: params.weight * areaRatio });
   }
-}
-
-function resolveBoundaryMode(params: GridParams): "free" | "fixed" | "rim-damped" | "rim-heavy" {
-  if (params.boundaryMode) {
-    return params.boundaryMode;
-  }
-  return params.fixedBorder ? "fixed" : "free";
 }
 
 function detectBoundaryDots(graph: GraphModel, type: GridType, params: GridParams): Set<number> {

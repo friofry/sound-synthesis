@@ -24,10 +24,10 @@ const BASE_GRID_PARAMS: GridParams = {
   layers: 1,
   stiffness: 1,
   weight: 0.000001,
-  fixedBorder: false,
   stiffnessType: "isotropic",
   width: CANVAS_WIDTH,
   height: CANVAS_HEIGHT,
+  boundaryMode: "free",
 };
 
 type TopologyCase = {

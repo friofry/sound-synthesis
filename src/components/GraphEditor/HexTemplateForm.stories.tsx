@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { fn } from "storybook/test";
+import { DEFAULT_HEX_TEMPLATE_DIALOG_SETTINGS } from "../../config/defaults";
 import { HexTemplateForm } from "./dialogs/HexTemplateDialog";
 
 const meta = {
@@ -14,7 +15,7 @@ const meta = {
       </div>
     ),
   ],
-  args: { onClose: fn(), onApply: fn() },
+  args: { initialValues: DEFAULT_HEX_TEMPLATE_DIALOG_SETTINGS, onClose: fn(), onApply: fn() },
 } satisfies Meta<typeof HexTemplateForm>;
 
 export default meta;

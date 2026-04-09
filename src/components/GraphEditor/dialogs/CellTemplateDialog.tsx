@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { DEFAULT_CELL_TEMPLATE_DIALOG_SETTINGS } from "../../../config/defaults";
+import type { BoundaryMode } from "../../../engine/types";
 import { useGraphStore } from "../../../store/graphStore";
 import { MfcButton, MfcCheckbox, MfcDialog, MfcField, MfcNumberInput } from "../../ui/MfcDialog";
 
@@ -7,27 +9,28 @@ export type CellTemplateFormValues = {
   heightPoints: number;
   stiffness: number;
   weight: number;
-  fixedBorder: boolean;
+  boundaryMode: Extract<BoundaryMode, "free" | "fixed">;
 };
 
 export type CellTemplateFormProps = {
+  initialValues: CellTemplateFormValues;
   onApply: (values: CellTemplateFormValues) => void;
   onClose: () => void;
 };
 
-export function CellTemplateForm({ onApply, onClose }: CellTemplateFormProps) {
-  const [widthPoints, setWidthPoints] = useState(3);
-  const [heightPoints, setHeightPoints] = useState(3);
-  const [stiffness, setStiffness] = useState(1);
-  const [weight, setWeight] = useState(1);
-  const [fixedBorder, setFixedBorder] = useState(false);
+export function CellTemplateForm({ initialValues, onApply, onClose }: CellTemplateFormProps) {
+  const [widthPoints, setWidthPoints] = useState(initialValues.widthPoints);
+  const [heightPoints, setHeightPoints] = useState(initialValues.heightPoints);
+  const [stiffness, setStiffness] = useState(initialValues.stiffness);
+  const [weight, setWeight] = useState(initialValues.weight);
+  const [fixedBorder, setFixedBorder] = useState(initialValues.boundaryMode === "fixed");
 
   return (
     <MfcDialog
       title="Cell template"
       open
       onClose={onClose}
-      onSubmit={() => onApply({ widthPoints, heightPoints, stiffness, weight, fixedBorder })}
+      onSubmit={() => onApply({ widthPoints, heightPoints, stiffness, weight, boundaryMode: fixedBorder ? "fixed" : "free" })}
       width={300}
       actions={
         <>
@@ -73,6 +76,7 @@ export function CellTemplateDialog() {
 
   return (
     <CellTemplateForm
+      initialValues={DEFAULT_CELL_TEMPLATE_DIALOG_SETTINGS}
       onApply={(values) => {
         const n = Number.isFinite(values.heightPoints) ? Math.max(1, Math.floor(values.heightPoints)) : 1;
         const m = Number.isFinite(values.widthPoints) ? Math.max(1, Math.floor(values.widthPoints)) : 1;
@@ -82,8 +86,7 @@ export function CellTemplateDialog() {
         setDefaults({
           defaultWeight: safeWeight,
           defaultStiffness: safeStiffness,
-          fixedBorder: values.fixedBorder,
-          boundaryMode: values.fixedBorder ? "fixed" : "free",
+          boundaryMode: values.boundaryMode,
         });
         createPresetGraph("cell", {
           n,
@@ -91,7 +94,7 @@ export function CellTemplateDialog() {
           layers: 1,
           stiffness: safeStiffness,
           weight: safeWeight,
-          fixedBorder: values.fixedBorder,
+          boundaryMode: values.boundaryMode,
           stiffnessType,
           width: canvasSize.width,
           height: canvasSize.height,

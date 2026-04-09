@@ -2,9 +2,9 @@ import { clonePerturbation, GraphModel } from "./graph";
 import { scaleGraphForPitchRatio } from "./gridGenerators";
 import { runSimulation } from "./simulation";
 import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "./tuning";
-import type { GraphPerturbation, RawInstrumentNote, SimulationParams } from "./types";
+import type { GraphPerturbation, RawInstrumentNote, SimulationBackend, SimulationParams, SimulationPrecision } from "./types";
 import { DEFAULT_KEYBINDS, DEFAULT_KEY_LABELS } from "../components/PianoPlayer/KeyboardMapping";
-import { DEFAULT_SIMULATION_PRECISION, resolveDefaultSimulationBackend } from "./simulationDefaults";
+import { DEFAULT_GRAPH_STORE_SIMULATION_PARAMS, DEFAULT_SIMULATION_PRECISION, resolveDefaultSimulationBackend } from "../config/defaults";
 
 type GenerateInstrumentOptions = {
   noteCount?: number;
@@ -15,6 +15,8 @@ type GenerateInstrumentOptions = {
   attenuation?: number;
   squareAttenuation?: number;
   method?: SimulationParams["method"];
+  backend?: SimulationBackend;
+  precision?: SimulationPrecision;
   substepsMode?: SimulationParams["substepsMode"];
   substeps?: number;
   baseGraphSnapshotId?: string;
@@ -28,15 +30,17 @@ export function generateInstrumentFromGraph(
   const noteCount = options.noteCount ?? DEFAULT_KEYBINDS.length;
   const baseFrequency = options.baseFrequency ?? 440;
   const baseIndex = options.baseIndex ?? 9;
-  const sampleRate = options.sampleRate ?? 8000;
-  const lengthK = options.lengthK ?? 8;
-  const attenuation = options.attenuation ?? 4;
-  const squareAttenuation = options.squareAttenuation ?? (1 / 50) * attenuation;
-  const method = options.method ?? "euler";
-  const backend = resolveDefaultSimulationBackend(method, DEFAULT_SIMULATION_PRECISION);
-  const substepsMode = options.substepsMode ?? "fixed";
-  const substeps = options.substeps ?? 1;
+  const sampleRate = options.sampleRate ?? DEFAULT_GRAPH_STORE_SIMULATION_PARAMS.sampleRate;
+  const lengthK = options.lengthK ?? DEFAULT_GRAPH_STORE_SIMULATION_PARAMS.lengthK;
+  const attenuation = options.attenuation ?? DEFAULT_GRAPH_STORE_SIMULATION_PARAMS.attenuation;
+  const squareAttenuation = options.squareAttenuation ?? DEFAULT_GRAPH_STORE_SIMULATION_PARAMS.squareAttenuation;
+  const method = options.method ?? DEFAULT_GRAPH_STORE_SIMULATION_PARAMS.method;
+  const precision = options.precision ?? DEFAULT_SIMULATION_PRECISION;
+  const backend = options.backend ?? resolveDefaultSimulationBackend(method, precision);
+  const substepsMode = options.substepsMode ?? DEFAULT_GRAPH_STORE_SIMULATION_PARAMS.substepsMode;
+  const substeps = options.substeps ?? DEFAULT_GRAPH_STORE_SIMULATION_PARAMS.substeps;
   const perturbation = clonePerturbation(options.perturbation ?? graph.editorPerturbation);
+  const resolvedPlayingPoint = graph.resolvePlayingPoint(perturbation);
   const ratioForIndex = (index: number): number => 2 ** ((index - baseIndex) / 12);
   const baseGraphSnapshotId = options.baseGraphSnapshotId ?? "note-generator:base";
   let calibrationPitchRatio = 1;
@@ -44,7 +48,7 @@ export function generateInstrumentFromGraph(
   if (noteCount > 0) {
     const firstTargetRatio = ratioForIndex(0);
     const calibrationGraph = scaleGraphForPitchRatio(graph, firstTargetRatio);
-    calibrationGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
+    calibrationGraph.playingPoint = resolvedPlayingPoint;
     const calibrationResult = runSimulation(
       calibrationGraph.toGraphData(perturbation),
       {
@@ -53,7 +57,7 @@ export function generateInstrumentFromGraph(
         method,
         attenuation,
         squareAttenuation,
-        playingPoint: calibrationGraph.playingPoint ?? 0,
+        playingPoint: calibrationGraph.resolvePlayingPoint(perturbation),
         substepsMode,
         substeps,
       },
@@ -71,7 +75,7 @@ export function generateInstrumentFromGraph(
     const targetRatio = ratioForIndex(index);
     const tunedRatio = targetRatio * calibrationPitchRatio;
     const noteGraph = scaleGraphForPitchRatio(graph, tunedRatio);
-    noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
+    noteGraph.playingPoint = resolvedPlayingPoint;
     const result = runSimulation(
       noteGraph.toGraphData(perturbation),
       {
@@ -80,7 +84,7 @@ export function generateInstrumentFromGraph(
         method,
         attenuation,
         squareAttenuation,
-        playingPoint: noteGraph.playingPoint ?? 0,
+        playingPoint: noteGraph.resolvePlayingPoint(perturbation),
         substepsMode,
         substeps,
       },

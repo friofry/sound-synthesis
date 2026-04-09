@@ -69,10 +69,10 @@ test.describe("Full Workflow", () => {
         layers: 1,
         stiffness: 1,
         weight: 0.000001,
-        fixedBorder: false,
         stiffnessType: "isotropic",
         width: 1200,
         height: 700,
+        boundaryMode: "free",
       });
     });
 

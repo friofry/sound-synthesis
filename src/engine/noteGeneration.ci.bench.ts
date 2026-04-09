@@ -6,7 +6,7 @@ import {
   DEFAULT_SIMULATION_METHOD,
   DEFAULT_SIMULATION_SUBSTEPS,
   DEFAULT_SIMULATION_SUBSTEPS_MODE,
-} from "./simulationDefaults";
+} from "../config/defaults";
 import type { GraphData, GridParams, GridType, SimulationParams } from "./types";
 
 const GRID_SIZE = 25;
@@ -21,10 +21,10 @@ const GRID_PARAMS: GridParams = {
   layers: 1,
   stiffness: 1,
   weight: 0.000001,
-  fixedBorder: true,
   stiffnessType: "isotropic",
   width: CANVAS_WIDTH,
   height: CANVAS_HEIGHT,
+  boundaryMode: "fixed",
 };
 
 type TopologyBenchmarkCase = {

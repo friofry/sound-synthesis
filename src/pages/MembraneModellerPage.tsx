@@ -8,7 +8,6 @@ import { CellTemplateDialog } from "../components/GraphEditor/dialogs/CellTempla
 import { HexTemplateDialog } from "../components/GraphEditor/dialogs/HexTemplateDialog";
 import { InsertGraphDialog } from "../components/GraphEditor/dialogs/InsertGraphDialog";
 import { LinePropertiesDialog } from "../components/GraphEditor/dialogs/LinePropertiesDialog";
-import { SimulationDialog } from "../components/GraphEditor/dialogs/SimulationDialog";
 import { CommunityGraphsDialog } from "../components/GraphEditor/dialogs/CommunityGraphsDialog";
 import { HammerDialog } from "../components/GraphEditor/dialogs/HammerDialog";
 import { MembraneViewer } from "../components/Viewer3D/MembraneViewer";
@@ -19,6 +18,11 @@ import { PianoToolbar } from "../components/PianoPlayer/PianoToolbar";
 import { LegacyOscillogrammWaveform } from "../components/PianoPlayer/LegacyOscillogrammWaveform";
 import { LegacyOscillogrammSpectrum } from "../components/PianoPlayer/LegacyOscillogrammSpectrum";
 import { MfcSplitView } from "../components/ui/MfcSplitView";
+import {
+  DEFAULT_INITIAL_PRESET_GENERATION_SETTINGS,
+  DEFAULT_INSERT_GRAPH_DIALOG_GENERATION_SETTINGS,
+  DEFAULT_RANDOM_TOOL_GENERATION_SETTINGS,
+} from "../config/defaults";
 import { graphFromBinary } from "../engine/fileIO/graphFile";
 import { createHammerToolPerturbation } from "../engine/hammerPerturbation";
 import type {
@@ -29,13 +33,6 @@ import type {
   WeightDistributionMode,
 } from "../engine/types";
 import type { DistributionMode } from "../engine/presetGraphPreparation";
-import {
-  DEFAULT_SIMULATION_BACKEND,
-  DEFAULT_SIMULATION_METHOD,
-  DEFAULT_SIMULATION_PRECISION,
-  DEFAULT_SIMULATION_SUBSTEPS,
-  DEFAULT_SIMULATION_SUBSTEPS_MODE,
-} from "../engine/simulationDefaults";
 import { useGraphStore } from "../store/graphStore";
 import { useMembraneViewerStore } from "../store/membraneViewerStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
@@ -86,6 +83,20 @@ export function MembraneModellerPage() {
     handleLoadSncFile,
   } = usePianoToolbar({ graph, simulationParams });
 
+  const buildQuickGenerateSettings = useCallback(
+    (
+      defaults:
+        | typeof DEFAULT_INITIAL_PRESET_GENERATION_SETTINGS
+        | typeof DEFAULT_RANDOM_TOOL_GENERATION_SETTINGS
+        | typeof DEFAULT_INSERT_GRAPH_DIALOG_GENERATION_SETTINGS,
+      octaves: 1 | 2 | 3 = defaults.octaves,
+    ) => ({
+      ...defaults,
+      octaves,
+    }),
+    [],
+  );
+
   const InitializeFuzzyGraph = useCallback(() => {
     const randomPreset = createRandomPresetConfig();
 
@@ -94,7 +105,6 @@ export function MembraneModellerPage() {
     const height = Math.max(1, initialState.canvasSize.height);
 
     initialState.setDefaults({
-      fixedBorder: randomPreset.boundaryMode === "fixed",
       boundaryMode: randomPreset.boundaryMode,
       stiffnessType: randomPreset.stiffnessType,
       defaultStiffness: randomPreset.stiffness,
@@ -110,7 +120,6 @@ export function MembraneModellerPage() {
       layers: randomPreset.size,
       stiffness: randomPreset.stiffness,
       weight: initialState.defaultWeight,
-      fixedBorder: randomPreset.boundaryMode === "fixed",
       stiffnessType: randomPreset.stiffnessType,
       boundaryMode: randomPreset.boundaryMode,
       stiffnessNormalizationMode: randomPreset.stiffnessNormalizationMode,
@@ -133,22 +142,13 @@ export function MembraneModellerPage() {
     });
     initialState.setTool("hammer");
     const preparedGraph = useGraphStore.getState().graph.clone();
-    void handleConfirmGenerateNotes({
-      octaves: 2,
-      attenuation: generateNotesSettings.attenuation,
-      squareAttenuation: generateNotesSettings.squareAttenuation,
-      durationMs: 150,
-      tillSilence: false,
-      sampleRate: 44100,
-      method: DEFAULT_SIMULATION_METHOD,
-      backend: DEFAULT_SIMULATION_BACKEND,
-      precision: DEFAULT_SIMULATION_PRECISION,
-      substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
-      substeps: DEFAULT_SIMULATION_SUBSTEPS,
-    }, preparedGraph);
+    void handleConfirmGenerateNotes(
+      buildQuickGenerateSettings(DEFAULT_INITIAL_PRESET_GENERATION_SETTINGS),
+      preparedGraph,
+      { persistSettings: false },
+    );
   }, [
-    generateNotesSettings.attenuation,
-    generateNotesSettings.squareAttenuation,
+    buildQuickGenerateSettings,
     handleConfirmGenerateNotes,
   ]);
 
@@ -174,7 +174,6 @@ export function MembraneModellerPage() {
     const height = Math.max(1, currentState.canvasSize.height);
 
     setDefaults({
-      fixedBorder: randomPreset.boundaryMode === "fixed",
       boundaryMode: randomPreset.boundaryMode,
       stiffnessType: randomPreset.stiffnessType,
       defaultStiffness: randomPreset.stiffness,
@@ -190,7 +189,6 @@ export function MembraneModellerPage() {
       layers: randomPreset.size,
       stiffness: randomPreset.stiffness,
       weight: currentState.defaultWeight,
-      fixedBorder: randomPreset.boundaryMode === "fixed",
       stiffnessType: randomPreset.stiffnessType,
       boundaryMode: randomPreset.boundaryMode,
       stiffnessNormalizationMode: randomPreset.stiffnessNormalizationMode,
@@ -214,23 +212,14 @@ export function MembraneModellerPage() {
     currentState.setTool("hammer");
 
     const preparedGraph = useGraphStore.getState().graph.clone();
-    void handleConfirmGenerateNotes({
-      octaves: 2,
-      attenuation: generateNotesSettings.attenuation,
-      squareAttenuation: generateNotesSettings.squareAttenuation,
-      durationMs: 150,
-      tillSilence: false,
-      sampleRate: 44100,
-      method: DEFAULT_SIMULATION_METHOD,
-      backend: DEFAULT_SIMULATION_BACKEND,
-      precision: DEFAULT_SIMULATION_PRECISION,
-      substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
-      substeps: DEFAULT_SIMULATION_SUBSTEPS,
-    }, preparedGraph);
+    void handleConfirmGenerateNotes(
+      buildQuickGenerateSettings(DEFAULT_RANDOM_TOOL_GENERATION_SETTINGS),
+      preparedGraph,
+      { persistSettings: false },
+    );
   }, [
+    buildQuickGenerateSettings,
     createPresetGraph,
-    generateNotesSettings.attenuation,
-    generateNotesSettings.squareAttenuation,
     handleConfirmGenerateNotes,
     setDefaults,
   ]);
@@ -258,6 +247,7 @@ export function MembraneModellerPage() {
       velocity: number;
       restitution: number;
       radius: number;
+      playingPointMode: "impact-point" | "graph-center";
     };
   }) => {
     e2eSetLastHammerImpact({
@@ -368,7 +358,6 @@ export function MembraneModellerPage() {
           </section>
         </MfcSplitView>
       </MfcSplitView>
-      <SimulationDialog />
       <DotPropertiesDialog />
       <LinePropertiesDialog />
       <GroupModifyDialog />
@@ -379,19 +368,11 @@ export function MembraneModellerPage() {
         open={insertDialog.open}
         canvasSize={canvasSize}
         onGenerateOctaves123={(octaves) => {
-          void handleConfirmGenerateNotes({
-            octaves,
-            attenuation: generateNotesSettings.attenuation,
-            squareAttenuation: generateNotesSettings.squareAttenuation,
-            durationMs: 150,
-            tillSilence: false,
-            sampleRate: 44100,
-            method: DEFAULT_SIMULATION_METHOD,
-            backend: DEFAULT_SIMULATION_BACKEND,
-            precision: DEFAULT_SIMULATION_PRECISION,
-            substepsMode: DEFAULT_SIMULATION_SUBSTEPS_MODE,
-            substeps: DEFAULT_SIMULATION_SUBSTEPS,
-          });
+          void handleConfirmGenerateNotes(
+            buildQuickGenerateSettings(DEFAULT_INSERT_GRAPH_DIALOG_GENERATION_SETTINGS, octaves),
+            undefined,
+            { persistSettings: false },
+          );
         }}
         onClose={closeInsertDialog}
       />
@@ -428,7 +409,7 @@ function createRandomPresetConfig(): {
   rimDampingFactor: number;
 } {
   const graphTypes: GridType[] = ["cell", "triangle", "astra", "hexagon", "disk-hex"];
-  const boundaryModes: BoundaryMode[] = ["free", "fixed", "rim-damped", "rim-heavy"];
+  const boundaryModes: BoundaryMode[] = ["fixed"];
   const stiffnessNormalizationModes: StiffnessNormalizationMode[] = ["none", "by-edge-length", "by-rest-area"];
   const weightDistributionModes: WeightDistributionMode[] = ["uniform", "by-node-area", "edge-light"];
   const centerDistributions: DistributionMode[] = ["equivalent", "smoothed"];

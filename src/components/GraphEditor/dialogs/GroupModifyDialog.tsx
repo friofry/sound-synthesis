@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DEFAULT_GROUP_MODIFY_DIALOG_SETTINGS } from "../../../config/defaults";
 import { useGraphStore } from "../../../store/graphStore";
 import { MfcButton, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput } from "../../ui/MfcDialog";
 
@@ -14,16 +15,17 @@ export type GroupModifyFormValues = {
 };
 
 export type GroupModifyFormProps = {
+  initialValues: GroupModifyFormValues;
   onApply: (values: GroupModifyFormValues) => void;
   onClose: () => void;
 };
 
-export function GroupModifyForm({ onApply, onClose }: GroupModifyFormProps) {
-  const [maxAmplitude, setMaxAmplitude] = useState(0.2);
-  const [maxWeight, setMaxWeight] = useState(0.000001);
-  const [stiffness, setStiffness] = useState(1);
-  const [distribution, setDistribution] = useState<DistributionMode>("equivalent");
-  const [fixMode, setFixMode] = useState<FixMode>("none");
+export function GroupModifyForm({ initialValues, onApply, onClose }: GroupModifyFormProps) {
+  const [maxAmplitude, setMaxAmplitude] = useState(initialValues.maxAmplitude);
+  const [maxWeight, setMaxWeight] = useState(initialValues.maxWeight);
+  const [stiffness, setStiffness] = useState(initialValues.stiffness);
+  const [distribution, setDistribution] = useState<DistributionMode>(initialValues.distribution);
+  const [fixMode, setFixMode] = useState<FixMode>(initialValues.fixMode);
 
   return (
     <MfcDialog
@@ -79,6 +81,7 @@ export function GroupModifyDialog() {
 
   return (
     <GroupModifyForm
+      initialValues={DEFAULT_GROUP_MODIFY_DIALOG_SETTINGS}
       onApply={(values) => {
         const cx = (rect.x1 + rect.x2) / 2;
         const cy = (rect.y1 + rect.y2) / 2;

@@ -186,10 +186,10 @@ export async function createPresetGrid(
         layers: 1,
         stiffness: 1,
         weight: 0.000001,
-        fixedBorder: false,
         stiffnessType: "isotropic",
         width,
         height,
+        boundaryMode: "free",
       });
     },
     { type, n, m, width, height },
