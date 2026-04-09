@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DOT_RADIUS, GRAPH_COLORS, IGNORE_RADIUS } from "../../engine/types";
 import { useGraphStore, type Rect } from "../../store/graphStore";
-import { generateHammerOneShot } from "./hammerOneShot";
 
 const MIN_GROUP_SIZE = 8;
 const LINE_HIT_THRESHOLD = 10;
@@ -10,7 +9,6 @@ const HAMMER_CURSOR =
   'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%271%27 y=%2718%27 font-size=%2718%27%3E%F0%9F%94%A8%3C/text%3E%3C/svg%3E") 4 20, crosshair';
 
 type GraphCanvasProps = {
-  onHammerPreview?: (buffer: Float32Array, sampleRate: number) => void;
   onHammerImpact?: (payload: {
     impactX: number;
     impactY: number;
@@ -25,7 +23,7 @@ type GraphCanvasProps = {
   }) => void;
 };
 
-export function GraphCanvas({ onHammerPreview, onHammerImpact }: GraphCanvasProps) {
+export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [size, setSize] = useState({ width: 1200, height: 700 });
@@ -525,20 +523,6 @@ export function GraphCanvas({ onHammerPreview, onHammerImpact }: GraphCanvasProp
           radius: hammerSettings.radius,
         },
       });
-      void generateHammerOneShot({
-        graph,
-        impactX: point.x,
-        impactY: point.y,
-        charge,
-        settings: hammerSettings,
-        sampleRate: 44_100,
-      })
-        .then((result) => {
-          onHammerPreview?.(result.buffer, result.sampleRate);
-        })
-        .catch((error) => {
-          window.alert(error instanceof Error ? error.message : "Hammer one-shot generation failed");
-        });
       return;
     }
 

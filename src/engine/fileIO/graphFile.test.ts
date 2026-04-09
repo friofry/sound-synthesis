@@ -13,6 +13,13 @@ describe("graphFile legacy .gph compatibility", () => {
         { x: 30, y: 40, u: 3.25, v: 4.5, weight: 2.75, fixed: true, inputFile: "kick.wav" },
       ],
       lines: [{ dot1: 0, dot2: 1, k: 7.5 }],
+      editorPerturbation: {
+        kind: "instant",
+        points: [
+          { u: 1.5, v: -2.25 },
+          { u: 3.25, v: 4.5 },
+        ],
+      },
     };
 
     const expected = serializeLegacyGph(graph);
@@ -32,9 +39,17 @@ describe("graphFile legacy .gph compatibility", () => {
         { dot1: 0, dot2: 1, k: 9.5 },
         { dot1: 1, dot2: 2, k: 10.5 },
       ],
+      editorPerturbation: {
+        kind: "instant",
+        points: [
+          { u: 0, v: 1 },
+          { u: 3, v: 4 },
+          { u: 6, v: 7 },
+        ],
+      },
     };
 
-    const parsed = graphFromBinary(serializeLegacyGph(graph).buffer);
+    const parsed = graphFromBinary(Uint8Array.from(serializeLegacyGph(graph)).buffer);
 
     expect(parsed).toEqual({
       dots: [
@@ -46,6 +61,14 @@ describe("graphFile legacy .gph compatibility", () => {
         { dot1: 0, dot2: 1, k: 9.5 },
         { dot1: 1, dot2: 2, k: 10.5 },
       ],
+      editorPerturbation: {
+        kind: "instant",
+        points: [
+          { u: 0, v: 1 },
+          { u: 3, v: 4 },
+          { u: 6, v: 7 },
+        ],
+      },
     });
   });
 

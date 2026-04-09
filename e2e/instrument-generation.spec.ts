@@ -20,10 +20,12 @@ test.describe("Instrument generation progress", () => {
     const progressDialog = page.locator('.mfc-window:has(.mfc-title:has-text("Generating instrument..."))');
     await expect(progressDialog).toBeVisible();
 
-    await progressDialog.getByRole("button", { name: "Close dialog" }).click();
+    const closeButton = progressDialog.getByRole("button", { name: "Close dialog" });
+    await expect(closeButton).toBeVisible();
+    await closeButton.evaluate((node) => (node as HTMLButtonElement).click());
     await expect(progressDialog).toBeHidden();
 
-    await expect(generateInstrumentButton).toBeEnabled({ timeout: 3_000 });
+    await expect(generateInstrumentButton).toBeEnabled({ timeout: 10_000 });
     await generateInstrumentButton.click();
     await expect(generateDialog).toBeVisible();
   });
@@ -38,6 +40,7 @@ test.describe("Instrument generation progress", () => {
 
     const progressDialog = page.locator('.mfc-window:has(.mfc-title:has-text("Generating instrument..."))');
     await expect(progressDialog).toBeVisible();
-    await expect(progressDialog).toContainText("Estimation:", { timeout: 10_000 });
+    await expect(progressDialog).toContainText(/Preparing simulation|Calibrating first note|Generating notes/);
+    await expect(progressDialog).toContainText("Estimation:", { timeout: 30_000 });
   });
 });

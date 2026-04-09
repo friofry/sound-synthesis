@@ -41,8 +41,9 @@ function applyCenteredGroupModify(graph: GraphModel, options: CenterGroupModifyO
 
   const centerX = (bounds.minX + bounds.maxX) / 2;
   const centerY = (bounds.minY + bounds.maxY) / 2;
-  const radiusRatio = Number.isFinite(options.radiusRatio)
-    ? Math.max(0.05, Math.min(1, options.radiusRatio))
+  const rawRadiusRatio = options.radiusRatio;
+  const radiusRatio = typeof rawRadiusRatio === "number" && Number.isFinite(rawRadiusRatio)
+    ? Math.max(0.05, Math.min(1, rawRadiusRatio))
     : CENTER_GROUP_AREA_RATIO;
   const rectWidth = (bounds.maxX - bounds.minX) * radiusRatio;
   const rectHeight = (bounds.maxY - bounds.minY) * radiusRatio;

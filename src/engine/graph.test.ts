@@ -51,4 +51,25 @@ describe("GraphModel", () => {
     const restored = GraphModel.fromJSON(graph.toJSON());
     expect(restored.toJSON()).toEqual(graph.toJSON());
   });
+
+  it("preserves editor perturbation through serialization", () => {
+    const graph = new GraphModel();
+    graph.addDot(0, 0, 0, 0, 1, false);
+    graph.addDot(10, 10, 0, 0, 1, false);
+    graph.addDot(20, 20, 0, 0, 1, true);
+    graph.setEditorPerturbation({
+      kind: "instant",
+      points: [
+        { u: 1.25, v: -2.5 },
+        { u: -3.75, v: 4.125 },
+        { u: 0.5, v: -0.25 },
+      ],
+    });
+
+    const serialized = graph.toJSON();
+    const restored = GraphModel.fromJSON(serialized);
+
+    expect(restored.getEditorPerturbation()).toEqual(serialized.editorPerturbation);
+    expect(restored.dots.map((dot) => ({ u: dot.u, v: dot.v }))).toEqual(serialized.editorPerturbation!.points);
+  });
 });

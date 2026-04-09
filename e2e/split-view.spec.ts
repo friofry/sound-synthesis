@@ -123,20 +123,62 @@ test.describe("MfcSplitView", () => {
 
     const splitters = page.locator(".modeller-right-column > .mfc-splitter");
     await expect(splitters).toHaveCount(3);
+    await page.waitForFunction(() => {
+      const panes = Array.from(document.querySelectorAll(".modeller-right-column > .mfc-split-pane"));
+      return panes.length === 4 && panes.every((node) => (node as HTMLElement).getBoundingClientRect().height > 20);
+    });
 
     const heightsBefore = await readPaneHeights();
     expect(heightsBefore).toHaveLength(4);
 
     const firstSplitter = splitters.first();
-    const box = await firstSplitter.boundingBox();
-    if (!box) throw new Error("First vertical splitter is not measurable");
-
-    const cx = box.x + box.width / 2;
-    const cy = box.y + box.height / 2;
-    await page.mouse.move(cx, cy);
-    await page.mouse.down();
-    await page.mouse.move(cx, cy - 60, { steps: 8 });
-    await page.mouse.up();
+    await firstSplitter.evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const endY = centerY - 120;
+      const pointerId = 1;
+      node.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          bubbles: true,
+          cancelable: true,
+          pointerId,
+          pointerType: "mouse",
+          button: 0,
+          buttons: 1,
+          clientX: centerX,
+          clientY: centerY,
+        }),
+      );
+      for (let step = 1; step <= 12; step += 1) {
+        const progress = step / 12;
+        const y = centerY + (endY - centerY) * progress;
+        node.dispatchEvent(
+          new PointerEvent("pointermove", {
+            bubbles: true,
+            cancelable: true,
+            pointerId,
+            pointerType: "mouse",
+            button: 0,
+            buttons: 1,
+            clientX: centerX,
+            clientY: y,
+          }),
+        );
+      }
+      node.dispatchEvent(
+        new PointerEvent("pointerup", {
+          bubbles: true,
+          cancelable: true,
+          pointerId,
+          pointerType: "mouse",
+          button: 0,
+          buttons: 0,
+          clientX: centerX,
+          clientY: endY,
+        }),
+      );
+    });
 
     const heightsAfter = await readPaneHeights();
 

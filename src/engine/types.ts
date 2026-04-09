@@ -69,6 +69,27 @@ export interface Dot {
   lines: Line[];
 }
 
+export interface TopologyDot {
+  x: number;
+  y: number;
+  weight: number;
+  fixed: boolean;
+  inputFile: string | null;
+  lines: Line[];
+}
+
+export interface PerturbationPoint {
+  u: number;
+  v: number;
+}
+
+export interface InstantGraphPerturbation {
+  kind: "instant";
+  points: PerturbationPoint[];
+}
+
+export type GraphPerturbation = InstantGraphPerturbation;
+
 export interface SerializedDot {
   x: number;
   y: number;
@@ -83,7 +104,14 @@ export interface SerializedGraph {
   dots: SerializedDot[];
   lines: Line[];
   playingPoint?: number | null;
+  editorPerturbation?: GraphPerturbation;
 }
+
+export type GeneratedNoteSource = {
+  baseGraphSnapshotId: string;
+  tunedRatio: number;
+  perturbation: GraphPerturbation;
+};
 
 export interface GraphData {
   dots: SerializedDot[];
@@ -219,8 +247,7 @@ export type RawInstrumentNote = {
   frequency: number;
   buffer: Float32Array;
   sampleRate: number;
-  viewerBaseGraphSnapshotId?: string;
-  viewerTunedRatio?: number;
+  viewerSource?: GeneratedNoteSource;
 };
 
 export const CHROMATIC_DIES_ONE_BASED = new Set([2, 4, 7, 9, 11]);

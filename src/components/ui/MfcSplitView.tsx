@@ -155,7 +155,11 @@ export function MfcSplitView({
 
       activePointerIdRef.current = event.pointerId;
       activeSplitterRef.current = splitterIndex;
-      event.currentTarget.setPointerCapture(event.pointerId);
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // Synthetic pointer events used in tests may not support capture.
+      }
       setIsDragging(true);
       setRatioFromClient(event.clientX, event.clientY);
     },
@@ -164,10 +168,10 @@ export function MfcSplitView({
 
   const onPointerMove = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
-      if (!isDragging || activePointerIdRef.current !== event.pointerId) return;
+      if (activePointerIdRef.current !== event.pointerId || activeSplitterRef.current === null) return;
       setRatioFromClient(event.clientX, event.clientY);
     },
-    [isDragging, setRatioFromClient],
+    [setRatioFromClient],
   );
 
   const stopDragging = useCallback((event: PointerEvent<HTMLDivElement>) => {
@@ -179,6 +183,30 @@ export function MfcSplitView({
     activeSplitterRef.current = null;
     setIsDragging(false);
   }, []);
+
+  useEffect(() => {
+    if (!isDragging) {
+      return;
+    }
+    const onWindowPointerMove = (event: globalThis.PointerEvent) => {
+      if (activePointerIdRef.current !== event.pointerId || activeSplitterRef.current === null) return;
+      setRatioFromClient(event.clientX, event.clientY);
+    };
+    const onWindowPointerEnd = (event: globalThis.PointerEvent) => {
+      if (activePointerIdRef.current !== event.pointerId) return;
+      activePointerIdRef.current = null;
+      activeSplitterRef.current = null;
+      setIsDragging(false);
+    };
+    window.addEventListener("pointermove", onWindowPointerMove);
+    window.addEventListener("pointerup", onWindowPointerEnd);
+    window.addEventListener("pointercancel", onWindowPointerEnd);
+    return () => {
+      window.removeEventListener("pointermove", onWindowPointerMove);
+      window.removeEventListener("pointerup", onWindowPointerEnd);
+      window.removeEventListener("pointercancel", onWindowPointerEnd);
+    };
+  }, [isDragging, setRatioFromClient]);
 
   const availableSize = Math.max(0, mainSize - splitterSize * Math.max(0, paneCount - 1));
   const effectiveRatios = useMemo(

@@ -20,6 +20,7 @@ import { LegacyOscillogrammWaveform } from "../components/PianoPlayer/LegacyOsci
 import { LegacyOscillogrammSpectrum } from "../components/PianoPlayer/LegacyOscillogrammSpectrum";
 import { MfcSplitView } from "../components/ui/MfcSplitView";
 import { graphFromBinary } from "../engine/fileIO/graphFile";
+import { createHammerToolPerturbation } from "../engine/hammerPerturbation";
 import type {
   BoundaryMode,
   GridType,
@@ -67,7 +68,7 @@ export function MembraneModellerPage() {
     handlePressKey,
     handleReleaseKey,
     handleGenerateOne,
-    handlePlayPreviewBuffer,
+    generateSingleNoteFromSource,
     generateInstrument,
     generateNotesDialogOpen,
     generateNotesSettings,
@@ -265,51 +266,38 @@ export function MembraneModellerPage() {
       charge: payload.charge,
       radius: payload.settings.radius,
     });
-    const { setActiveSource, updateActiveSnapshotGraph } = useMembraneViewerStore.getState();
-    const { resetFrame, play, armHammerBootstrap } = useViewerStore.getState();
-    const radius = Math.max(1, payload.settings.radius);
-    const sigma = Math.max(1, radius * 0.45);
-    const effectiveVelocity = payload.settings.velocity * clamp(payload.charge, 0, 1);
-    const restitution = clamp(payload.settings.restitution, 0, 1);
-    const hammerMass = Math.max(0.000001, payload.settings.weight);
-
-    setActiveSource("editor");
-    updateActiveSnapshotGraph((nextGraph) => {
-      for (let index = 0; index < nextGraph.dots.length; index += 1) {
-        const dot = nextGraph.dots[index];
-        if (!dot || dot.fixed) {
-          continue;
-        }
-        const dist = Math.hypot(dot.x - payload.impactX, dot.y - payload.impactY);
-        if (dist > radius) {
-          continue;
-        }
-        const factor =
-          payload.settings.distribution === "smoothed"
-            ? Math.exp(-(dist * dist) / (2 * sigma * sigma))
-            : 1;
-        const dotMass = Math.max(0.000001, dot.weight);
-        const impactVelocity =
-          (((1 + restitution) * hammerMass) / (hammerMass + dotMass)) * effectiveVelocity * factor;
-        const nextV = dot.v + impactVelocity;
-        nextGraph.setDotProps(index, {
-          u: dot.u,
-          v: Math.max(-1, Math.min(1, nextV)),
-        });
-      }
+    const hammerPerturbation = createHammerToolPerturbation({
+      graph,
+      impactX: payload.impactX,
+      impactY: payload.impactY,
+      charge: payload.charge,
+      settings: payload.settings,
     });
-    armHammerBootstrap();
+    const { initializeSource, setActiveSource } = useMembraneViewerStore.getState();
+    const { resetFrame, play } = useViewerStore.getState();
+    const { setToolPerturbation } = useGraphStore.getState();
+
+    setToolPerturbation(hammerPerturbation);
+    initializeSource("tool-preview", graph, {
+      activate: true,
+      force: true,
+      perturbation: hammerPerturbation,
+    });
+    setActiveSource("tool-preview");
     resetFrame();
     play();
-  }, []);
 
-  const handleHammerPreviewForE2E = useCallback(
-    (buffer: Float32Array, sampleRate: number) => {
-      e2eRecordHammerPreview(buffer, sampleRate);
-      void handlePlayPreviewBuffer(buffer, sampleRate);
-    },
-    [handlePlayPreviewBuffer],
-  );
+    void generateSingleNoteFromSource({
+      sourceGraph: graph,
+      perturbation: hammerPerturbation,
+      autoplay: true,
+      snapshotId: "tool-preview:latest",
+    }).then((note) => {
+      if (note) {
+        e2eRecordHammerPreview(note.buffer, note.sampleRate);
+      }
+    });
+  }, [generateSingleNoteFromSource, graph]);
 
   return (
     <section className="workspace-layout">
@@ -320,7 +308,7 @@ export function MembraneModellerPage() {
               <EditorToolbar onReprepareAndGenerate={handleReprepareAndGenerate} />
             </aside>
             <div className="graph-stage">
-              <GraphCanvas onHammerPreview={handleHammerPreviewForE2E} onHammerImpact={handleHammerImpactToViewer} />
+              <GraphCanvas onHammerImpact={handleHammerImpactToViewer} />
               <StatusBar />
             </div>
           </section>
@@ -424,9 +412,6 @@ function randomFloat(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
 
 function createRandomPresetConfig(): {
   graphType: GridType;

@@ -14,7 +14,7 @@ import { forEachSpringLine } from "./simulationAssembly";
 import { applyVelocityDamping } from "./simulationDamping";
 import { applyEndFadeOut, applyStartFadeIn } from "./simulationFade";
 import { createIntegratorStep } from "./simulationIntegratorBridge";
-import { rungeKuttaStepShared } from "./simulationRk4";
+import { rungeKuttaStepShared, type RungeKuttaWorkspace } from "./simulationRk4";
 import { resolveSampleSubsteps, substepsFromStiffnessRatio } from "./simulationSubsteps";
 
 type FreeFreeEdges = {
@@ -409,7 +409,7 @@ function rungeKuttaStep(
   dt: number,
   attenuation: number,
   squareAttenuation: number,
-  workspace: RungeKuttaWorkspace,
+  workspace: RungeKuttaWorkspace<FloatArray>,
 ): void {
   rungeKuttaStepShared(state, dt, workspace, (u, v, out) =>
     void buildAcceleration(u, v, edges, attenuation, squareAttenuation, out),
@@ -420,7 +420,7 @@ function rungeKuttaStep(
 // Workspace allocation
 // ---------------------------------------------------------------------------
 
-function createRungeKuttaWorkspace(n: number, precision: SimulationPrecision): RungeKuttaWorkspace {
+function createRungeKuttaWorkspace(n: number, precision: SimulationPrecision): RungeKuttaWorkspace<FloatArray> {
   return {
     k1u: createFloatArray(n, precision),
     k1v: createFloatArray(n, precision),

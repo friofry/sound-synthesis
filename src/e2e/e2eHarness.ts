@@ -154,7 +154,7 @@ function buildHarness(): E2EHarness {
       if (!snapshot) {
         return [];
       }
-      return toDotSnapshot(snapshot.graph.dots);
+      return toDotSnapshot(snapshot.graph.getDotsForPerturbation(snapshot.perturbation));
     },
     getViewerStatus: () => {
       const viewer = useViewerStore.getState();

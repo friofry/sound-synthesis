@@ -5,24 +5,49 @@ import {
   START_V,
   START_W,
   type Dot,
+  type GraphPerturbation,
   type GraphData,
   type KoeffStr,
   type Line,
   type SerializedDot,
   type SerializedGraph,
+  type TopologyDot,
 } from "./types";
 
 const asKey = (a: number, b: number): string => (a < b ? `${a}:${b}` : `${b}:${a}`);
 
 export class GraphModel {
-  dots: Dot[] = [];
+  private topologyDots: TopologyDot[] = [];
+  private mergedDotsCache: Dot[] | null = null;
   lines: Line[] = [];
   playingPoint: number | null = null;
+  editorPerturbation: GraphPerturbation = { kind: "instant", points: [] };
+
+  get dots(): Dot[] {
+    if (!this.mergedDotsCache) {
+      this.mergedDotsCache = this.topologyDots.map((dot, index) => {
+        const point = this.editorPerturbation.points[index] ?? { u: START_U, v: START_V };
+        return {
+          x: dot.x,
+          y: dot.y,
+          u: point.u,
+          v: point.v,
+          weight: dot.weight,
+          fixed: dot.fixed,
+          inputFile: dot.inputFile,
+          lines: dot.lines,
+        };
+      });
+    }
+    return this.mergedDotsCache;
+  }
 
   clear(): void {
-    this.dots = [];
+    this.topologyDots = [];
     this.lines = [];
     this.playingPoint = null;
+    this.editorPerturbation = { kind: "instant", points: [] };
+    this.invalidateDotsCache();
   }
 
   size(): number {
@@ -38,8 +63,10 @@ export class GraphModel {
     fixed = false,
     inputFile: string | null = null,
   ): number {
-    this.dots.push({ x, y, u, v, weight, fixed, inputFile, lines: [] });
-    return this.dots.length - 1;
+    this.topologyDots.push({ x, y, weight, fixed, inputFile, lines: [] });
+    this.editorPerturbation.points.push({ u, v });
+    this.invalidateDotsCache();
+    return this.topologyDots.length - 1;
   }
 
   addLine(dot1: number, dot2: number, k = START_K): boolean {
@@ -51,8 +78,9 @@ export class GraphModel {
     }
     const line: Line = { dot1, dot2, k };
     this.lines.push(line);
-    this.dots[dot1].lines.push(line);
-    this.dots[dot2].lines.push(line);
+    this.topologyDots[dot1].lines.push(line);
+    this.topologyDots[dot2].lines.push(line);
+    this.invalidateDotsCache();
     return true;
   }
 
@@ -66,7 +94,8 @@ export class GraphModel {
     if (index < 0 || index >= this.size()) {
       return;
     }
-    this.dots.splice(index, 1);
+    this.topologyDots.splice(index, 1);
+    this.editorPerturbation.points.splice(index, 1);
     const nextLines: Line[] = [];
     for (const line of this.lines) {
       if (line.dot1 === index || line.dot2 === index) {
@@ -87,6 +116,7 @@ export class GraphModel {
       }
     }
     this.rebuildDotLines();
+    this.invalidateDotsCache();
   }
 
   existsLine(dot1: number, dot2: number): boolean {
@@ -112,28 +142,43 @@ export class GraphModel {
   }
 
   setDotFixed(index: number, fixed: boolean): void {
-    const dot = this.dots[index];
+    const dot = this.topologyDots[index];
     if (dot) {
       dot.fixed = fixed;
       if (fixed && this.playingPoint === index) {
         this.playingPoint = null;
       }
+      this.invalidateDotsCache();
     }
   }
 
   setDotProps(index: number, partial: Partial<Omit<Dot, "lines">>): void {
-    const dot = this.dots[index];
-    if (!dot) {
+    const topology = this.topologyDots[index];
+    if (!topology) {
       return;
     }
-    this.dots[index] = { ...dot, ...partial };
+    const point = this.editorPerturbation.points[index] ?? { u: START_U, v: START_V };
+    this.topologyDots[index] = {
+      x: partial.x ?? topology.x,
+      y: partial.y ?? topology.y,
+      weight: partial.weight ?? topology.weight,
+      fixed: partial.fixed ?? topology.fixed,
+      inputFile: partial.inputFile ?? topology.inputFile,
+      lines: topology.lines,
+    };
+    this.editorPerturbation.points[index] = {
+      u: partial.u ?? point.u,
+      v: partial.v ?? point.v,
+    };
+    this.invalidateDotsCache();
   }
 
   moveDot(index: number, x: number, y: number): void {
-    const dot = this.dots[index];
+    const dot = this.topologyDots[index];
     if (dot) {
       dot.x = x;
       dot.y = y;
+      this.invalidateDotsCache();
     }
   }
 
@@ -206,12 +251,22 @@ export class GraphModel {
   }
 
   createInitBuffer(): { u: Float64Array; v: Float64Array } {
+    return this.createInitBufferFromPerturbation(this.editorPerturbation);
+  }
+
+  createInitBufferFromPerturbation(perturbation: GraphPerturbation | null = this.editorPerturbation): {
+    u: Float64Array;
+    v: Float64Array;
+  } {
+    const points = resolvePerturbationPoints(this.topologyDots.length, perturbation ?? this.editorPerturbation);
     const u: number[] = [];
     const v: number[] = [];
-    for (const dot of this.dots) {
+    for (let index = 0; index < this.topologyDots.length; index += 1) {
+      const dot = this.topologyDots[index];
       if (!dot.fixed) {
-        u.push(dot.u);
-        v.push(dot.v);
+        const point = points[index];
+        u.push(point.u);
+        v.push(point.v);
       }
     }
     return { u: Float64Array.from(u), v: Float64Array.from(v) };
@@ -223,19 +278,52 @@ export class GraphModel {
 
   toJSON(): SerializedGraph {
     return {
-      dots: this.dots.map(stripDotLines),
+      dots: this.getDotsForPerturbation().map(stripDotLines),
       lines: this.lines.map((line) => ({ ...line })),
       playingPoint: this.playingPoint,
+      editorPerturbation: clonePerturbation(this.editorPerturbation),
     };
   }
 
-  toGraphData(): GraphData {
+  toGraphData(perturbation: GraphPerturbation | null = this.editorPerturbation): GraphData {
     const playingPoint = this.playingPoint ?? this.findFirstPlayableDot();
     return {
-      dots: this.dots.map(stripDotLines),
+      dots: this.getDotsForPerturbation(perturbation ?? this.editorPerturbation).map(stripDotLines),
       lines: this.lines.map((line) => ({ ...line })),
       playingPoint,
     };
+  }
+
+  getDotsForPerturbation(perturbation: GraphPerturbation | null = this.editorPerturbation): Dot[] {
+    const points = resolvePerturbationPoints(this.topologyDots.length, perturbation ?? this.editorPerturbation);
+    return this.topologyDots.map((dot, index) => {
+      const point = points[index];
+      return {
+        x: dot.x,
+        y: dot.y,
+        u: point.u,
+        v: point.v,
+        weight: dot.weight,
+        fixed: dot.fixed,
+        inputFile: dot.inputFile,
+        lines: dot.lines,
+      };
+    });
+  }
+
+  getEditorPerturbation(): GraphPerturbation {
+    return clonePerturbation(this.editorPerturbation);
+  }
+
+  setEditorPerturbation(perturbation: GraphPerturbation | null): void {
+    this.editorPerturbation = clonePerturbation(
+      normalizePerturbationForDotCount(this.topologyDots.length, perturbation),
+    );
+    this.invalidateDotsCache();
+  }
+
+  clearEditorPerturbation(): void {
+    this.setEditorPerturbation(createZeroPerturbation(this.topologyDots.length));
   }
 
   findFirstPlayableDot(): number {
@@ -245,19 +333,33 @@ export class GraphModel {
 
   static fromJSON(payload: SerializedGraph): GraphModel {
     const graph = new GraphModel();
-    graph.dots = payload.dots.map((dot) => ({ ...dot, lines: [] }));
+    graph.topologyDots = payload.dots.map((dot) => ({
+      x: dot.x,
+      y: dot.y,
+      weight: dot.weight,
+      fixed: dot.fixed,
+      inputFile: dot.inputFile,
+      lines: [],
+    }));
     graph.lines = payload.lines.map((line) => ({ ...line }));
     graph.playingPoint = payload.playingPoint ?? null;
+    graph.editorPerturbation = normalizePerturbationForDotCount(graph.topologyDots.length, payload.editorPerturbation);
     graph.rebuildDotLines();
+    graph.invalidateDotsCache();
     return graph;
   }
 
   private rebuildDotLines(): void {
-    this.dots = this.dots.map((dot) => ({ ...dot, lines: [] }));
+    this.topologyDots = this.topologyDots.map((dot) => ({ ...dot, lines: [] }));
     this.lines.forEach((line) => {
-      this.dots[line.dot1]?.lines.push(line);
-      this.dots[line.dot2]?.lines.push(line);
+      this.topologyDots[line.dot1]?.lines.push(line);
+      this.topologyDots[line.dot2]?.lines.push(line);
     });
+    this.invalidateDotsCache();
+  }
+
+  private invalidateDotsCache(): void {
+    this.mergedDotsCache = null;
   }
 }
 
@@ -283,6 +385,38 @@ function stripDotLines(dot: Dot): SerializedDot {
     fixed: dot.fixed,
     inputFile: dot.inputFile,
   };
+}
+
+export function createZeroPerturbation(dotCount: number): GraphPerturbation {
+  return {
+    kind: "instant",
+    points: Array.from({ length: dotCount }, () => ({ u: START_U, v: START_V })),
+  };
+}
+
+export function clonePerturbation(perturbation: GraphPerturbation | null | undefined): GraphPerturbation {
+  return normalizePerturbationForDotCount(perturbation?.points.length ?? 0, perturbation);
+}
+
+export function normalizePerturbationForDotCount(
+  dotCount: number,
+  perturbation: GraphPerturbation | null | undefined,
+): GraphPerturbation {
+  const sourcePoints = perturbation?.points ?? [];
+  return {
+    kind: "instant",
+    points: Array.from({ length: dotCount }, (_, index) => ({
+      u: sourcePoints[index]?.u ?? START_U,
+      v: sourcePoints[index]?.v ?? START_V,
+    })),
+  };
+}
+
+function resolvePerturbationPoints(
+  dotCount: number,
+  perturbation: GraphPerturbation | null | undefined,
+): Array<{ u: number; v: number }> {
+  return normalizePerturbationForDotCount(dotCount, perturbation).points;
 }
 
 function distancePointToSegment(

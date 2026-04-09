@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { generateGraph } from "../engine/gridGenerators";
-import { GraphModel } from "../engine/graph";
+import { clonePerturbation, GraphModel } from "../engine/graph";
 import { preparePresetGraph, type PresetGraphPreparationOptions } from "../engine/presetGraphPreparation";
 import {
   type BoundaryMode,
+  type GraphPerturbation,
   DEFAULT_ATTENUATION,
   DEFAULT_SAMPLE_RATE,
   DEFAULT_SQUARE_ATTENUATION,
@@ -84,6 +85,7 @@ interface GraphStore {
   hammerSettings: HammerSettings;
   hammerPreviewPoint: { x: number; y: number } | null;
   hammerCharge: number;
+  toolPerturbation: GraphPerturbation | null;
   simulationDialogOpen: boolean;
   simulationParams: SimulationParams;
   isSimulating: boolean;
@@ -124,6 +126,8 @@ interface GraphStore {
   setHammerSettings: (values: Partial<HammerSettings>) => void;
   setHammerPreviewPoint: (point: { x: number; y: number } | null) => void;
   setHammerCharge: (value: number) => void;
+  setToolPerturbation: (perturbation: GraphPerturbation | null) => void;
+  clearToolPerturbation: () => void;
   openCommunityGraphsDialog: () => void;
   closeCommunityGraphsDialog: () => void;
   openSimulationDialog: () => void;
@@ -207,6 +211,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   hammerSettings: defaultHammerSettings,
   hammerPreviewPoint: null,
   hammerCharge: 0,
+  toolPerturbation: null,
   simulationDialogOpen: false,
   simulationParams: defaultSimulationParams,
   isSimulating: false,
@@ -268,6 +273,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
   setGraph: (graph) =>
     set({
       graph,
+      toolPerturbation: null,
       playingPoint: graph.playingPoint,
       selectedDotA: null,
       selectedDotB: null,
@@ -283,11 +289,12 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     set((state) => {
       const graph = state.graph.clone();
       updater(graph);
-      return { graph };
+      return { graph, toolPerturbation: null };
     }),
   clearGraph: () =>
     set({
       graph: new GraphModel(),
+      toolPerturbation: null,
       selectedDotA: null,
       selectedDotB: null,
       selectedLineIndex: null,
@@ -299,6 +306,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     preparePresetGraph(graph, preparation);
     set({
       graph,
+      toolPerturbation: null,
       selectedDotA: null,
       selectedDotB: null,
       selectedLineIndex: null,
@@ -330,6 +338,11 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     })),
   setHammerPreviewPoint: (point) => set({ hammerPreviewPoint: point }),
   setHammerCharge: (value) => set({ hammerCharge: clamp(value, 0, 1) }),
+  setToolPerturbation: (perturbation) =>
+    set({
+      toolPerturbation: perturbation ? clonePerturbation(perturbation) : null,
+    }),
+  clearToolPerturbation: () => set({ toolPerturbation: null }),
   openCommunityGraphsDialog: () => set({ communityGraphsDialog: { open: true, payload: null } }),
   closeCommunityGraphsDialog: () => set({ communityGraphsDialog: { open: false, payload: null } }),
   openSimulationDialog: () => set({ simulationDialogOpen: true }),
@@ -367,6 +380,7 @@ export const useGraphStore = create<GraphStore>((set, get) => ({
     const graph = GraphModel.fromJSON(payload);
     set({
       graph,
+      toolPerturbation: null,
       selectedDotA: null,
       selectedDotB: null,
       selectedLineIndex: null,

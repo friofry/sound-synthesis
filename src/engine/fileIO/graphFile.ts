@@ -124,6 +124,13 @@ export function graphFromBinary(buffer: ArrayBuffer): SerializedGraph {
   }
 }
 
+function buildEditorPerturbationFromDots(dots: SerializedDot[]): SerializedGraph["editorPerturbation"] {
+  return {
+    kind: "instant",
+    points: dots.map((dot) => ({ u: dot.u, v: dot.v })),
+  };
+}
+
 function graphFromClassicBinary(buffer: ArrayBuffer): SerializedGraph {
   const view = new DataView(buffer);
   const bytes = new Uint8Array(buffer);
@@ -208,7 +215,7 @@ function graphFromClassicBinary(buffer: ArrayBuffer): SerializedGraph {
     }
   }
 
-  return { dots, lines };
+  return { dots, lines, editorPerturbation: buildEditorPerturbationFromDots(dots) };
 }
 
 function graphFromWin32LegacyBinary(buffer: ArrayBuffer): SerializedGraph {
@@ -286,7 +293,7 @@ function graphFromWin32LegacyBinary(buffer: ArrayBuffer): SerializedGraph {
     }
   }
 
-  return { dots, lines };
+  return { dots, lines, editorPerturbation: buildEditorPerturbationFromDots(dots) };
 }
 
 export function graphToJSON(graph: SerializedGraph): string {

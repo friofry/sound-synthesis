@@ -1,8 +1,8 @@
-import { GraphModel } from "./graph";
+import { clonePerturbation, GraphModel } from "./graph";
 import { scaleGraphForPitchRatio } from "./gridGenerators";
 import { runSimulation } from "./simulation";
 import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "./tuning";
-import type { RawInstrumentNote, SimulationParams } from "./types";
+import type { GraphPerturbation, RawInstrumentNote, SimulationParams } from "./types";
 import { DEFAULT_KEYBINDS, DEFAULT_KEY_LABELS } from "../components/PianoPlayer/KeyboardMapping";
 import { DEFAULT_SIMULATION_PRECISION, resolveDefaultSimulationBackend } from "./simulationDefaults";
 
@@ -17,7 +17,8 @@ type GenerateInstrumentOptions = {
   method?: SimulationParams["method"];
   substepsMode?: SimulationParams["substepsMode"];
   substeps?: number;
-  viewerBaseGraphSnapshotId?: string;
+  baseGraphSnapshotId?: string;
+  perturbation?: GraphPerturbation | null;
 };
 
 export function generateInstrumentFromGraph(
@@ -35,8 +36,9 @@ export function generateInstrumentFromGraph(
   const backend = resolveDefaultSimulationBackend(method, DEFAULT_SIMULATION_PRECISION);
   const substepsMode = options.substepsMode ?? "fixed";
   const substeps = options.substeps ?? 1;
+  const perturbation = clonePerturbation(options.perturbation ?? graph.editorPerturbation);
   const ratioForIndex = (index: number): number => 2 ** ((index - baseIndex) / 12);
-  const viewerBaseGraphSnapshotId = options.viewerBaseGraphSnapshotId ?? "note-generator:base";
+  const baseGraphSnapshotId = options.baseGraphSnapshotId ?? "note-generator:base";
   let calibrationPitchRatio = 1;
 
   if (noteCount > 0) {
@@ -44,7 +46,7 @@ export function generateInstrumentFromGraph(
     const calibrationGraph = scaleGraphForPitchRatio(graph, firstTargetRatio);
     calibrationGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
     const calibrationResult = runSimulation(
-      calibrationGraph.toGraphData(),
+      calibrationGraph.toGraphData(perturbation),
       {
         sampleRate,
         lengthK,
@@ -71,7 +73,7 @@ export function generateInstrumentFromGraph(
     const noteGraph = scaleGraphForPitchRatio(graph, tunedRatio);
     noteGraph.playingPoint = graph.playingPoint ?? graph.findFirstPlayableDot();
     const result = runSimulation(
-      noteGraph.toGraphData(),
+      noteGraph.toGraphData(perturbation),
       {
         sampleRate,
         lengthK,
@@ -94,8 +96,11 @@ export function generateInstrumentFromGraph(
       frequency: baseFrequency * targetRatio,
       buffer: result.playingPointBuffer,
       sampleRate,
-      viewerBaseGraphSnapshotId,
-      viewerTunedRatio: tunedRatio,
+      viewerSource: {
+        baseGraphSnapshotId,
+        tunedRatio,
+        perturbation,
+      },
     });
   }
 

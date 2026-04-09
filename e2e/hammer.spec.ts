@@ -138,7 +138,7 @@ test.describe("Hammer E2E", () => {
 
     await expect
       .poll(async () => (await getViewerStatus(page)).activeSource, { timeout: 10_000 })
-      .toBe("editor");
+      .toBe("tool-preview");
     await expect
       .poll(async () => ((await getViewerStatus(page)).playing ? 1 : 0), { timeout: 10_000 })
       .toBe(1);
@@ -168,7 +168,6 @@ test.describe("Hammer E2E", () => {
   });
 
   test("non-zero only inside hammer radius", async ({ page }) => {
-    test.fail(true, "Expected fail until strict viewer zeroing outside hammer radius is implemented.");
     const scenario = await prepareRandomAndHammer(page);
     const viewerDots = await getViewerSnapshotDots(page);
 
@@ -197,7 +196,6 @@ test.describe("Hammer E2E", () => {
   });
 
   test("random perturbations are zeroed before viewer starts", async ({ page }) => {
-    test.fail(true, "Expected fail until random-start perturbations are cleared before viewer bootstrap.");
     const scenario = await prepareRandomAndHammer(page);
     const viewerDots = await getViewerSnapshotDots(page);
 

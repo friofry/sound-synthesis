@@ -99,6 +99,13 @@ test.describe("Editor Toolbar", () => {
       ],
       lines: [{ dot1: 0, dot2: 1, k: 9.25 }],
       playingPoint: null,
+      editorPerturbation: {
+        kind: "instant",
+        points: [
+          { u: 1.25, v: -2.5 },
+          { u: 3.5, v: 4.75 },
+        ],
+      },
     });
   });
 

@@ -1,7 +1,16 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { clickCanvas, createPresetGrid, dragOnCanvas, getGraphState, rightClickCanvas, selectTool } from "./helpers";
 
 test.describe("Dialogs", () => {
+  const dialogByTitle = (page: Page, title: string) => page.locator(`.mfc-window:has(.mfc-title:has-text("${title}"))`);
+  const pickEditableDot = (dots: Array<{ x: number; y: number; fixed: boolean }>) => {
+    const dot = dots.find((candidate) => !candidate.fixed) ?? dots[Math.floor(dots.length / 2)];
+    if (!dot) {
+      throw new Error("Preset graph has no dots");
+    }
+    return dot;
+  };
+
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
   });
@@ -9,23 +18,27 @@ test.describe("Dialogs", () => {
   test("right-click on a dot opens DotPropertiesDialog", async ({ page }) => {
     await createPresetGrid(page, "cell", 3, 3);
     const state = await getGraphState(page);
-    const dot = state.dots[0];
+    const dot = pickEditableDot(state.dots);
 
     await rightClickCanvas(page, dot.x, dot.y);
 
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Point parameters");
     await expect(dialog).toBeVisible();
     await expect(dialog.locator(".mfc-title")).toHaveText("Point parameters");
   });
 
   test("DotPropertiesDialog shows weight, velocity, position fields", async ({ page }) => {
     await createPresetGrid(page, "cell", 3, 3);
-    const state = await getGraphState(page);
-    const dot = state.dots[0];
+    await page.evaluate(() => {
+      const state = window.__graphStore.getState() as {
+        graph: { dots: Array<{ fixed: boolean }> };
+        openDotDialog: (dotIndex: number) => void;
+      };
+      const dotIndex = state.graph.dots.findIndex((candidate) => !candidate.fixed);
+      state.openDotDialog(dotIndex >= 0 ? dotIndex : 0);
+    });
 
-    await rightClickCanvas(page, dot.x, dot.y);
-
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Point parameters");
     await expect(dialog.locator("text=weight")).toBeVisible();
     await expect(dialog.locator("text=velocity")).toBeVisible();
     await expect(dialog.locator("text=position")).toBeVisible();
@@ -33,12 +46,16 @@ test.describe("Dialogs", () => {
 
   test("DotPropertiesDialog OK applies changes", async ({ page }) => {
     await createPresetGrid(page, "cell", 3, 3);
-    const state = await getGraphState(page);
-    const dot = state.dots[0];
+    await page.evaluate(() => {
+      const state = window.__graphStore.getState() as {
+        graph: { dots: Array<{ fixed: boolean }> };
+        openDotDialog: (dotIndex: number) => void;
+      };
+      const dotIndex = state.graph.dots.findIndex((candidate) => !candidate.fixed);
+      state.openDotDialog(dotIndex >= 0 ? dotIndex : 0);
+    });
 
-    await rightClickCanvas(page, dot.x, dot.y);
-
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Point parameters");
     await expect(dialog).toBeVisible();
 
     // Check the Fixed checkbox
@@ -55,12 +72,19 @@ test.describe("Dialogs", () => {
   test("DotPropertiesDialog Cancel discards changes", async ({ page }) => {
     await createPresetGrid(page, "cell", 3, 3);
     const state = await getGraphState(page);
-    const dot = state.dots[0];
+    const dot = pickEditableDot(state.dots);
     const wasFix = dot.fixed;
 
-    await rightClickCanvas(page, dot.x, dot.y);
+    await page.evaluate(() => {
+      const store = window.__graphStore.getState() as {
+        graph: { dots: Array<{ fixed: boolean }> };
+        openDotDialog: (dotIndex: number) => void;
+      };
+      const dotIndex = store.graph.dots.findIndex((candidate) => !candidate.fixed);
+      store.openDotDialog(dotIndex >= 0 ? dotIndex : 0);
+    });
 
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Point parameters");
     await expect(dialog).toBeVisible();
 
     const fixedCheckbox = dialog.locator('input[type="checkbox"]');
@@ -89,7 +113,7 @@ test.describe("Dialogs", () => {
     await selectTool(page, "Modify link");
     await clickCanvas(page, midX, midY);
 
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Line Dialog");
     await expect(dialog).toBeVisible();
     await expect(dialog.locator(".mfc-title")).toHaveText("Line Dialog");
   });
@@ -100,7 +124,7 @@ test.describe("Dialogs", () => {
     await selectTool(page, "Modify group");
     await dragOnCanvas(page, 10, 10, 500, 500);
 
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Modify Group");
     await expect(dialog).toBeVisible();
     await expect(dialog.locator(".mfc-title")).toHaveText("Modify Group");
   });
@@ -111,7 +135,7 @@ test.describe("Dialogs", () => {
     await selectTool(page, "Modify group");
     await dragOnCanvas(page, 10, 10, 500, 500);
 
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Modify Group");
     await expect(dialog.locator("text=Max Amplitude")).toBeVisible();
     await expect(dialog.locator("text=Max Weight")).toBeVisible();
     await expect(dialog.locator("text=Stiffness")).toBeVisible();
@@ -124,7 +148,7 @@ test.describe("Dialogs", () => {
       window.__graphStore.getState().openSimulationDialog();
     });
 
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Simulation Output");
     await expect(dialog).toBeVisible();
     await expect(dialog.locator(".mfc-title")).toHaveText("Simulation Output");
   });
@@ -135,7 +159,7 @@ test.describe("Dialogs", () => {
       window.__graphStore.getState().openSimulationDialog();
     });
 
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Simulation Output");
     await expect(dialog.locator("text=Sample Rate")).toBeVisible();
     await expect(dialog.locator("text=Samples (K)")).toBeVisible();
     await expect(dialog.locator("text=Linear Damping")).toBeVisible();
@@ -145,7 +169,7 @@ test.describe("Dialogs", () => {
   test("CellTemplateDialog applies and creates a graph", async ({ page }) => {
     await page.click('button[title="Add cell graph"]');
 
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Cell template");
     await expect(dialog).toBeVisible();
     await expect(dialog.locator(".mfc-title")).toHaveText("Cell template");
 
@@ -160,7 +184,7 @@ test.describe("Dialogs", () => {
   test("HexTemplateDialog creates graph that fits inside canvas bounds", async ({ page }) => {
     await page.click('button[title="Add hexagonal graph"]');
 
-    const dialog = page.locator(".mfc-window");
+    const dialog = dialogByTitle(page, "Hex template");
     await expect(dialog).toBeVisible();
     await dialog.locator("button:text('OK')").click();
     await expect(dialog).not.toBeVisible();

@@ -79,6 +79,7 @@ declare global {
         dotDialog: { open: boolean };
         lineDialog: { open: boolean };
         groupDialog: { open: boolean };
+        canvasSize: { width: number; height: number };
         graph: { dots: Dot[]; lines: Line[] };
         createPresetGraph: (type: string, params: Record<string, unknown>) => void;
         clearGraph: () => void;
@@ -140,11 +141,9 @@ export async function selectTool(page: Page, toolLabel: string): Promise<void> {
 }
 
 export async function clickCanvas(page: Page, x: number, y: number, options?: { modifiers?: string[] }): Promise<void> {
-  const canvas = page.locator("canvas.graph-canvas");
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error("Canvas not found");
+  const point = await getCanvasScreenPoint(page, x, y);
   const modifiers = (options?.modifiers ?? []) as Array<"Alt" | "Control" | "Meta" | "Shift">;
-  await page.mouse.click(box.x + x, box.y + y, { modifiers });
+  await page.mouse.click(point.clientX, point.clientY, { modifiers });
 }
 
 export async function dragOnCanvas(
@@ -154,20 +153,17 @@ export async function dragOnCanvas(
   toX: number,
   toY: number,
 ): Promise<void> {
-  const canvas = page.locator("canvas.graph-canvas");
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error("Canvas not found");
-  await page.mouse.move(box.x + fromX, box.y + fromY);
+  const fromPoint = await getCanvasScreenPoint(page, fromX, fromY);
+  const toPoint = await getCanvasScreenPoint(page, toX, toY);
+  await page.mouse.move(fromPoint.clientX, fromPoint.clientY);
   await page.mouse.down();
-  await page.mouse.move(box.x + toX, box.y + toY, { steps: 10 });
+  await page.mouse.move(toPoint.clientX, toPoint.clientY, { steps: 10 });
   await page.mouse.up();
 }
 
 export async function moveOnCanvas(page: Page, x: number, y: number): Promise<void> {
-  const canvas = page.locator("canvas.graph-canvas");
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error("Canvas not found");
-  await page.mouse.move(box.x + x, box.y + y);
+  const point = await getCanvasScreenPoint(page, x, y);
+  await page.mouse.move(point.clientX, point.clientY);
 }
 
 export async function createPresetGrid(
@@ -176,9 +172,15 @@ export async function createPresetGrid(
   n: number = 3,
   m: number = 3,
 ): Promise<void> {
+  const canvas = page.locator("canvas.graph-canvas");
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error("Canvas not found");
+  const width = Math.max(200, Math.round(box.width));
+  const height = Math.max(200, Math.round(box.height));
   await page.evaluate(
-    ({ type, n, m }) => {
-      window.__graphStore.getState().createPresetGraph(type, {
+    ({ type, n, m, width, height }) => {
+      const state = window.__graphStore.getState();
+      state.createPresetGraph(type, {
         n,
         m,
         layers: 1,
@@ -186,11 +188,11 @@ export async function createPresetGrid(
         weight: 0.000001,
         fixedBorder: false,
         stiffnessType: "isotropic",
-        width: 1200,
-        height: 700,
+        width,
+        height,
       });
     },
-    { type, n, m },
+    { type, n, m, width, height },
   );
 }
 
@@ -201,10 +203,27 @@ export async function clearGraph(page: Page): Promise<void> {
 }
 
 export async function rightClickCanvas(page: Page, x: number, y: number): Promise<void> {
+  const point = await getCanvasScreenPoint(page, x, y);
+  await page.mouse.click(point.clientX, point.clientY, { button: "right" });
+}
+
+async function getCanvasScreenPoint(page: Page, worldX: number, worldY: number): Promise<{ clientX: number; clientY: number }> {
+  const viewport = await page.evaluate(() => {
+    const state = window.__graphStore.getState();
+    return {
+      scale: state.viewportScale,
+      offsetX: state.viewportOffset.x,
+      offsetY: state.viewportOffset.y,
+    };
+  });
   const canvas = page.locator("canvas.graph-canvas");
   const box = await canvas.boundingBox();
   if (!box) throw new Error("Canvas not found");
-  await page.mouse.click(box.x + x, box.y + y, { button: "right" });
+  const screenX = worldX * viewport.scale + viewport.offsetX;
+  const screenY = worldY * viewport.scale + viewport.offsetY;
+  const clampedX = Math.min(Math.max(1, screenX), Math.max(1, box.width - 1));
+  const clampedY = Math.min(Math.max(1, screenY), Math.max(1, box.height - 1));
+  return { clientX: box.x + clampedX, clientY: box.y + clampedY };
 }
 
 export async function switchToWindowPage(page: Page, label: "Membrane Modeller" | "Piano Player"): Promise<void> {

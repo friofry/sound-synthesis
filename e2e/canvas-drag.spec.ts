@@ -22,12 +22,20 @@ test.describe("Canvas - Drag and Zoom", () => {
 
   test("drag-viewport tool pans the viewport", async ({ page }) => {
     await selectTool(page, "Drag viewport");
+    const canvas = page.locator("canvas.graph-canvas");
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error("Canvas not found");
 
     const before = await page.evaluate(() => ({
       ...window.__graphStore.getState().viewportOffset,
     }));
 
-    await dragOnCanvas(page, 300, 300, 400, 400);
+    const startX = box.x + box.width / 2;
+    const startY = box.y + box.height / 2;
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX + 80, startY + 80, { steps: 10 });
+    await page.mouse.up();
 
     const after = await page.evaluate(() => ({
       ...window.__graphStore.getState().viewportOffset,
@@ -39,13 +47,21 @@ test.describe("Canvas - Drag and Zoom", () => {
 
   test("mouse wheel zooms the viewport", async ({ page }) => {
     const canvas = page.locator("canvas.graph-canvas");
-    const box = await canvas.boundingBox();
-    if (!box) throw new Error("Canvas not found");
-
     const before = await page.evaluate(() => window.__graphStore.getState().viewportScale);
-
-    await page.mouse.move(box.x + 300, box.y + 300);
-    await page.mouse.wheel(0, -100);
+    await canvas.evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      const clientX = rect.left + rect.width / 2;
+      const clientY = rect.top + rect.height / 2;
+      node.dispatchEvent(
+        new WheelEvent("wheel", {
+          bubbles: true,
+          cancelable: true,
+          deltaY: -100,
+          clientX,
+          clientY,
+        }),
+      );
+    });
     await page.waitForTimeout(100);
 
     const after = await page.evaluate(() => window.__graphStore.getState().viewportScale);

@@ -84,21 +84,23 @@ export function MembraneHeatmapMesh({ heatmapEnabled }: MembraneHeatmapMeshProps
   const activeSource = useMembraneViewerStore((state) => state.activeSource);
   const activeSnapshot = useMembraneViewerStore((state) => state.snapshots[state.activeSource]);
   const graph = activeSnapshot?.graph ?? EMPTY_GRAPH;
+  const sourcePerturbation = activeSnapshot?.perturbation ?? EMPTY_GRAPH.editorPerturbation;
   const snapshotRevision = activeSnapshot?.revision ?? 0;
 
   const normalizedDots = useMemo(() => {
-    if (graph.dots.length === 0) {
+    const dots = graph.getDotsForPerturbation(sourcePerturbation);
+    if (dots.length === 0) {
       return [];
     }
-    const bounds = computeBounds(graph.dots);
-    return graph.dots.map((dot) => ({
+    const bounds = computeBounds(dots);
+    return dots.map((dot) => ({
       x: ((dot.x - bounds.minX) / bounds.width) * 4 - 2,
       z: ((dot.y - bounds.minY) / bounds.height) * 2 - 1,
       u: dot.u,
       fixed: dot.fixed,
       weight: dot.weight,
     }));
-  }, [graph.dots]);
+  }, [graph, sourcePerturbation, snapshotRevision]);
 
   const stiffnessRange = useMemo(() => computeRange(graph.lines.map((line) => line.k)), [graph.lines]);
 
@@ -158,8 +160,8 @@ export function MembraneHeatmapMesh({ heatmapEnabled }: MembraneHeatmapMeshProps
   }, [normalizedDots]);
 
   const structureSignature = useMemo(
-    () => `${activeSource}#${snapshotRevision}#${buildGraphStructureSignature(graph)}`,
-    [activeSource, graph, snapshotRevision],
+    () => `${activeSource}#${snapshotRevision}#${buildGraphStructureSignature(graph, sourcePerturbation)}`,
+    [activeSource, graph, sourcePerturbation, snapshotRevision],
   );
 
   useEffect(() => {
@@ -300,7 +302,7 @@ export function MembraneHeatmapMesh({ heatmapEnabled }: MembraneHeatmapMeshProps
     const shouldReinitialize = (justStarted && frameIndex === 0) || !runtimeStepperRef.current;
     if (shouldReinitialize || !runtimeStepperRef.current) {
       runtimeStepperRef.current = createRuntimeSimulationStepper(
-        graph.toGraphData(),
+        graph.toGraphData(sourcePerturbation),
         buildViewerLiveSimulationParams(graph.playingPoint ?? graph.findFirstPlayableDot()),
         VIEWER_LIVE_BACKEND,
       );
@@ -368,8 +370,11 @@ export function MembraneHeatmapMesh({ heatmapEnabled }: MembraneHeatmapMeshProps
   );
 }
 
-function buildGraphStructureSignature(graph: GraphModel): string {
-  const dots = graph.dots.map((dot) => `${Number(dot.fixed)}:${dot.weight}`).join("|");
+function buildGraphStructureSignature(graph: GraphModel, perturbation: Parameters<GraphModel["getDotsForPerturbation"]>[0]): string {
+  const dots = graph
+    .getDotsForPerturbation(perturbation)
+    .map((dot) => `${Number(dot.fixed)}:${dot.weight}:${dot.u}:${dot.v}`)
+    .join("|");
   const lines = graph.lines.map((line) => `${line.dot1}:${line.dot2}:${line.k}`).join("|");
   return `${graph.playingPoint ?? -1}#${dots}#${lines}`;
 }

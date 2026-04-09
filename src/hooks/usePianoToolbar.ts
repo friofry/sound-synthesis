@@ -9,8 +9,9 @@ import { SimpleMixer } from "../engine/snc/simpleMixer";
 import { executeSncCommands, parseSncText } from "../engine/snc/sncParser";
 import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "../engine/tuning";
 import { encodeWavBlob } from "../engine/snc/wavExport";
-import { GraphModel } from "../engine/graph";
+import { clonePerturbation, GraphModel } from "../engine/graph";
 import type {
+  GraphPerturbation,
   RawInstrumentNote,
   SerializedGraph,
   SimulationBackend,
@@ -36,8 +37,7 @@ type InstrumentBundle = {
     frequency: number;
     sampleRate: number;
     buffer: number[];
-    viewerBaseGraphSnapshotId?: string;
-    viewerTunedRatio?: number;
+    viewerSource?: RawInstrumentNote["viewerSource"];
   }>;
 };
 
@@ -409,9 +409,52 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     });
   }, [setInstrumentGenerationState]);
 
+  const generateSingleNoteFromSource = useCallback(
+    async (options?: {
+      sourceGraph?: GraphModel;
+      perturbation?: GraphPerturbation | null;
+      autoplay?: boolean;
+      snapshotId?: string;
+    }): Promise<RawInstrumentNote | null> => {
+      const targetGraph = options?.sourceGraph ?? graph;
+      if (targetGraph.dots.length === 0) {
+        const fallback = createFallbackNotes(1)[0];
+        audioEngine.setNote(fallback);
+        setActiveBuffer(fallback.buffer, fallback.sampleRate);
+        if (options?.autoplay) {
+          await audioEngine.playNote(fallback.alias);
+        }
+        return fallback;
+      }
+      const snapshotId = options?.snapshotId ?? VIEWER_BASE_GRAPH_SNAPSHOT_IDS.singleNote;
+      const perturbation = clonePerturbation(options?.perturbation ?? targetGraph.getEditorPerturbation());
+      setViewerBaseGraphSnapshot(snapshotId, targetGraph.toJSON());
+      const note = generateInstrumentFromGraph(targetGraph, {
+        noteCount: 1,
+        sampleRate: simulationParams.sampleRate,
+        lengthK: simulationParams.lengthK,
+        attenuation: simulationParams.attenuation,
+        squareAttenuation: simulationParams.squareAttenuation,
+        method: simulationParams.method,
+        substepsMode: simulationParams.substepsMode,
+        substeps: simulationParams.substeps,
+        baseGraphSnapshotId: snapshotId,
+        perturbation,
+      })[0];
+      audioEngine.setNote(note);
+      setActiveBuffer(note.buffer, note.sampleRate);
+      if (options?.autoplay) {
+        await audioEngine.playNote(note.alias);
+      }
+      return note;
+    },
+    [audioEngine, graph, setActiveBuffer, setViewerBaseGraphSnapshot, simulationParams],
+  );
+
   const handleConfirmGenerateNotes = useCallback(
     async (values: GenerateNotesDialogValues, sourceGraph?: GraphModel) => {
       const targetGraph = sourceGraph ?? graph;
+      const basePerturbation = clonePerturbation(targetGraph.getEditorPerturbation());
       const safeOctaves = Math.max(1, Math.min(3, Math.round(values.octaves))) as 1 | 2 | 3;
       const safeAttenuation = Number.isFinite(values.attenuation) ? Math.max(0, values.attenuation) : simulationParams.attenuation;
       const safeSquareAttenuation = Number.isFinite(values.squareAttenuation)
@@ -498,8 +541,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
           }
 
           const noteProgress = new Array<number>(safeNoteCount).fill(0);
-          const viewerBaseGraphSnapshotId = VIEWER_BASE_GRAPH_SNAPSHOT_IDS.instrument;
-          setViewerBaseGraphSnapshot(viewerBaseGraphSnapshotId, targetGraph.toJSON());
+          const baseGraphSnapshotId = VIEWER_BASE_GRAPH_SNAPSHOT_IDS.instrument;
+          setViewerBaseGraphSnapshot(baseGraphSnapshotId, targetGraph.toJSON());
           const updateGenerationProgress = () => {
             const totalProgress = noteProgress.reduce((sum, value) => sum + value, 0);
             const absoluteProgress = (totalProgress / safeNoteCount) * 100;
@@ -563,8 +606,11 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
                 frequency: baseFrequency * targetRatio,
                 buffer: result.playingPointBuffer,
                 sampleRate: safeSampleRate,
-                viewerBaseGraphSnapshotId,
-                viewerTunedRatio: tunedRatio,
+                viewerSource: {
+                  baseGraphSnapshotId,
+                  tunedRatio,
+                  perturbation: basePerturbation,
+                },
               };
             }
           };
@@ -615,26 +661,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   );
 
   const handleGenerateOne = useCallback(() => {
-    if (graph.dots.length === 0) {
-      const fallback = createFallbackNotes(1)[0];
-      audioEngine.setNote(fallback);
-      setActiveBuffer(fallback.buffer, fallback.sampleRate);
-      return;
-    }
-    const singleBaseGraphSnapshotId = VIEWER_BASE_GRAPH_SNAPSHOT_IDS.singleNote;
-    setViewerBaseGraphSnapshot(singleBaseGraphSnapshotId, graph.toJSON());
-    const note = generateInstrumentFromGraph(graph, {
-      noteCount: 1,
-      sampleRate: simulationParams.sampleRate,
-      lengthK: simulationParams.lengthK,
-      attenuation: simulationParams.attenuation,
-      squareAttenuation: simulationParams.squareAttenuation,
-      method: simulationParams.method,
-      viewerBaseGraphSnapshotId: singleBaseGraphSnapshotId,
-    })[0];
-    audioEngine.setNote(note);
-    setActiveBuffer(note.buffer, note.sampleRate);
-  }, [audioEngine, graph, setActiveBuffer, setViewerBaseGraphSnapshot, simulationParams]);
+    void generateSingleNoteFromSource();
+  }, [generateSingleNoteFromSource]);
 
   const handlePlayPreviewBuffer = useCallback(
     async (buffer: Float32Array, sampleRate: number) => {
@@ -688,8 +716,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
         frequency: note.frequency,
         sampleRate: note.sampleRate,
         buffer: Array.from(note.buffer),
-        viewerBaseGraphSnapshotId: note.viewerBaseGraphSnapshotId,
-        viewerTunedRatio: note.viewerTunedRatio,
+        viewerSource: note.viewerSource,
       })),
       baseGraphSnapshots: viewerBaseGraphSnapshots,
     };
@@ -721,8 +748,6 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
           const notes: RawInstrumentNote[] = parsed.notes.map((note) => ({
             ...note,
             buffer: Float32Array.from(note.buffer),
-            viewerBaseGraphSnapshotId: note.viewerBaseGraphSnapshotId,
-            viewerTunedRatio: note.viewerTunedRatio,
           }));
           setViewerBaseGraphSnapshots(parsed.baseGraphSnapshots ?? {});
           setInstrumentNotes(notes);
@@ -824,6 +849,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     handlePressKey,
     handleReleaseKey,
     handleGenerateOne,
+    generateSingleNoteFromSource,
     handlePlayPreviewBuffer,
     generateInstrument,
     generateNotesDialogOpen,

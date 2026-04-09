@@ -67,7 +67,7 @@ export function MembraneViewer() {
   const graph = activeSnapshot?.graph ?? EMPTY_GRAPH;
 
   useEffect(() => {
-    initializeSource("editor", editorGraph, { activate: false });
+    initializeSource("editor", editorGraph, { activate: false, perturbation: editorGraph.editorPerturbation });
   }, [editorGraph, initializeSource]);
 
   useEffect(() => {
@@ -75,10 +75,11 @@ export function MembraneViewer() {
       return;
     }
     const note = instrumentNotes[lastPressedKeyIndex];
-    if (!note?.viewerBaseGraphSnapshotId || !Number.isFinite(note.viewerTunedRatio)) {
+    const viewerSource = note?.viewerSource;
+    if (!viewerSource?.baseGraphSnapshotId || !Number.isFinite(viewerSource.tunedRatio)) {
       return;
     }
-    const baseSnapshot = viewerBaseGraphSnapshots[note.viewerBaseGraphSnapshotId];
+    const baseSnapshot = viewerBaseGraphSnapshots[viewerSource.baseGraphSnapshotId];
     if (!baseSnapshot) {
       return;
     }
@@ -86,10 +87,11 @@ export function MembraneViewer() {
     const keyIsPressedNow = pressedKeys.has(lastPressedKeyIndex);
     const shouldActivate = keyIsPressedNow || activeSource === source;
     const baseGraph = GraphModel.fromJSON(baseSnapshot);
-    const noteGraph = scaleGraphForPitchRatio(baseGraph, note.viewerTunedRatio ?? 1);
+    const noteGraph = scaleGraphForPitchRatio(baseGraph, viewerSource.tunedRatio ?? 1);
     noteGraph.playingPoint = baseGraph.playingPoint ?? baseGraph.findFirstPlayableDot();
     initializeSource(source, noteGraph, {
       activate: shouldActivate,
+      perturbation: viewerSource.perturbation,
       // Rebuild note snapshot on every fresh key press so previous paint
       // or runtime deformations do not persist when revisiting this note.
       force: keyIsPressedNow,
