@@ -2,9 +2,19 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import {
   CylinderGeometry,
+  IcosahedronGeometry,
+  InstancedMesh,
+  Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
+  Object3D,
+  PlaneGeometry,
+  SphereGeometry,
+  type BufferGeometry,
+  type Group,
   type PointLight,
 } from "three";
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { useAudioAnalyserStore } from "../../store/audioAnalyserStore";
 import { WallEqualizer } from "./WallEqualizer";
 
@@ -26,6 +36,14 @@ const LEG_RADIUS = 0.07;
 
 const FRAME_H = 0.06;
 const FRAME_OFFSET = 0.05;
+
+const DISCO_Y = 2.8;
+const DISCO_RADIUS = 0.35;
+const DISCO_RAY_COUNT = 8;
+const DISCO_RAY_COLORS = [
+  "#ff3090", "#30ff90", "#3090ff", "#ffff30",
+  "#ff9030", "#90ff30", "#ff30ff", "#30ffff",
+];
 
 export function HeatmapSceneShell({ enabled, membraneDots }: HeatmapSceneShellProps) {
   const accentRef = useRef<PointLight>(null);
@@ -157,6 +175,9 @@ export function HeatmapSceneShell({ enabled, membraneDots }: HeatmapSceneShellPr
 
       {/* ── Membrane perimeter frame ── */}
       <PerimeterFrame hull={expandedHull} y={frameY} />
+
+      {/* ── Disco ball ── */}
+      <DiscoBall />
     </group>
   );
 }
@@ -200,6 +221,105 @@ function PerimeterFrame({ hull, y }: { hull: Point2D[]; y: number }) {
       ))}
     </group>
   );
+}
+
+/* ── Ornate turned leg ── */
+
+function DiscoBall() {
+  const groupRef = useRef<Group>(null);
+  const raysRef = useRef<Group>(null);
+
+  const { mirrorsMesh, innerMesh } = useMemo(() => buildDiscoBall(DISCO_RADIUS, 0.04), []);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (groupRef.current) {
+      groupRef.current.rotation.y = t * 0.6;
+      groupRef.current.rotation.x = Math.sin(t * 0.3) * 0.1;
+    }
+    if (raysRef.current) {
+      raysRef.current.rotation.y = -t * 0.4;
+    }
+  });
+
+  return (
+    <group position={[0, DISCO_Y, 0]}>
+      {/* suspension wire */}
+      <mesh position={[0, (TABLE_Y - TABLE_TOP_H / 2 - LEG_H + ROOM_H - DISCO_Y + DISCO_RADIUS) / 2 + DISCO_RADIUS, 0]}>
+        <cylinderGeometry args={[0.012, 0.012, TABLE_Y - TABLE_TOP_H / 2 - LEG_H + ROOM_H - DISCO_Y + DISCO_RADIUS, 8]} />
+        <meshStandardMaterial color="#888" roughness={0.3} metalness={0.8} />
+      </mesh>
+
+      <group ref={groupRef}>
+        <primitive object={innerMesh} />
+        <primitive object={mirrorsMesh} />
+      </group>
+
+      <pointLight intensity={3} distance={10} color="#f8f0ff" decay={2} />
+
+      <group ref={raysRef}>
+        {DISCO_RAY_COLORS.map((color, i) => {
+          const angle = (i / DISCO_RAY_COUNT) * Math.PI * 2;
+          const elevation = ((i % 3) - 1) * 0.35;
+          return (
+            <pointLight
+              key={i}
+              position={[
+                Math.cos(angle) * 1.2,
+                elevation,
+                Math.sin(angle) * 1.2,
+              ]}
+              intensity={1.5}
+              distance={8}
+              color={color}
+              decay={2}
+            />
+          );
+        })}
+      </group>
+    </group>
+  );
+}
+
+function buildDiscoBall(radius: number, mirrorSize: number) {
+  const dummy = new Object3D();
+
+  const rawGeom = new IcosahedronGeometry(radius, 5);
+  rawGeom.deleteAttribute("normal");
+  rawGeom.deleteAttribute("uv");
+  const baseGeom: BufferGeometry = BufferGeometryUtils.mergeVertices(rawGeom);
+  baseGeom.computeVertexNormals();
+
+  const positions = baseGeom.attributes.position.array;
+  const normals = baseGeom.attributes.normal.array;
+  const vertexCount = baseGeom.attributes.position.count;
+
+  const mirrorGeom = new PlaneGeometry(mirrorSize, mirrorSize);
+  const mirrorMat = new MeshStandardMaterial({
+    color: "#e0e0e0",
+    roughness: 0.05,
+    metalness: 1.0,
+  });
+
+  const instancedMirrors = new InstancedMesh(mirrorGeom, mirrorMat, vertexCount);
+
+  for (let i = 0; i < vertexCount; i++) {
+    const idx = i * 3;
+    dummy.position.set(positions[idx], positions[idx + 1], positions[idx + 2]);
+    dummy.lookAt(
+      positions[idx] + normals[idx],
+      positions[idx + 1] + normals[idx + 1],
+      positions[idx + 2] + normals[idx + 2],
+    );
+    dummy.updateMatrix();
+    instancedMirrors.setMatrixAt(i, dummy.matrix);
+  }
+
+  const innerGeom = new SphereGeometry(radius * 0.97, 32, 24);
+  const innerMat = new MeshBasicMaterial({ color: 0x222222 });
+  const innerMesh = new Mesh(innerGeom, innerMat);
+
+  return { mirrorsMesh: instancedMirrors, innerMesh };
 }
 
 /* ── Ornate turned leg ── */
