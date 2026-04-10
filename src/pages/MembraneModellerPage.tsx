@@ -219,6 +219,14 @@ export function MembraneModellerPage() {
     currentState.setTool("hammer");
 
     const preparedGraph = useGraphStore.getState().graph.clone();
+    const { initializeSource } = useMembraneViewerStore.getState();
+    const { resetFrame } = useViewerStore.getState();
+    initializeSource("editor", preparedGraph, {
+      activate: true,
+      force: true,
+      perturbation: preparedGraph.editorPerturbation,
+    });
+    resetFrame();
     void handleConfirmGenerateNotes(
       buildQuickGenerateSettings(DEFAULT_RANDOM_TOOL_GENERATION_SETTINGS),
       preparedGraph,
