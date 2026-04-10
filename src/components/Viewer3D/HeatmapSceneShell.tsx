@@ -50,7 +50,7 @@ export function HeatmapSceneShell({ enabled, membraneDots }: HeatmapSceneShellPr
   const analyser = useAudioAnalyserStore((s) => s.analyser);
 
   useFrame(({ clock }) => {
-    if (!enabled || !accentRef.current) {
+    if (!accentRef.current) {
       return;
     }
     const t = clock.getElapsedTime();
@@ -81,6 +81,10 @@ export function HeatmapSceneShell({ enabled, membraneDots }: HeatmapSceneShellPr
 
   const legPositions = useMemo(() => pickLegCorners(expandedHull), [expandedHull]);
 
+  if (!enabled) {
+    return null;
+  }
+
   const floorY = TABLE_Y - TABLE_TOP_H / 2 - LEG_H;
   const frameY = TABLE_Y + TABLE_TOP_H / 2 + 0.04;
   const legCenterY = frameY - LEG_H / 2;
@@ -97,15 +101,13 @@ export function HeatmapSceneShell({ enabled, membraneDots }: HeatmapSceneShellPr
       <pointLight position={[-4, 3.8, 3]} intensity={1.8} distance={14} color="#dde8ff" />
       <pointLight position={[4, 3.8, 3]} intensity={1.8} distance={14} color="#dde8ff" />
 
-      {enabled ? (
-        <pointLight
-          ref={accentRef}
-          position={[0, 2.2, 1.5]}
-          intensity={1.5}
-          distance={9}
-          color="#e0d6ff"
-        />
-      ) : null}
+      <pointLight
+        ref={accentRef}
+        position={[0, 2.2, 1.5]}
+        intensity={1.5}
+        distance={9}
+        color="#e0d6ff"
+      />
 
       {/* ── Room ── */}
       <mesh position={[0, floorY, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
@@ -166,18 +168,16 @@ export function HeatmapSceneShell({ enabled, membraneDots }: HeatmapSceneShellPr
         colorScheme="purple"
       />
 
-      {/* ── Ornate legs (heatmap scene only) ── */}
-      {enabled
-        ? legPositions.map((pos, i) => (
-            <OrnamentedLeg key={i} position={[pos.x, legCenterY, pos.z]} height={LEG_H} />
-          ))
-        : null}
+      {/* ── Ornate legs ── */}
+      {legPositions.map((pos, i) => (
+        <OrnamentedLeg key={i} position={[pos.x, legCenterY, pos.z]} height={LEG_H} />
+      ))}
 
-      {/* ── Membrane perimeter frame (heatmap scene only) ── */}
-      {enabled ? <PerimeterFrame hull={expandedHull} y={frameY} /> : null}
+      {/* ── Membrane perimeter frame ── */}
+      <PerimeterFrame hull={expandedHull} y={frameY} />
 
-      {/* ── Disco ball (heatmap scene only) ── */}
-      {enabled ? <DiscoBall /> : null}
+      {/* ── Disco ball ── */}
+      <DiscoBall />
     </group>
   );
 }

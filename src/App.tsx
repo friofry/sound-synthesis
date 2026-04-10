@@ -70,6 +70,9 @@ function App() {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable) {
         return;
       }
+      if (document.querySelector(".mfc-overlay")) {
+        return;
+      }
       event.preventDefault();
       setTab((current) => {
         const index = TAB_CYCLE.indexOf(current);

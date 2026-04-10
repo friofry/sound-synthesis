@@ -13,7 +13,7 @@
     "test:unit": "vitest run --config vitest.unit.config.ts",
     "test:bench": "vitest bench src/engine/noteGeneration.bench.ts --config vitest.bench.config.ts",
     "test:bench:charts": "npm run test:bench > bench-output.txt && node scripts/bench-chart.mjs --mode topology-hz --input bench-output.txt --output bench-report.html --title \"Topology benchmark performance\"",
-    "test:bench:ci": "vitest bench src/engine/noteGeneration.ci.bench.ts --config vitest.bench.config.ts",
+    "test:bench:ci": "vitest bench src/engine/noteGeneration.ci.bench.ts src/components/FrequencyAnalyzer/pitchAnalysis.bench.ts --config vitest.bench.config.ts",
     "test:bench:ci:charts": "npm run test:bench:ci > bench-ci-output.txt && node scripts/bench-chart.mjs --mode flat-hz --input bench-ci-output.txt --output bench-ci-report.html --title \"CI benchmark performance\"",
     "benchmark:freq": "vitest bench src/components/FrequencyAnalyzer/pitchAnalysis.bench.ts --config vitest.bench.config.ts",
     "test:e2e": "playwright test",

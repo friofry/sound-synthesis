@@ -94,7 +94,7 @@ export function MfcDialog({ title, open, onClose, onSubmit, width = 360, childre
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+  }, [open, onClose, onSubmit]);
 
   if (!open) {
     return null;

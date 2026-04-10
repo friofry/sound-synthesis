@@ -43,24 +43,6 @@ jobs:
       - name: Run unit tests
         run: npm run test:unit
 
-  frequency-benchmark:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Frequency / pitch HPS benchmark (JS vs WASM)
-        run: npm run benchmark:freq
-
   benchmark:
     runs-on: ubuntu-latest
     env:
