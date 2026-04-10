@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { formatTimeLabel, resizeCanvas } from "./shared";
+import { clamp, formatTimeLabel, resizeCanvas } from "./shared";
 
 type WaveformViewProps = {
   analyser: AnalyserNode | null;
@@ -26,27 +26,6 @@ function drawWaveformAxes(
   ctx.moveTo(left, bottom + 0.5);
   ctx.lineTo(right, bottom + 0.5);
   ctx.stroke();
-}
-
-/** Box blur for envelope samples (reduces comb-like look when many cycles fit in one pixel column). */
-function boxBlur1D(values: Float64Array, radius: number): Float64Array {
-  if (radius <= 0 || values.length === 0) {
-    return values;
-  }
-  const out = new Float64Array(values.length);
-  for (let i = 0; i < values.length; i += 1) {
-    let sum = 0;
-    let count = 0;
-    for (let j = -radius; j <= radius; j += 1) {
-      const k = i + j;
-      if (k >= 0 && k < values.length) {
-        sum += values[k];
-        count += 1;
-      }
-    }
-    out[i] = sum / count;
-  }
-  return out;
 }
 
 function drawDawStyleWaveform(
@@ -158,7 +137,6 @@ export function WaveformView({ analyser, buffer, sampleRate }: WaveformViewProps
             peakAmplitude = amplitude;
           }
         }
-        const amplitudeScale = Math.max(peakAmplitude, 1e-3);
         const w = layout.chartWidth;
         const samplesPerPixel = buffer.length / w;
         const maxNorm = new Float64Array(w);
@@ -167,8 +145,8 @@ export function WaveformView({ analyser, buffer, sampleRate }: WaveformViewProps
         for (let pixelIndex = 0; pixelIndex < w; pixelIndex += 1) {
           const startIndex = Math.floor(pixelIndex * samplesPerPixel);
           const endIndex = Math.min(buffer.length, Math.max(startIndex + 1, Math.floor((pixelIndex + 1) * samplesPerPixel)));
-          let minValue = 1;
-          let maxValue = -1;
+          let minValue = Number.POSITIVE_INFINITY;
+          let maxValue = Number.NEGATIVE_INFINITY;
 
           for (let sampleIndex = startIndex; sampleIndex < endIndex; sampleIndex += 1) {
             const sample = buffer[sampleIndex] ?? 0;
@@ -180,28 +158,28 @@ export function WaveformView({ analyser, buffer, sampleRate }: WaveformViewProps
             }
           }
 
-          maxNorm[pixelIndex] = maxValue / amplitudeScale;
-          minNorm[pixelIndex] = minValue / amplitudeScale;
-        }
+          if (minValue === Number.POSITIVE_INFINITY) {
+            minValue = 0;
+            maxValue = 0;
+          }
 
-        const spp = samplesPerPixel;
-        const blurRadius = spp > 80 ? 6 : spp > 40 ? 5 : spp > 20 ? 4 : spp > 10 ? 3 : 2;
-        const maxSmooth = boxBlur1D(maxNorm, blurRadius);
-        const minSmooth = boxBlur1D(minNorm, blurRadius);
+          maxNorm[pixelIndex] = clamp(maxValue, -1, 1);
+          minNorm[pixelIndex] = clamp(minValue, -1, 1);
+        }
 
         drawDawStyleWaveform(
           ctx,
           layout.chartLeft,
           centerY,
           layout.chartHeight,
-          maxSmooth,
-          minSmooth,
+          maxNorm,
+          minNorm,
           waveformFill,
           waveformStrokeColor,
         );
 
         ctx.fillStyle = "#000000";
-        ctx.fillText(`peak ${amplitudeScale.toFixed(3)}`, layout.chartLeft + 8, layout.chartTop + 14);
+        ctx.fillText(`peak ${peakAmplitude.toFixed(3)} (−1…+1 scale)`, layout.chartLeft + 8, layout.chartTop + 14);
       } else if (analyser) {
         if (!liveData || liveData.length !== analyser.fftSize) {
           liveData = new Float32Array(analyser.fftSize);
@@ -215,7 +193,6 @@ export function WaveformView({ analyser, buffer, sampleRate }: WaveformViewProps
             peakAmplitude = amplitude;
           }
         }
-        const amplitudeScale = Math.max(peakAmplitude, 1e-3);
         const w = layout.chartWidth;
         const maxNorm = new Float64Array(w);
         const minNorm = new Float64Array(w);
@@ -224,8 +201,8 @@ export function WaveformView({ analyser, buffer, sampleRate }: WaveformViewProps
         for (let pixelIndex = 0; pixelIndex < w; pixelIndex += 1) {
           const startIndex = Math.floor(pixelIndex * bucketSize);
           const endIndex = Math.min(liveData.length, Math.max(startIndex + 1, Math.floor((pixelIndex + 1) * bucketSize)));
-          let minValue = 1;
-          let maxValue = -1;
+          let minValue = Number.POSITIVE_INFINITY;
+          let maxValue = Number.NEGATIVE_INFINITY;
           for (let sampleIndex = startIndex; sampleIndex < endIndex; sampleIndex += 1) {
             const sample = liveData[sampleIndex] ?? 0;
             if (sample < minValue) {
@@ -235,26 +212,27 @@ export function WaveformView({ analyser, buffer, sampleRate }: WaveformViewProps
               maxValue = sample;
             }
           }
-          maxNorm[pixelIndex] = maxValue / amplitudeScale;
-          minNorm[pixelIndex] = minValue / amplitudeScale;
+          if (minValue === Number.POSITIVE_INFINITY) {
+            minValue = 0;
+            maxValue = 0;
+          }
+          maxNorm[pixelIndex] = clamp(maxValue, -1, 1);
+          minNorm[pixelIndex] = clamp(minValue, -1, 1);
         }
-
-        const maxSmooth = boxBlur1D(maxNorm, 2);
-        const minSmooth = boxBlur1D(minNorm, 2);
 
         drawDawStyleWaveform(
           ctx,
           layout.chartLeft,
           centerY,
           layout.chartHeight,
-          maxSmooth,
-          minSmooth,
+          maxNorm,
+          minNorm,
           waveformFill,
           waveformStrokeColor,
         );
 
         ctx.fillStyle = "#000000";
-        ctx.fillText(`peak ${amplitudeScale.toFixed(3)}`, layout.chartLeft + 8, layout.chartTop + 14);
+        ctx.fillText(`peak ${peakAmplitude.toFixed(3)} (−1…+1 scale)`, layout.chartLeft + 8, layout.chartTop + 14);
       } else {
         ctx.fillStyle = "#666666";
         ctx.fillText("No waveform data", layout.chartLeft + 8, layout.chartTop + 14);

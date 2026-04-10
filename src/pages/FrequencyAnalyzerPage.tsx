@@ -1,10 +1,11 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { FrequencyBarsView } from "../components/FrequencyAnalyzer/FrequencyBarsView";
 import { SpectrogramView } from "../components/FrequencyAnalyzer/SpectrogramView";
 import { WaveformView } from "../components/FrequencyAnalyzer/WaveformView";
 import { largestPowerOfTwoAtMost, MIN_FREQUENCY } from "../components/FrequencyAnalyzer/shared";
 import { PianoKeyboard } from "../components/PianoPlayer/PianoKeyboard";
 import { MfcSplitView } from "../components/ui/MfcSplitView";
+import { reprepareAndGenerateRandom } from "../graph/reprepareAndGenerateRandom";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
 import { useAudioAnalyserStore } from "../store/audioAnalyserStore";
 import { useGraphStore } from "../store/graphStore";
@@ -38,7 +39,43 @@ export function FrequencyAnalyzerPage({ onBack }: FrequencyAnalyzerPageProps) {
     audioEngine,
     handlePressKey,
     handleReleaseKey,
+    handleConfirmGenerateNotes,
   } = usePianoToolbar({ graph, simulationParams });
+
+  const handleReprepareAndGenerate = useCallback(() => {
+    reprepareAndGenerateRandom(handleConfirmGenerateNotes);
+  }, [handleConfirmGenerateNotes]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== " " || event.repeat || event.defaultPrevented) {
+        return;
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement
+        || (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (document.querySelector(".mfc-overlay")) {
+        return;
+      }
+
+      event.preventDefault();
+      handleReprepareAndGenerate();
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [handleReprepareAndGenerate]);
 
   const setAnalyser = useAudioAnalyserStore((state) => state.setAnalyser);
   useEffect(() => {
