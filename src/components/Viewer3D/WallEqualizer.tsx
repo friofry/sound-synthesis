@@ -4,6 +4,7 @@ import {
   Color,
   DataTexture,
   FloatType,
+  Mesh,
   PlaneGeometry,
   RedFormat,
   ShaderMaterial,
@@ -111,7 +112,7 @@ export function WallEqualizer({
   height,
   colorScheme = "neon",
 }: WallEqualizerProps) {
-  const matRef = useRef<ShaderMaterial>(null);
+  const meshRef = useRef<Mesh>(null);
   const dataRef = useRef<Float32Array>(new Float32Array(BAR_COUNT));
   const smoothedRef = useRef<Float32Array>(new Float32Array(BAR_COUNT));
   const floatBufRef = useRef<Float32Array | null>(null);
@@ -145,10 +146,14 @@ export function WallEqualizer({
   }, [width, height, colorScheme]);
 
   useFrame(({ clock }) => {
-    if (!matRef.current) return;
+    const mat = meshRef.current?.material;
+    if (!mat || Array.isArray(mat)) {
+      return;
+    }
+    const shaderMaterial = mat as ShaderMaterial;
 
     const t = clock.getElapsedTime();
-    matRef.current.uniforms.uTime.value = t;
+    shaderMaterial.uniforms.uTime.value = t;
 
     const data = dataRef.current;
     const smoothed = smoothedRef.current;
@@ -157,9 +162,10 @@ export function WallEqualizer({
       if (!floatBufRef.current || floatBufRef.current.length !== analyser.frequencyBinCount) {
         floatBufRef.current = new Float32Array(analyser.frequencyBinCount);
       }
-      analyser.getFloatFrequencyData(floatBufRef.current);
+      const floatBuf = floatBufRef.current;
+      analyser.getFloatFrequencyData(floatBuf as Float32Array<ArrayBuffer>);
 
-      data.set(projectDecibelSpectrumToLogBands(floatBufRef.current, analyser.context.sampleRate, {
+      data.set(projectDecibelSpectrumToLogBands(floatBuf, analyser.context.sampleRate, {
         barCount: BAR_COUNT,
         minFrequency: MIN_FREQ,
         maxFrequency: MAX_FREQ,
@@ -181,15 +187,11 @@ export function WallEqualizer({
       }
     }
 
-    const spectrumTexture = matRef.current.uniforms.uSpectrum.value as DataTexture;
+    const spectrumTexture = shaderMaterial.uniforms.uSpectrum.value as DataTexture;
     const texData = spectrumTexture.image.data as Float32Array;
     texData.set(smoothed);
     spectrumTexture.needsUpdate = true;
   });
 
-  return (
-    <mesh position={position} rotation={rotation} geometry={geometry} material={material}>
-      <primitive object={material} ref={matRef} />
-    </mesh>
-  );
+  return <mesh ref={meshRef} position={position} rotation={rotation} geometry={geometry} material={material} />;
 }

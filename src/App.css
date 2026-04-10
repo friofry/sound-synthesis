@@ -729,9 +729,10 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #0a0a1a;
-  color: #e0e0e0;
+  background: #d4d0c8;
+  color: #000;
   overflow: hidden;
+  font-family: Tahoma, "Segoe UI", sans-serif;
 }
 
 .freq-analyzer-toolbar {
@@ -740,96 +741,165 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  padding: 5px 10px;
-  background: #16162b;
-  border-bottom: 1px solid #2a2a4a;
+  gap: 8px;
+  padding: 4px 8px;
+  background: #d4d0c8;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 #dfdfdf,
+    inset -1px -1px 0 #404040;
   font-size: 12px;
 }
 
 .freq-toolbar-btn {
-  border: 1px solid #3a3a5a;
-  background: #22223a;
-  color: #d0d0e0;
-  padding: 4px 10px;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #404040;
+  border-bottom: 1px solid #404040;
+  box-shadow:
+    inset -1px -1px 0 #808080,
+    inset 1px 1px 0 #dfdfdf;
+  background: #ece9d8;
+  color: #000;
+  padding: 3px 10px;
   font-size: 11px;
   cursor: pointer;
-  border-radius: 3px;
 }
 
 .freq-toolbar-btn:hover {
-  background: #2e2e50;
+  background: #f4f1e5;
 }
 
 .freq-toolbar-btn-active {
-  background: #c0392b;
-  border-color: #e74c3c;
-  color: #fff;
+  border-top: 1px solid #404040;
+  border-left: 1px solid #404040;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  box-shadow:
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #dfdfdf;
+  background: #ddd9ce;
+  color: #000;
 }
 
 .freq-toolbar-btn-active:hover {
-  background: #a93226;
+  background: #ddd9ce;
 }
 
 .freq-toolbar-separator {
-  width: 1px;
+  width: 2px;
   height: 22px;
-  background: #3a3a5a;
+  background: #d4d0c8;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
 }
 
 .freq-toolbar-label {
   display: flex;
   align-items: center;
-  gap: 4px;
-  color: #aaa;
+  gap: 6px;
+  color: #000;
   font-size: 11px;
 }
 
+.freq-toolbar-label-wide {
+  min-width: 170px;
+}
+
 .freq-toolbar-select {
-  background: #1a1a30;
-  border: 1px solid #3a3a5a;
-  color: #d0d0e0;
+  min-width: 80px;
+  background: #fff;
+  border: 1px solid #7f9db9;
+  color: #000;
   padding: 2px 4px;
   font-size: 11px;
-  border-radius: 2px;
+  font-family: inherit;
 }
 
 .freq-toolbar-range {
   width: 80px;
-  accent-color: #1e88e5;
 }
 
 .freq-toolbar-value {
   min-width: 28px;
   text-align: right;
   font-variant-numeric: tabular-nums;
-  color: #d0d0e0;
+  color: #000;
 }
 
 .freq-toolbar-status {
   margin-left: auto;
-  color: #777;
+  min-width: 240px;
+  color: #333;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.freq-analyzer-error {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  background: #fff3f1;
+  color: #8a2017;
+  font-size: 11px;
 }
 
 .freq-analyzer-content {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   padding: 4px;
+  background: #d4d0c8;
+}
+
+.freq-analyzer-split-view {
+  width: 100%;
+  height: 100%;
 }
 
 .freq-analyzer-panel {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
   min-height: 0;
-  position: relative;
+  background: #d4d0c8;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 #dfdfdf,
+    inset -1px -1px 0 #404040;
 }
 
-.freq-analyzer-half {
-  flex: 1;
+.freq-analyzer-panel-title {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  background: linear-gradient(90deg, #0a246a 0%, #245edc 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.freq-analyzer-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  background: #fff;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .freq-analyzer-canvas {

@@ -5,12 +5,30 @@ export type SpectrumPoint = {
   magnitude: number;
 };
 
+export type STFTWindowFunction = "hann" | "none";
+
 type BufferSpectrumOptions = {
   algorithm?: SpectrumAlgorithm;
   frameSize?: number;
   binCount?: number;
   minSampleCount?: number;
   normalize?: boolean;
+};
+
+export type STFTOptions = {
+  frameSize?: number;
+  hopSize?: number;
+  binCount?: number;
+  windowFunction?: STFTWindowFunction;
+};
+
+export type STFTResult = {
+  magnitudes: Float64Array[];
+  sampleRate: number;
+  frameSize: number;
+  hopSize: number;
+  frameCount: number;
+  binCount: number;
 };
 
 type LogBandOptions = {
@@ -44,9 +62,10 @@ function normalizeFrameSize(frameSize?: number): number {
   return safeFrameSize;
 }
 
-function buildPaddedFrame(buffer: Float32Array, frameSize: number): Float64Array {
+function buildPaddedFrame(buffer: Float32Array, frameSize: number, startIndex = 0): Float64Array {
   const frame = new Float64Array(frameSize);
-  frame.set(buffer.subarray(0, Math.min(buffer.length, frameSize)));
+  const endIndex = Math.min(buffer.length, startIndex + frameSize);
+  frame.set(buffer.subarray(startIndex, endIndex));
   return frame;
 }
 
@@ -92,7 +111,7 @@ function reverseBits(value: number, bitCount: number): number {
   return reversed;
 }
 
-function computeFftSpectrum(frame: Float64Array, sampleRate: number, binCount: number): SpectrumPoint[] {
+function computeFftMagnitudes(frame: Float64Array, binCount: number): Float64Array {
   const size = frame.length;
   if (!isPowerOfTwo(size)) {
     throw new Error(`FFT frameSize must be a power of two, got ${size}`);
@@ -129,15 +148,55 @@ function computeFftSpectrum(frame: Float64Array, sampleRate: number, binCount: n
     }
   }
 
+  const magnitudes = new Float64Array(binCount);
+  for (let bin = 1; bin <= binCount; bin += 1) {
+    magnitudes[bin - 1] = Math.hypot(real[bin], imag[bin]) / size;
+  }
+
+  return magnitudes;
+}
+
+function computeFftSpectrum(frame: Float64Array, sampleRate: number, binCount: number): SpectrumPoint[] {
+  const size = frame.length;
+  const magnitudes = computeFftMagnitudes(frame, binCount);
   const spectrum: SpectrumPoint[] = [];
   for (let bin = 1; bin <= binCount; bin += 1) {
     spectrum.push({
       frequency: (bin * sampleRate) / size,
-      magnitude: Math.hypot(real[bin], imag[bin]) / size,
+      magnitude: magnitudes[bin - 1],
     });
   }
-
   return spectrum;
+}
+
+export function applyHannWindow(frame: Float32Array | Float64Array): Float64Array {
+  if (frame.length === 0) {
+    return new Float64Array();
+  }
+
+  if (frame.length === 1) {
+    return new Float64Array([frame[0] ?? 0]);
+  }
+
+  const output = new Float64Array(frame.length);
+  const lastIndex = frame.length - 1;
+  for (let index = 0; index < frame.length; index += 1) {
+    const weight = 0.5 * (1 - Math.cos((2 * Math.PI * index) / lastIndex));
+    output[index] = (frame[index] ?? 0) * weight;
+  }
+  return output;
+}
+
+export function magnitudeToDecibels(magnitude: number, minDecibels = -120): number {
+  if (!Number.isFinite(magnitude) || magnitude <= 0) {
+    return minDecibels;
+  }
+
+  return Math.max(minDecibels, 20 * Math.log10(magnitude));
+}
+
+function applyWindow(frame: Float64Array, windowFunction: STFTWindowFunction): Float64Array {
+  return windowFunction === "hann" ? applyHannWindow(frame) : new Float64Array(frame);
 }
 
 export function computeBufferSpectrum(
@@ -167,6 +226,51 @@ export function computeBufferSpectrum(
     : computeFftSpectrum(frame, sampleRate, binCount);
 
   return options.normalize === false ? spectrum : normalizeSpectrum(spectrum);
+}
+
+export function computeSTFT(
+  buffer: Float32Array | null,
+  sampleRate: number,
+  options: STFTOptions = {},
+): STFTResult {
+  const frameSize = normalizeFrameSize(options.frameSize);
+  const hopSize = Math.max(1, Math.floor(options.hopSize ?? frameSize / 2));
+  const maxPositiveBinCount = Math.max(0, Math.floor(frameSize / 2) - 1);
+  const binCount = clamp(
+    Math.floor(options.binCount ?? maxPositiveBinCount),
+    0,
+    maxPositiveBinCount,
+  );
+
+  if (!buffer || buffer.length < frameSize || sampleRate <= 0 || binCount === 0) {
+    return {
+      magnitudes: [],
+      sampleRate,
+      frameSize,
+      hopSize,
+      frameCount: 0,
+      binCount,
+    };
+  }
+
+  const windowFunction = options.windowFunction ?? "hann";
+  const magnitudes: Float64Array[] = [];
+  const maxStart = buffer.length - frameSize;
+
+  for (let startIndex = 0; startIndex <= maxStart; startIndex += hopSize) {
+    const frame = buildPaddedFrame(buffer, frameSize, startIndex);
+    const windowedFrame = applyWindow(frame, windowFunction);
+    magnitudes.push(computeFftMagnitudes(windowedFrame, binCount));
+  }
+
+  return {
+    magnitudes,
+    sampleRate,
+    frameSize,
+    hopSize,
+    frameCount: magnitudes.length,
+    binCount,
+  };
 }
 
 function getLogBandRange(index: number, barCount: number, minFrequency: number, maxFrequency: number): [number, number] {
@@ -213,7 +317,7 @@ export function projectSpectrumToLogBands(
 }
 
 export function projectDecibelSpectrumToLogBands(
-  data: Float32Array,
+  data: Float32Array<ArrayBufferLike>,
   sampleRate: number,
   options: DecibelBandOptions,
 ): number[] {
