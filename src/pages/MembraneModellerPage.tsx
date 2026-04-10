@@ -430,8 +430,8 @@ function createRandomPresetConfig(): {
   const centerDistributions: DistributionMode[] = ["equivalent", "smoothed"];
   return {
     graphType: graphTypes[randomInt(0, graphTypes.length - 1)],
-    size: randomInt(15, 50),
-    stiffness: randomFloat(0.5, 5),
+    size: randomInt(5, 20),
+    stiffness: randomFloat(1, 5),
     amplitude: randomFloat(0.1, 0.8),
     centerGroupRadiusRatio: randomFloat(0.175, 0.475),
     stiffnessType: Math.random() < 0.5 ? "tetradic" : "isotropic",
