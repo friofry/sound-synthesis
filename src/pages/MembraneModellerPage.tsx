@@ -40,7 +40,11 @@ import { useViewerStore } from "../store/viewerStore";
 import { useAudioAnalyserStore } from "../store/audioAnalyserStore";
 import { e2eRecordHammerPreview, e2eSetLastHammerImpact, installE2EHarness } from "../e2e/e2eHarness";
 
-export function MembraneModellerPage() {
+type MembraneModellerPageProps = {
+  onOpenPianoPlayer: () => void;
+};
+
+export function MembraneModellerPage({ onOpenPianoPlayer }: MembraneModellerPageProps) {
   const skipAutoRandomInit = import.meta.env.VITE_E2E === "1";
   const fuzzyGraphInitializedRef = useRef(false);
   const {
@@ -351,6 +355,12 @@ export function MembraneModellerPage() {
               onLoadInstrumentFile={handleLoadInstrumentFile}
               onSaveSnc={handleSaveSnc}
               onLoadSncFile={handleLoadSncFile}
+              navigationButton={{
+                label: "Open Piano Player",
+                title: "Open Piano Player",
+                text: "⤴️",
+                onClick: onOpenPianoPlayer,
+              }}
             />
             <GenerateNotesDialog
               open={generateNotesDialogOpen}

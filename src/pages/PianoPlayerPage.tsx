@@ -9,7 +9,11 @@ import { useGraphStore } from "../store/graphStore";
 import { useAudioAnalyserStore } from "../store/audioAnalyserStore";
 import { usePianoToolbar } from "../hooks/usePianoToolbar";
 
-export function PianoPlayerPage() {
+type PianoPlayerPageProps = {
+  onBackToModeller: () => void;
+};
+
+export function PianoPlayerPage({ onBackToModeller }: PianoPlayerPageProps) {
   const graph = useGraphStore((state) => state.graph);
   const simulationParams = useGraphStore((state) => state.simulationParams);
 
@@ -70,6 +74,12 @@ export function PianoPlayerPage() {
         onLoadInstrumentFile={handleLoadInstrumentFile}
         onSaveSnc={handleSaveSnc}
         onLoadSncFile={handleLoadSncFile}
+        navigationButton={{
+          label: "Back to Membrane Modeller",
+          title: "Back to Membrane Modeller",
+          text: "⤵️",
+          onClick: onBackToModeller,
+        }}
       />
       <GenerateNotesDialog
         open={generateNotesDialogOpen}

@@ -45,6 +45,14 @@ function App() {
     }
   }, [serializeGraph]);
 
+  const openModeller = useCallback(() => {
+    setTab("modeller");
+  }, []);
+
+  const openPianoPlayer = useCallback(() => {
+    setTab("piano");
+  }, []);
+
   const menuItems = useMemo<MfcMenuBarItem[]>(
     () => [
       {
@@ -87,13 +95,13 @@ function App() {
             id: "show-modeller",
             label: "Membrane Modeller",
             disabled: tab === "modeller",
-            onClick: () => setTab("modeller"),
+            onClick: openModeller,
           },
           {
             id: "show-piano-player",
             label: "Piano Player",
             disabled: tab === "piano",
-            onClick: () => setTab("piano"),
+            onClick: openPianoPlayer,
           },
         ],
       },
@@ -135,6 +143,8 @@ function App() {
       openCommunityGraphsDialog,
       openHexTemplateDialog,
       openInsertDialog,
+      openModeller,
+      openPianoPlayer,
       resetViewport,
       tab,
       zoomViewport,
@@ -144,7 +154,14 @@ function App() {
   return (
     <main className="app-shell">
       <MfcMenuBar items={menuItems} className="menu-bar" />
-      <section className="app-content">{tab === "modeller" ? <MembraneModellerPage /> : <PianoPlayerPage />}</section>
+      <section className="app-content">
+        <div className={`app-page ${tab === "modeller" ? "" : "is-hidden"}`}>
+          <MembraneModellerPage onOpenPianoPlayer={openPianoPlayer} />
+        </div>
+        <div className={`app-page ${tab === "piano" ? "" : "is-hidden"}`}>
+          <PianoPlayerPage onBackToModeller={openModeller} />
+        </div>
+      </section>
       <input
         ref={graphInputRef}
         type="file"
