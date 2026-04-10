@@ -8,6 +8,7 @@ import {
   RedFormat,
   ShaderMaterial,
 } from "three";
+import { projectDecibelSpectrumToLogBands } from "../../engine/audioSpectrum";
 
 const BAR_COUNT = 48;
 const MIN_FREQ = 30;
@@ -158,28 +159,13 @@ export function WallEqualizer({
       }
       analyser.getFloatFrequencyData(floatBufRef.current);
 
-      const nyquist = analyser.context.sampleRate / 2;
-      const logMin = Math.log(MIN_FREQ);
-      const logRange = Math.log(Math.min(MAX_FREQ, nyquist)) - logMin;
-      const minDb = analyser.minDecibels;
-      const maxDb = analyser.maxDecibels;
-      const dbRange = maxDb - minDb;
-
-      for (let i = 0; i < BAR_COUNT; i++) {
-        const freqStart = Math.exp(logMin + (i / BAR_COUNT) * logRange);
-        const freqEnd = Math.exp(logMin + ((i + 1) / BAR_COUNT) * logRange);
-        const binStart = Math.max(1, Math.floor((freqStart / nyquist) * floatBufRef.current.length));
-        const binEnd = Math.min(
-          floatBufRef.current.length - 1,
-          Math.ceil((freqEnd / nyquist) * floatBufRef.current.length),
-        );
-
-        let maxVal = minDb;
-        for (let b = binStart; b <= binEnd; b++) {
-          if (floatBufRef.current[b] > maxVal) maxVal = floatBufRef.current[b];
-        }
-        data[i] = Math.max(0, Math.min(1, (maxVal - minDb) / dbRange));
-      }
+      data.set(projectDecibelSpectrumToLogBands(floatBufRef.current, analyser.context.sampleRate, {
+        barCount: BAR_COUNT,
+        minFrequency: MIN_FREQ,
+        maxFrequency: MAX_FREQ,
+        minDecibels: analyser.minDecibels,
+        maxDecibels: analyser.maxDecibels,
+      }));
     } else {
       data.fill(0);
     }
