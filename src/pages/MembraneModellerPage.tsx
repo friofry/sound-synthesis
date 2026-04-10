@@ -43,9 +43,10 @@ import { e2eRecordHammerPreview, e2eSetLastHammerImpact, installE2EHarness } fro
 type MembraneModellerPageProps = {
   onOpenPianoPlayer: () => void;
   onOpenFrequencyAnalyzer: () => void;
+  visible?: boolean;
 };
 
-export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyzer }: MembraneModellerPageProps) {
+export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyzer, visible = true }: MembraneModellerPageProps) {
   const skipAutoRandomInit = import.meta.env.VITE_E2E === "1";
   const fuzzyGraphInitializedRef = useRef(false);
   const {
@@ -91,9 +92,11 @@ export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyze
 
   const setAnalyser = useAudioAnalyserStore((s) => s.setAnalyser);
   useEffect(() => {
-    setAnalyser(audioEngine.analyser);
-    return () => setAnalyser(null);
-  }, [audioEngine.analyser, setAnalyser]);
+    if (visible) {
+      setAnalyser(audioEngine.analyser, "modeller");
+    }
+    return () => setAnalyser(null, "modeller");
+  }, [audioEngine.analyser, setAnalyser, visible]);
 
   const buildQuickGenerateSettings = useCallback(
     (

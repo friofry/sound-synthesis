@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import "./App.css";
 import { MfcMenuBar, type MfcMenuBarItem } from "./components/ui/MfcMenu";
 import { MembraneModellerPage } from "./pages/MembraneModellerPage";
@@ -57,6 +57,28 @@ function App() {
   const openFrequencyAnalyzer = useCallback(() => {
     setTab("frequency-analyzer");
   }, []);
+
+  const TAB_CYCLE: AppTab[] = useMemo(() => ["modeller", "piano", "frequency-analyzer"], []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "1") {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable) {
+        return;
+      }
+      event.preventDefault();
+      setTab((current) => {
+        const index = TAB_CYCLE.indexOf(current);
+        return TAB_CYCLE[(index + 1) % TAB_CYCLE.length];
+      });
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [TAB_CYCLE]);
 
   const menuItems = useMemo<MfcMenuBarItem[]>(
     () => [
@@ -168,15 +190,21 @@ function App() {
     <main className="app-shell">
       <MfcMenuBar items={menuItems} className="menu-bar" />
       <section className="app-content">
-        <div className={`app-page ${tab === "modeller" ? "" : "is-hidden"}`}>
-          <MembraneModellerPage onOpenPianoPlayer={openPianoPlayer} onOpenFrequencyAnalyzer={openFrequencyAnalyzer} />
-        </div>
-        <div className={`app-page ${tab === "piano" ? "" : "is-hidden"}`}>
-          <PianoPlayerPage onBackToModeller={openModeller} />
-        </div>
-        <div className={`app-page ${tab === "frequency-analyzer" ? "" : "is-hidden"}`}>
-          <FrequencyAnalyzerPage onBack={() => setTab("modeller")} />
-        </div>
+        {tab === "modeller" ? (
+          <div className="app-page">
+            <MembraneModellerPage onOpenPianoPlayer={openPianoPlayer} onOpenFrequencyAnalyzer={openFrequencyAnalyzer} visible />
+          </div>
+        ) : null}
+        {tab === "piano" ? (
+          <div className="app-page">
+            <PianoPlayerPage onBackToModeller={openModeller} visible />
+          </div>
+        ) : null}
+        {tab === "frequency-analyzer" ? (
+          <div className="app-page">
+            <FrequencyAnalyzerPage onBack={() => setTab("modeller")} />
+          </div>
+        ) : null}
       </section>
       <input
         ref={graphInputRef}

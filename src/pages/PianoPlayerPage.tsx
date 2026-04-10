@@ -11,9 +11,10 @@ import { usePianoToolbar } from "../hooks/usePianoToolbar";
 
 type PianoPlayerPageProps = {
   onBackToModeller: () => void;
+  visible?: boolean;
 };
 
-export function PianoPlayerPage({ onBackToModeller }: PianoPlayerPageProps) {
+export function PianoPlayerPage({ onBackToModeller, visible = true }: PianoPlayerPageProps) {
   const graph = useGraphStore((state) => state.graph);
   const simulationParams = useGraphStore((state) => state.simulationParams);
 
@@ -46,9 +47,11 @@ export function PianoPlayerPage({ onBackToModeller }: PianoPlayerPageProps) {
 
   const setAnalyser = useAudioAnalyserStore((s) => s.setAnalyser);
   useEffect(() => {
-    setAnalyser(audioEngine.analyser);
-    return () => setAnalyser(null);
-  }, [audioEngine.analyser, setAnalyser]);
+    if (visible) {
+      setAnalyser(audioEngine.analyser, "piano");
+    }
+    return () => setAnalyser(null, "piano");
+  }, [audioEngine.analyser, setAnalyser, visible]);
 
   return (
     <div className="piano-page">

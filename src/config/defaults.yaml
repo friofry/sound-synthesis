@@ -17,7 +17,7 @@ simulation:
   dialogDefaults:
     piano:
       octaves: 2
-      durationMs: 150
+      durationMs: 500
       tillSilence: false
       sampleRate: 44100
       attenuation: 2
@@ -144,7 +144,7 @@ simulation:
 
     oneNoteGenerator:
       octaves: 1
-      durationMs: 150
+      durationMs: 500
       tillSilence: false
       sampleRate: 44100
       attenuation: 2

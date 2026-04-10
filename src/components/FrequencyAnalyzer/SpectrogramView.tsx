@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef } from "react";
 import { computeSTFT, magnitudeToDecibels } from "../../engine/audioSpectrum";
 import {
+  drawSpectrogramPitchOverlay,
+  findDominantFrequencyDecibels,
+  findDominantFrequencyLinearMagnitudes,
+  pickLoudestStftFrameIndex,
+} from "./pitchAnalysis";
+import {
   clamp,
   dbToSpectrogramColor,
   FALLBACK_MAX_DB,
@@ -18,6 +24,9 @@ type SpectrogramViewProps = {
   sampleRate: number;
   fftSize: number;
   maxFrequency: number;
+  highlightFundamental?: boolean;
+  highlightOvertones?: boolean;
+  showNoteLabels?: boolean;
 };
 
 const LIVE_COLUMN_MS = 30;
@@ -94,6 +103,7 @@ function drawOverlay(
   chartHeight: number,
   maxFrequency: number,
   timeLabels: string[],
+  skipBuiltinHzGrid: boolean,
 ) {
   ctx.fillStyle = "rgba(14, 14, 20, 0.9)";
   ctx.fillRect(0, 0, cssWidth, chartTop);
@@ -107,17 +117,21 @@ function drawOverlay(
   ctx.fillStyle = "rgba(240, 240, 245, 0.92)";
   ctx.font = "10px Tahoma, Segoe UI, sans-serif";
 
-  LABEL_FREQUENCIES.filter((frequency) => frequency <= maxFrequency).forEach((frequency) => {
-    const ratio = (Math.log(frequency) - Math.log(MIN_FREQUENCY)) / Math.max(1e-9, Math.log(maxFrequency) - Math.log(MIN_FREQUENCY));
-    const y = chartBottom - ratio * chartHeight;
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
-    ctx.beginPath();
-    ctx.moveTo(chartLeft, y + 0.5);
-    ctx.lineTo(chartRight, y + 0.5);
-    ctx.stroke();
-    ctx.fillStyle = "rgba(240, 240, 245, 0.92)";
-    ctx.fillText(formatFrequencyLabel(frequency), 8, y + 3);
-  });
+  if (!skipBuiltinHzGrid) {
+    LABEL_FREQUENCIES.filter((frequency) => frequency <= maxFrequency).forEach((frequency) => {
+      const ratio =
+        (Math.log(frequency) - Math.log(MIN_FREQUENCY)) /
+        Math.max(1e-9, Math.log(maxFrequency) - Math.log(MIN_FREQUENCY));
+      const y = chartBottom - ratio * chartHeight;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+      ctx.beginPath();
+      ctx.moveTo(chartLeft, y + 0.5);
+      ctx.lineTo(chartRight, y + 0.5);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(240, 240, 245, 0.92)";
+      ctx.fillText(formatFrequencyLabel(frequency), 8, y + 3);
+    });
+  }
 
   timeLabels.forEach((label, index) => {
     const ratio = timeLabels.length === 1 ? 0 : index / (timeLabels.length - 1);
@@ -152,6 +166,9 @@ export function SpectrogramView({
   sampleRate,
   fftSize,
   maxFrequency,
+  highlightFundamental = false,
+  highlightOvertones = false,
+  showNoteLabels = false,
 }: SpectrogramViewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastLiveColumnAtRef = useRef(0);
@@ -202,7 +219,24 @@ export function SpectrogramView({
           layout.chartHeight,
           maxFrequency,
           ["0 s"],
+          showNoteLabels,
         );
+        if (highlightFundamental || highlightOvertones || showNoteLabels) {
+          drawSpectrogramPitchOverlay(ctx, {
+            chartLeft: layout.chartLeft,
+            chartTop: layout.chartTop,
+            chartRight: layout.chartRight,
+            chartBottom: layout.chartBottom,
+            chartWidth: layout.chartWidth,
+            chartHeight: layout.chartHeight,
+            maxFrequency,
+            fundamentalHz: null,
+            highlightFundamental,
+            highlightOvertones,
+            showNoteLabels,
+            theme: "dark",
+          });
+        }
         return;
       }
 
@@ -234,6 +268,22 @@ export function SpectrogramView({
       }
 
       const durationSeconds = buffer.length / sampleRate;
+
+      let fundamentalHz: number | null = null;
+      if (highlightFundamental || highlightOvertones) {
+        const frameIndex = pickLoudestStftFrameIndex(stft.magnitudes);
+        const magFrame = stft.magnitudes[frameIndex];
+        if (magFrame) {
+          fundamentalHz = findDominantFrequencyLinearMagnitudes(
+            magFrame,
+            sampleRate,
+            stft.frameSize,
+            MIN_FREQUENCY,
+            maxFrequency,
+          );
+        }
+      }
+
       drawOverlay(
         ctx,
         layout.cssWidth,
@@ -246,7 +296,25 @@ export function SpectrogramView({
         layout.chartHeight,
         maxFrequency,
         Array.from({ length: 5 }, (_, index) => formatTimeLabel((durationSeconds * index) / 4)),
+        showNoteLabels,
       );
+
+      if (highlightFundamental || highlightOvertones || showNoteLabels) {
+        drawSpectrogramPitchOverlay(ctx, {
+          chartLeft: layout.chartLeft,
+          chartTop: layout.chartTop,
+          chartRight: layout.chartRight,
+          chartBottom: layout.chartBottom,
+          chartWidth: layout.chartWidth,
+          chartHeight: layout.chartHeight,
+          maxFrequency,
+          fundamentalHz,
+          highlightFundamental,
+          highlightOvertones,
+          showNoteLabels,
+          theme: "dark",
+        });
+      }
     };
 
     const renderLiveSpectrogram = () => {
@@ -312,6 +380,17 @@ export function SpectrogramView({
         lastLiveColumnAtRef.current = now;
       }
 
+      let fundamentalHz: number | null = null;
+      if ((highlightFundamental || highlightOvertones) && liveFrame) {
+        analyser.getFloatFrequencyData(liveFrame);
+        fundamentalHz = findDominantFrequencyDecibels(
+          liveFrame,
+          analyser.context.sampleRate,
+          MIN_FREQUENCY,
+          maxFrequency,
+        );
+      }
+
       const liveHistorySeconds = (layout.chartWidth * LIVE_COLUMN_MS) / 1000;
       drawOverlay(
         ctx,
@@ -328,7 +407,25 @@ export function SpectrogramView({
           const seconds = liveHistorySeconds * (1 - index / 4);
           return index === 4 ? "now" : `-${formatTimeLabel(seconds)}`;
         }),
+        showNoteLabels,
       );
+
+      if (highlightFundamental || highlightOvertones || showNoteLabels) {
+        drawSpectrogramPitchOverlay(ctx, {
+          chartLeft: layout.chartLeft,
+          chartTop: layout.chartTop,
+          chartRight: layout.chartRight,
+          chartBottom: layout.chartBottom,
+          chartWidth: layout.chartWidth,
+          chartHeight: layout.chartHeight,
+          maxFrequency,
+          fundamentalHz,
+          highlightFundamental,
+          highlightOvertones,
+          showNoteLabels,
+          theme: "dark",
+        });
+      }
 
       animationFrameId = window.requestAnimationFrame(renderLiveSpectrogram);
     };
@@ -358,7 +455,17 @@ export function SpectrogramView({
       window.removeEventListener("resize", renderBufferSpectrogram);
       window.cancelAnimationFrame(animationFrameId);
     };
-  }, [analyser, buffer, fftSize, maxFrequency, sampleRate, stft]);
+  }, [
+    analyser,
+    buffer,
+    fftSize,
+    highlightFundamental,
+    highlightOvertones,
+    maxFrequency,
+    sampleRate,
+    showNoteLabels,
+    stft,
+  ]);
 
   return <canvas ref={canvasRef} className="freq-analyzer-canvas freq-analyzer-spectrogram-canvas" />;
 }

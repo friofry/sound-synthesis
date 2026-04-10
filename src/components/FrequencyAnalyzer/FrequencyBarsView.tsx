@@ -5,6 +5,11 @@ import {
   projectSpectrumToLogBands,
 } from "../../engine/audioSpectrum";
 import {
+  drawBarsPitchOverlay,
+  findDominantFrequencyDecibels,
+  findDominantFrequencySpectrumPoints,
+} from "./pitchAnalysis";
+import {
   FALLBACK_MAX_DB,
   FALLBACK_MIN_DB,
   formatFrequencyLabel,
@@ -19,6 +24,9 @@ type FrequencyBarsViewProps = {
   sampleRate: number;
   fftSize: number;
   maxFrequency: number;
+  highlightFundamental?: boolean;
+  highlightOvertones?: boolean;
+  showNoteLabels?: boolean;
 };
 
 const BAR_COUNT = 96;
@@ -29,6 +37,9 @@ export function FrequencyBarsView({
   sampleRate,
   fftSize,
   maxFrequency,
+  highlightFundamental = false,
+  highlightOvertones = false,
+  showNoteLabels = false,
 }: FrequencyBarsViewProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const bufferSpectrum = useMemo(
@@ -123,19 +134,55 @@ export function FrequencyBarsView({
       ctx.fillText("0.5", 16, layout.chartTop + layout.chartHeight / 2 + 3);
       ctx.fillText("0", 24, layout.chartBottom - 2);
 
-      const limitedLabels = LABEL_FREQUENCIES.filter((frequency) => frequency <= maxFrequency);
-      const logMin = Math.log(MIN_FREQUENCY);
-      const logRange = Math.max(1e-9, Math.log(Math.min(maxFrequency, sampleRate / 2)) - logMin);
-      limitedLabels.forEach((frequency) => {
-        const x = layout.chartLeft + ((Math.log(frequency) - logMin) / logRange) * layout.chartWidth;
-        ctx.strokeStyle = "#d6d6d6";
-        ctx.beginPath();
-        ctx.moveTo(x + 0.5, layout.chartTop);
-        ctx.lineTo(x + 0.5, layout.chartBottom);
-        ctx.stroke();
-        ctx.fillStyle = "#000000";
-        ctx.fillText(formatFrequencyLabel(frequency), Math.max(0, x - 12), layout.cssHeight - 6);
-      });
+      if (!showNoteLabels) {
+        const limitedLabels = LABEL_FREQUENCIES.filter((frequency) => frequency <= maxFrequency);
+        const logMin = Math.log(MIN_FREQUENCY);
+        const logRange = Math.max(1e-9, Math.log(Math.min(maxFrequency, sampleRate / 2)) - logMin);
+        limitedLabels.forEach((frequency) => {
+          const x = layout.chartLeft + ((Math.log(frequency) - logMin) / logRange) * layout.chartWidth;
+          ctx.strokeStyle = "#d6d6d6";
+          ctx.beginPath();
+          ctx.moveTo(x + 0.5, layout.chartTop);
+          ctx.lineTo(x + 0.5, layout.chartBottom);
+          ctx.stroke();
+          ctx.fillStyle = "#000000";
+          ctx.fillText(formatFrequencyLabel(frequency), Math.max(0, x - 12), layout.cssHeight - 6);
+        });
+      }
+
+      const bandMaxHz = Math.min(maxFrequency, sampleRate / 2);
+      let fundamentalHz: number | null = null;
+      if (highlightFundamental || highlightOvertones) {
+        if (buffer && buffer.length > 0 && bufferSpectrum.length > 0) {
+          fundamentalHz = findDominantFrequencySpectrumPoints(bufferSpectrum, MIN_FREQUENCY, bandMaxHz);
+        } else if ((!buffer || buffer.length === 0) && analyser && liveData) {
+          fundamentalHz = findDominantFrequencyDecibels(
+            liveData,
+            analyser.context.sampleRate,
+            MIN_FREQUENCY,
+            bandMaxHz,
+          );
+        }
+      }
+
+      if (highlightFundamental || highlightOvertones || showNoteLabels) {
+        drawBarsPitchOverlay(ctx, {
+          chartLeft: layout.chartLeft,
+          chartTop: layout.chartTop,
+          chartRight: layout.chartRight,
+          chartBottom: layout.chartBottom,
+          chartWidth: layout.chartWidth,
+          chartHeight: layout.chartHeight,
+          cssHeight: layout.cssHeight,
+          maxFrequency,
+          sampleRate,
+          fundamentalHz,
+          highlightFundamental,
+          highlightOvertones,
+          showNoteLabels,
+          theme: "light",
+        });
+      }
 
       if ((!buffer || buffer.length === 0) && analyser) {
         animationFrameId = window.requestAnimationFrame(render);
@@ -152,7 +199,17 @@ export function FrequencyBarsView({
       window.removeEventListener("resize", render);
       window.cancelAnimationFrame(animationFrameId);
     };
-  }, [analyser, buffer, bufferBars, maxFrequency, sampleRate]);
+  }, [
+    analyser,
+    buffer,
+    bufferBars,
+    bufferSpectrum,
+    highlightFundamental,
+    highlightOvertones,
+    maxFrequency,
+    sampleRate,
+    showNoteLabels,
+  ]);
 
   return <canvas ref={canvasRef} className="freq-analyzer-canvas freq-analyzer-bars-canvas" />;
 }

@@ -3,8 +3,11 @@ import { FrequencyBarsView } from "../components/FrequencyAnalyzer/FrequencyBars
 import { SpectrogramView } from "../components/FrequencyAnalyzer/SpectrogramView";
 import { WaveformView } from "../components/FrequencyAnalyzer/WaveformView";
 import { largestPowerOfTwoAtMost, MIN_FREQUENCY } from "../components/FrequencyAnalyzer/shared";
+import { PianoKeyboard } from "../components/PianoPlayer/PianoKeyboard";
 import { MfcSplitView } from "../components/ui/MfcSplitView";
+import { usePianoToolbar } from "../hooks/usePianoToolbar";
 import { useAudioAnalyserStore } from "../store/audioAnalyserStore";
+import { useGraphStore } from "../store/graphStore";
 import { usePianoStore } from "../store/pianoStore";
 
 type FrequencyAnalyzerPageProps = {
@@ -12,6 +15,9 @@ type FrequencyAnalyzerPageProps = {
 };
 
 const FFT_OPTIONS = [1024, 2048, 4096, 8192, 16384];
+
+/** Waveform / spectrogram / bars keep 1:2:1 of the remaining space; piano strip ~5%. */
+const FREQUENCY_ANALYZER_SPLIT_RATIOS = [0.2375, 0.475, 0.2375, 0.05] as const;
 
 function FrequencyPanel({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -23,18 +29,38 @@ function FrequencyPanel({ title, children }: { title: string; children: ReactNod
 }
 
 export function FrequencyAnalyzerPage({ onBack }: FrequencyAnalyzerPageProps) {
+  const graph = useGraphStore((state) => state.graph);
+  const simulationParams = useGraphStore((state) => state.simulationParams);
+
+  const {
+    noteCount,
+    pressedKeys,
+    audioEngine,
+    handlePressKey,
+    handleReleaseKey,
+  } = usePianoToolbar({ graph, simulationParams });
+
+  const setAnalyser = useAudioAnalyserStore((state) => state.setAnalyser);
+  useEffect(() => {
+    setAnalyser(audioEngine.analyser, "frequency-analyzer");
+    return () => setAnalyser(null, "frequency-analyzer");
+  }, [audioEngine.analyser, setAnalyser]);
+
   const engineAnalyser = useAudioAnalyserStore((state) => state.analyser);
   const activeBuffer = usePianoStore((state) => state.activeBuffer);
   const activeSampleRate = usePianoStore((state) => state.activeSampleRate);
 
-  const [fftSize, setFftSize] = useState(1024);
+  const [fftSize, setFftSize] = useState(8192);
+  const [highlightFundamental, setHighlightFundamental] = useState(false);
+  const [highlightOvertones, setHighlightOvertones] = useState(false);
+  const [showNoteLabels, setShowNoteLabels] = useState(false);
 
   useEffect(() => {
     const liveEngineAnalyser = useAudioAnalyserStore.getState().analyser;
     if (liveEngineAnalyser) {
       liveEngineAnalyser.fftSize = fftSize;
     }
-  }, [fftSize]);
+  }, [fftSize, engineAnalyser]);
 
   const selectedAnalyser = activeBuffer ? null : engineAnalyser;
   const selectedBuffer = activeBuffer;
@@ -88,11 +114,46 @@ export function FrequencyAnalyzerPage({ onBack }: FrequencyAnalyzerPageProps) {
           </select>
         </label>
 
+        <span className="freq-toolbar-separator" />
+
+        <button
+          type="button"
+          className={`freq-toolbar-btn${highlightFundamental ? " freq-toolbar-btn-active" : ""}`}
+          onClick={() => setHighlightFundamental((prev) => !prev)}
+          aria-pressed={highlightFundamental}
+          title="Highlight dominant note and frequency"
+        >
+          🎼 Fundamental
+        </button>
+        <button
+          type="button"
+          className={`freq-toolbar-btn${highlightOvertones ? " freq-toolbar-btn-active" : ""}`}
+          onClick={() => setHighlightOvertones((prev) => !prev)}
+          aria-pressed={highlightOvertones}
+          title="Highlight overtones (2×, 3×, …) with frequency"
+        >
+          🎵 Overtones
+        </button>
+        <button
+          type="button"
+          className={`freq-toolbar-btn${showNoteLabels ? " freq-toolbar-btn-active" : ""}`}
+          onClick={() => setShowNoteLabels((prev) => !prev)}
+          aria-pressed={showNoteLabels}
+          title="Show note labels (E3, C4, …) instead of Hz grid"
+        >
+          🎹 Notes
+        </button>
+
         <span className="freq-toolbar-status">{statusText}</span>
       </div>
 
       <div className="freq-analyzer-content">
-        <MfcSplitView orientation="vertical" defaultRatios={[0.25, 0.5, 0.25]} className="freq-analyzer-split-view">
+        <MfcSplitView
+          orientation="vertical"
+          defaultRatios={[...FREQUENCY_ANALYZER_SPLIT_RATIOS]}
+          minPaneSize={24}
+          className="freq-analyzer-split-view"
+        >
           <FrequencyPanel title="Waveform">
             <WaveformView analyser={selectedAnalyser} buffer={selectedBuffer} sampleRate={selectedSampleRate} />
           </FrequencyPanel>
@@ -103,6 +164,9 @@ export function FrequencyAnalyzerPage({ onBack }: FrequencyAnalyzerPageProps) {
               sampleRate={selectedSampleRate}
               fftSize={effectiveFftSize}
               maxFrequency={effectiveMaxFrequency}
+              highlightFundamental={highlightFundamental}
+              highlightOvertones={highlightOvertones}
+              showNoteLabels={showNoteLabels}
             />
           </FrequencyPanel>
           <FrequencyPanel title="Frequency Bars">
@@ -112,7 +176,20 @@ export function FrequencyAnalyzerPage({ onBack }: FrequencyAnalyzerPageProps) {
               sampleRate={selectedSampleRate}
               fftSize={effectiveFftSize}
               maxFrequency={effectiveMaxFrequency}
+              highlightFundamental={highlightFundamental}
+              highlightOvertones={highlightOvertones}
+              showNoteLabels={showNoteLabels}
             />
+          </FrequencyPanel>
+          <FrequencyPanel title="Piano">
+            <div className="freq-analyzer-piano-inner keyboard-wrap">
+              <PianoKeyboard
+                noteCount={noteCount}
+                pressedKeys={pressedKeys}
+                onPressKey={handlePressKey}
+                onReleaseKey={handleReleaseKey}
+              />
+            </div>
           </FrequencyPanel>
         </MfcSplitView>
       </div>
