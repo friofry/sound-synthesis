@@ -5,10 +5,8 @@ import { generateInstrumentFromGraph } from "../engine/noteGenerator";
 import { scaleGraphForPitchRatio } from "../engine/gridGenerators";
 import { parseInstrumentFile, serializeInstrumentFile } from "../engine/fileIO/instrumentFile";
 import { SncCreator } from "../engine/snc/sncCreator";
-import { SimpleMixer } from "../engine/snc/simpleMixer";
-import { executeSncCommands, parseSncText } from "../engine/snc/sncParser";
+import { renderSncTextToWav } from "../engine/snc/renderSncFromText";
 import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "../engine/tuning";
-import { encodeWavBlob } from "../engine/snc/wavExport";
 import { clonePerturbation, GraphModel } from "../engine/graph";
 import type {
   GraphPerturbation,
@@ -54,26 +52,6 @@ function downloadBlob(filename: string, blob: Blob): void {
   anchor.click();
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
-}
-
-function floatToInt16(buffer: Float32Array): Int16Array {
-  const out = new Int16Array(buffer.length);
-  for (let i = 0; i < buffer.length; i += 1) {
-    const value = Math.max(-1, Math.min(1, buffer[i]));
-    out[i] = value < 0 ? Math.round(value * 32768) : Math.round(value * 32767);
-  }
-  return out;
-}
-
-function concatInt16Arrays(chunks: Int16Array[]): Int16Array {
-  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const out = new Int16Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    out.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return out;
 }
 
 function resolveLengthK(durationMs: number, sampleRate: number, tillSilence: boolean): number {
@@ -785,60 +763,24 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   const handleLoadSncFile = useCallback(
     async (file: File) => {
       const text = await file.text();
-      const parsed = parseSncText(text);
-      const noteMap = new Map(instrumentNotes.map((note) => [note.alias, note]));
-      const chunks: Int16Array[] = [];
-      const sampleRate = instrumentNotes[0]?.sampleRate ?? 48_000;
-      const mixer = new SimpleMixer();
-
-      executeSncCommands(
-        parsed.commands,
-        mixer,
-        {
-          sampleRate,
-          knownAliases: noteMap.keys(),
-          createStreamForAlias: (alias) => {
-            const note = noteMap.get(alias);
-            if (!note) throw new Error(`Unknown alias ${alias}`);
-            const pcm = floatToInt16(note.buffer);
-            let offset = 0;
-            return {
-              getSamples(durationSeconds: number) {
-                const sampleCount = Math.max(0, Math.round(durationSeconds * sampleRate));
-                const chunk = new Int16Array(sampleCount);
-                const available = Math.max(0, Math.min(sampleCount, pcm.length - offset));
-                if (available > 0) {
-                  chunk.set(pcm.subarray(offset, offset + available));
-                  offset += available;
-                }
-                return chunk;
-              },
-              reset() {
-                offset = 0;
-              },
-            };
-          },
-        },
-        (chunk) => {
-          chunks.push(chunk);
-        },
-      );
-
-      if (mixer.size > 0) {
-        chunks.push(mixer.getBuffer());
+      if (instrumentNotes.length === 0) {
+        window.alert("Generate or load an instrument first, then open an SNC file.");
+        return;
       }
+      try {
+        const { wavBlob } = renderSncTextToWav(text, instrumentNotes);
+        setLastSncText(text);
+        setLastRenderedWav(wavBlob);
 
-      const merged = concatInt16Arrays(chunks);
-      const wavBlob = encodeWavBlob(merged, sampleRate);
-      setLastSncText(text);
-      setLastRenderedWav(wavBlob);
-
-      const url = URL.createObjectURL(wavBlob);
-      const audio = new Audio(url);
-      audioPreviewRef.current?.pause();
-      audioPreviewRef.current = audio;
-      void audio.play();
-      audio.onended = () => URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(wavBlob);
+        const audio = new Audio(url);
+        audioPreviewRef.current?.pause();
+        audioPreviewRef.current = audio;
+        void audio.play();
+        audio.onended = () => URL.revokeObjectURL(url);
+      } catch (error) {
+        window.alert(`Failed to play SNC: ${(error as Error).message}`);
+      }
     },
     [instrumentNotes, setLastSncText, setLastRenderedWav],
   );

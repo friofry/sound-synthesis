@@ -1,0 +1,169 @@
+--Limp Bizkit - Take a look around
+--Intro
+!wait 0.5
+
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.35
+
+1E a -1
+!wait 0.15
+
+1G a -1
+!wait 0.35
+
+1A a -1
+!wait 0.15
+
+1G a -1
+!wait 0.15
+
+--Intro 2
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.35
+
+1E a -1
+!wait 0.15
+
+1D a -1
+!wait 0.35
+
+1D# a -1
+!wait 0.35
+
+--Intro
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.35
+
+1E a -1
+!wait 0.15
+
+1G a -1
+!wait 0.35
+
+1A a -1
+!wait 0.15
+
+1G a -1
+!wait 0.15
+
+--Intro 2
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.5
+
+1E a -1
+!wait 0.35
+
+1E a -1
+!wait 0.15
+
+1D a -1
+!wait 0.35
+
+1D# a -1
+!wait 0.35
+
+--Main theme
+
+3G a -1
+!wait 0.15
+
+3E a -1
+!wait 0.15
+
+2B a -1
+!wait 2.35
+
+3G a -1
+!wait 0.15
+
+3E a -1
+!wait 0.15
+
+2A# a -1
+!wait 2.35
+
+3G a -1
+!wait 0.15
+
+3E a -1
+!wait 0.15
+
+2A a -1
+!wait 2.35
+
+2A a -1
+!wait 0.15
+
+2B a -1
+!wait 0.15
+
+!wait 2.35
+
+--Main theme repeated
+3G a -1
+!wait 0.15
+
+3E a -1
+!wait 0.15
+
+2B a -1
+!wait 2.35
+
+3G a -1
+!wait 0.15
+
+3E a -1
+!wait 0.15
+
+2A# a -1
+!wait 2.35
+
+3G a -1
+!wait 0.15
+
+3E a -1
+!wait 0.15
+
+2A a -1
+!wait 2.35
+
+2A a -1
+!wait 0.15
+
+2B a -1
+!wait 0.15
+
+!wait 2

@@ -1,0 +1,7343 @@
+--	Unknown event type - 192 192 255
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:  ,221		0.222
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:  ,227		0.227
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:  ,448		0.449
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:  ,454		0.455
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:  ,676		0.676
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:  ,681		0.682
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:  ,903		0.903
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:  ,909		0.909
+
+4E a -1
+
+!wait 0.221591
+--Current time 0: 1,130		1.131
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0: 1,136		1.136
+
+3B a -1
+
+!wait 0.221591
+--Current time 0: 1,357		1.358
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0: 1,363		1.364
+
+4D a -1
+
+!wait 0.221591
+--Current time 0: 1,585		1.585
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0: 1,590		1.591
+
+4C a -1
+
+!wait 0.221591
+--Current time 0: 1,812		1.812
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0: 1,818		1.818
+
+1A a -1
+
+3A a -1
+
+!wait 0.227273
+--Current time 0: 2, 45		2.045
+
+2E a -1
+
+!wait 0.221591
+--Current time 0: 2,267		2.267
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0: 2,272		2.273
+
+2A a -1
+
+!wait 0.227273
+--Current time 0: 2,499		2.500
+
+3C a -1
+
+!wait 0.227272
+--Current time 0: 2,727		2.727
+
+3E a -1
+
+!wait 0.227273
+--Current time 0: 2,954		2.955
+
+3A a -1
+
+!wait 0.221591
+--Current time 0: 3,176		3.176
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0: 3,181		3.182
+
+1E a -1
+
+3B a -1
+
+!wait 0.227273
+--Current time 0: 3,409		3.409
+
+2E a -1
+
+!wait 0.221591
+--Current time 0: 3,630		3.631
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0: 3,636		3.636
+
+2G# a -1
+
+!wait 0.227273
+--Current time 0: 3,863		3.864
+
+3E a -1
+
+!wait 0.227273
+--Current time 0: 4, 90		4.091
+
+3G# a -1
+
+!wait 0.227272
+--Current time 0: 4,318		4.318
+
+3B a -1
+
+!wait 0.221591
+--Current time 0: 4,539		4.540
+
+!stop 3B
+
+!stop 3G#
+
+!stop 3E
+
+!stop 2G#
+
+!stop 1E
+
+!stop 2E
+
+!wait 0.005682
+--Current time 0: 4,545		4.545
+
+1A a -1
+
+4C a -1
+
+!wait 0.227273
+--Current time 0: 4,772		4.773
+
+2E a -1
+
+!wait 0.221591
+--Current time 0: 4,994		4.994
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0: 4,999		5.000
+
+2A a -1
+
+!wait 0.227272
+--Current time 0: 5,227		5.227
+
+3E a -1
+
+!wait 0.227272
+--Current time 0: 5,454		5.455
+
+4E a -1
+
+!wait 0.221591
+--Current time 0: 5,676		5.676
+
+!stop 4E
+
+!stop 1A
+
+!stop 2A
+
+!stop 2E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 0: 5,681		5.682
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0: 5,903		5.903
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0: 5,909		5.909
+
+4E a -1
+
+!wait 0.221591
+--Current time 0: 6,130		6.131
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0: 6,136		6.136
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0: 6,357		6.358
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0: 6,363		6.364
+
+4E a -1
+
+!wait 0.221591
+--Current time 0: 6,585		6.585
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0: 6,590		6.591
+
+3B a -1
+
+!wait 0.221591
+--Current time 0: 6,812		6.812
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0: 6,818		6.818
+
+4D a -1
+
+!wait 0.221591
+--Current time 0: 7, 39		7.040
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0: 7, 45		7.045
+
+4C a -1
+
+!wait 0.221591
+--Current time 0: 7,267		7.267
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0: 7,272		7.273
+
+1A a -1
+
+3A a -1
+
+!wait 0.227273
+--Current time 0: 7,499		7.500
+
+2E a -1
+
+!wait 0.221591
+--Current time 0: 7,721		7.722
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0: 7,727		7.727
+
+2A a -1
+
+!wait 0.227272
+--Current time 0: 7,954		7.955
+
+3C a -1
+
+!wait 0.227273
+--Current time 0: 8,181		8.182
+
+3E a -1
+
+!wait 0.227272
+--Current time 0: 8,409		8.409
+
+3A a -1
+
+!wait 0.221591
+--Current time 0: 8,630		8.631
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0: 8,636		8.636
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 0: 8,863		8.864
+
+2E a -1
+
+!wait 0.221591
+--Current time 0: 9, 85		9.085
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0: 9, 90		9.091
+
+2G# a -1
+
+!wait 0.227272
+--Current time 0: 9,318		9.318
+
+3E a -1
+
+!wait 0.227273
+--Current time 0: 9,545		9.545
+
+4C a -1
+
+!wait 0.227272
+--Current time 0: 9,772		9.773
+
+3B a -1
+
+!wait 0.221591
+--Current time 0: 9,994		9.994
+
+!stop 3B
+
+!stop 4C
+
+!stop 3E
+
+!stop 2G#
+
+!stop 1E
+
+!stop 2E
+
+!wait 0.005682
+--Current time 0: 9,999		10.000
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 0:10,227		10.227
+
+2E a -1
+
+!wait 0.227272
+--Current time 0:10,454		10.455
+
+2A a -1
+
+!wait 0.221591
+--Current time 0:10,676		10.676
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.227272
+--Current time 0:10,903		10.903
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0:10,909		10.909
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:11,130		11.131
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:11,136		11.136
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:11,357		11.358
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:11,363		11.364
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:11,585		11.585
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:11,590		11.591
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:11,812		11.812
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:11,818		11.818
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:12, 39		12.040
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:12, 45		12.045
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:12,267		12.267
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:12,272		12.273
+
+4D a -1
+
+!wait 0.221591
+--Current time 0:12,494		12.494
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0:12,499		12.500
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:12,721		12.722
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:12,727		12.727
+
+1A a -1
+
+3A a -1
+
+!wait 0.227273
+--Current time 0:12,954		12.955
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:13,176		13.176
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0:13,181		13.182
+
+2A a -1
+
+!wait 0.227272
+--Current time 0:13,409		13.409
+
+3C a -1
+
+!wait 0.227272
+--Current time 0:13,636		13.636
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:13,863		13.864
+
+3A a -1
+
+!wait 0.221591
+--Current time 0:14, 85		14.085
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0:14, 90		14.091
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 0:14,318		14.318
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:14,539		14.540
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:14,545		14.545
+
+2G# a -1
+
+!wait 0.227273
+--Current time 0:14,772		14.773
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:14,999		15.000
+
+3G# a -1
+
+!wait 0.227272
+--Current time 0:15,227		15.227
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:15,448		15.449
+
+!stop 3B
+
+!stop 3G#
+
+!stop 3E
+
+!stop 2G#
+
+!stop 1E
+
+!stop 2E
+
+!wait 0.005682
+--Current time 0:15,454		15.455
+
+1A a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 0:15,681		15.682
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:15,903		15.903
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:15,909		15.909
+
+2A a -1
+
+!wait 0.227272
+--Current time 0:16,136		16.136
+
+3E a -1
+
+!wait 0.221591
+--Current time 0:16,357		16.358
+
+!stop 3E
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0:16,363		16.364
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:16,585		16.585
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:16,590		16.591
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:16,812		16.812
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:16,818		16.818
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:17, 39		17.040
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:17, 45		17.045
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:17,267		17.267
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:17,272		17.273
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:17,494		17.494
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:17,499		17.500
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:17,721		17.722
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:17,727		17.727
+
+4D a -1
+
+!wait 0.221591
+--Current time 0:17,948		17.949
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0:17,954		17.955
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:18,176		18.176
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:18,181		18.182
+
+1A a -1
+
+3A a -1
+
+!wait 0.227273
+--Current time 0:18,409		18.409
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:18,630		18.631
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0:18,636		18.636
+
+2A a -1
+
+!wait 0.227273
+--Current time 0:18,863		18.864
+
+3C a -1
+
+!wait 0.227273
+--Current time 0:19, 90		19.091
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:19,318		19.318
+
+3A a -1
+
+!wait 0.221591
+--Current time 0:19,539		19.540
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0:19,545		19.545
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 0:19,772		19.773
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:19,994		19.994
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:19,999		20.000
+
+2G# a -1
+
+!wait 0.227272
+--Current time 0:20,227		20.227
+
+3E a -1
+
+!wait 0.227273
+--Current time 0:20,454		20.455
+
+4C a -1
+
+!wait 0.227272
+--Current time 0:20,681		20.682
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:20,903		20.903
+
+!stop 3B
+
+!stop 4C
+
+!stop 3E
+
+!stop 2G#
+
+!stop 1E
+
+!stop 2E
+
+!wait 0.005682
+--Current time 0:20,909		20.909
+
+1A a -1
+
+3A a -1
+
+!wait 0.227273
+--Current time 0:21,136		21.136
+
+2E a -1
+
+!wait 0.227272
+--Current time 0:21,363		21.364
+
+2A a -1
+
+!wait 0.221591
+--Current time 0:21,585		21.585
+
+!stop 2A
+
+!stop 2E
+
+!stop 3A
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0:21,590		21.591
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:21,812		21.812
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:21,818		21.818
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:22, 39		22.040
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:22, 45		22.045
+
+4D a -1
+
+!wait 0.221591
+--Current time 0:22,267		22.267
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0:22,272		22.273
+
+2C a -1
+
+4E a -1
+
+!wait 0.227273
+--Current time 0:22,499		22.500
+
+2G a -1
+
+!wait 0.227273
+--Current time 0:22,727		22.727
+
+3C a -1
+
+!wait 0.221591
+--Current time 0:22,948		22.949
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:22,954		22.955
+
+3G a -1
+
+!wait 0.227273
+--Current time 0:23,181		23.182
+
+4F a -1
+
+!wait 0.227272
+--Current time 0:23,409		23.409
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:23,630		23.631
+
+!stop 4E
+
+!stop 4F
+
+!stop 3G
+
+!stop 3C
+
+!stop 2G
+
+!stop 2C
+
+!wait 0.005682
+--Current time 0:23,636		23.636
+
+1G a -1
+
+4D a -1
+
+!wait 0.227272
+--Current time 0:23,863		23.864
+
+2G a -1
+
+!wait 0.227273
+--Current time 0:24, 90		24.091
+
+2B a -1
+
+!wait 0.221591
+--Current time 0:24,312		24.312
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0:24,318		24.318
+
+3F a -1
+
+!wait 0.227272
+--Current time 0:24,545		24.545
+
+4E a -1
+
+!wait 0.227273
+--Current time 0:24,772		24.773
+
+4D a -1
+
+!wait 0.221591
+--Current time 0:24,994		24.994
+
+!stop 4D
+
+!stop 4E
+
+!stop 3F
+
+!stop 2B
+
+!stop 2G
+
+!stop 1G
+
+!wait 0.005682
+--Current time 0:24,999		25.000
+
+4C a -1
+
+1A a -1
+
+!wait 0.227273
+--Current time 0:25,227		25.227
+
+2E a -1
+
+!wait 0.227272
+--Current time 0:25,454		25.455
+
+2A a -1
+
+!wait 0.221591
+--Current time 0:25,676		25.676
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:25,681		25.682
+
+3E a -1
+
+!wait 0.227273
+--Current time 0:25,909		25.909
+
+4D a -1
+
+!wait 0.227272
+--Current time 0:26,136		26.136
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:26,357		26.358
+
+!stop 4C
+
+!stop 4D
+
+!stop 3E
+
+!stop 2A
+
+!stop 1A
+
+!stop 2E
+
+!wait 0.005682
+--Current time 0:26,363		26.364
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 0:26,590		26.591
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:26,812		26.812
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:26,818		26.818
+
+3E a -1
+
+!wait 0.221591
+--Current time 0:27, 39		27.040
+
+!stop 3E
+
+!wait 0.005682
+--Current time 0:27, 45		27.045
+
+3E a -1
+
+!wait 0.227273
+--Current time 0:27,272		27.273
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:27,494		27.494
+
+!stop 4E
+
+!stop 1E
+
+!stop 3E
+
+!stop 2E
+
+!wait 0.005682
+--Current time 0:27,499		27.500
+
+3E a -1
+
+!wait 0.227273
+--Current time 0:27,727		27.727
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:27,948		27.949
+
+!stop 4E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 0:27,954		27.955
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:28,176		28.176
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:28,181		28.182
+
+5E a -1
+
+!wait 0.221591
+--Current time 0:28,403		28.403
+
+!stop 5E
+
+!wait 0.005682
+--Current time 0:28,409		28.409
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:28,630		28.631
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:28,636		28.636
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:28,857		28.858
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:28,863		28.864
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:29, 85		29.085
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:29, 90		29.091
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:29,312		29.312
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:29,318		29.318
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:29,539		29.540
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:29,545		29.545
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:29,767		29.767
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:29,772		29.773
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:29,994		29.994
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:29,999		30.000
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:30,221		30.222
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:30,227		30.227
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:30,448		30.449
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:30,454		30.455
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:30,676		30.676
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:30,681		30.682
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:30,903		30.903
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:30,909		30.909
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:31,130		31.131
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:31,136		31.136
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:31,357		31.358
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:31,363		31.364
+
+4D a -1
+
+!wait 0.221591
+--Current time 0:31,585		31.585
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0:31,590		31.591
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:31,812		31.812
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:31,818		31.818
+
+1A a -1
+
+3A a -1
+
+!wait 0.227273
+--Current time 0:32, 45		32.045
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:32,267		32.267
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0:32,272		32.273
+
+2A a -1
+
+!wait 0.227272
+--Current time 0:32,499		32.500
+
+3C a -1
+
+!wait 0.227273
+--Current time 0:32,727		32.727
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:32,954		32.955
+
+3A a -1
+
+!wait 0.221591
+--Current time 0:33,176		33.176
+
+!stop 3A
+
+!stop 3E
+
+!stop 1A
+
+!stop 2A
+
+!stop 2E
+
+!stop 3C
+
+!wait 0.005682
+--Current time 0:33,181		33.182
+
+1E a -1
+
+3B a -1
+
+!wait 0.227273
+--Current time 0:33,409		33.409
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:33,630		33.631
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:33,636		33.636
+
+2G# a -1
+
+!wait 0.227272
+--Current time 0:33,863		33.864
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:34, 90		34.091
+
+3G# a -1
+
+!wait 0.227273
+--Current time 0:34,318		34.318
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:34,539		34.540
+
+!stop 3B
+
+!stop 3G#
+
+!stop 3E
+
+!stop 2G#
+
+!stop 2E
+
+!stop 1E
+
+!wait 0.005682
+--Current time 0:34,545		34.545
+
+1A a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 0:34,772		34.773
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:34,994		34.994
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:34,999		35.000
+
+2A a -1
+
+!wait 0.221591
+--Current time 0:35,221		35.222
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0:35,227		35.227
+
+3E a -1
+
+!wait 0.221591
+--Current time 0:35,448		35.449
+
+!stop 3E
+
+!wait 0.005682
+--Current time 0:35,454		35.455
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:35,676		35.676
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:35,681		35.682
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:35,903		35.903
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:35,909		35.909
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:36,130		36.131
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:36,136		36.136
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:36,357		36.358
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:36,363		36.364
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:36,585		36.585
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:36,590		36.591
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:36,812		36.812
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:36,818		36.818
+
+4D a -1
+
+!wait 0.221591
+--Current time 0:37, 39		37.040
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0:37, 45		37.045
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:37,267		37.267
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:37,272		37.273
+
+1A a -1
+
+3A a -1
+
+!wait 0.227273
+--Current time 0:37,499		37.500
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:37,721		37.722
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0:37,727		37.727
+
+2A a -1
+
+!wait 0.227272
+--Current time 0:37,954		37.955
+
+3C a -1
+
+!wait 0.227273
+--Current time 0:38,181		38.182
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:38,409		38.409
+
+3A a -1
+
+!wait 0.221591
+--Current time 0:38,630		38.631
+
+!stop 3A
+
+!stop 3E
+
+!stop 1A
+
+!stop 2A
+
+!stop 2E
+
+!stop 3C
+
+!wait 0.005682
+--Current time 0:38,636		38.636
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 0:38,863		38.864
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:39, 85		39.085
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:39, 90		39.091
+
+2G# a -1
+
+!wait 0.227272
+--Current time 0:39,318		39.318
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:39,545		39.545
+
+4C a -1
+
+!wait 0.227273
+--Current time 0:39,772		39.773
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:39,994		39.994
+
+!stop 3B
+
+!stop 4C
+
+!stop 3E
+
+!stop 2G#
+
+!stop 2E
+
+!stop 1E
+
+!wait 0.005682
+--Current time 0:39,999		40.000
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 0:40,227		40.227
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:40,448		40.449
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0:40,454		40.455
+
+2A a -1
+
+!wait 0.221591
+--Current time 0:40,676		40.676
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0:40,681		40.682
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:40,903		40.903
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:40,909		40.909
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:41,130		41.131
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:41,136		41.136
+
+4D a -1
+
+!wait 0.221591
+--Current time 0:41,357		41.358
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0:41,363		41.364
+
+4E a -1
+
+2C a -1
+
+!wait 0.227273
+--Current time 0:41,590		41.591
+
+2G a -1
+
+!wait 0.227272
+--Current time 0:41,818		41.818
+
+3C a -1
+
+!wait 0.221591
+--Current time 0:42, 39		42.040
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:42, 45		42.045
+
+3G a -1
+
+!wait 0.227273
+--Current time 0:42,272		42.273
+
+4F a -1
+
+!wait 0.227272
+--Current time 0:42,499		42.500
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:42,721		42.722
+
+!stop 4E
+
+!stop 4F
+
+!stop 3G
+
+!stop 3C
+
+!stop 2C
+
+!stop 2G
+
+!wait 0.005682
+--Current time 0:42,727		42.727
+
+1G a -1
+
+4D a -1
+
+!wait 0.227272
+--Current time 0:42,954		42.955
+
+2G a -1
+
+!wait 0.227273
+--Current time 0:43,181		43.182
+
+2B a -1
+
+!wait 0.221591
+--Current time 0:43,403		43.403
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0:43,409		43.409
+
+3F a -1
+
+!wait 0.227272
+--Current time 0:43,636		43.636
+
+4E a -1
+
+!wait 0.227273
+--Current time 0:43,863		43.864
+
+4D a -1
+
+!wait 0.221591
+--Current time 0:44, 85		44.085
+
+!stop 4D
+
+!stop 4E
+
+!stop 1G
+
+!stop 3F
+
+!stop 2G
+
+!stop 2B
+
+!wait 0.005682
+--Current time 0:44, 90		44.091
+
+1A a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 0:44,318		44.318
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:44,539		44.540
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:44,545		44.545
+
+2A a -1
+
+!wait 0.227273
+--Current time 0:44,772		44.773
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:44,999		45.000
+
+4D a -1
+
+!wait 0.227272
+--Current time 0:45,227		45.227
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:45,448		45.449
+
+!stop 4C
+
+!stop 4D
+
+!stop 3E
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0:45,454		45.455
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 0:45,681		45.682
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:45,903		45.903
+
+!stop 2E
+
+!stop 3B
+
+!stop 1E
+
+!wait 0.005682
+--Current time 0:45,909		45.909
+
+3E a -1
+
+!wait 0.221591
+--Current time 0:46,130		46.131
+
+!stop 3E
+
+!wait 0.005682
+--Current time 0:46,136		46.136
+
+3E a -1
+
+!wait 0.227273
+--Current time 0:46,363		46.364
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:46,585		46.585
+
+!stop 4E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 0:46,590		46.591
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:46,818		46.818
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:47, 39		47.040
+
+!stop 4E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 0:47, 45		47.045
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:47,266		47.267
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:47,272		47.273
+
+5E a -1
+
+!wait 0.107954
+--Current time 0:47,380		47.381
+
+!stop 5E
+
+!wait 0.119318
+--Current time 0:47,499		47.500
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:47,721		47.722
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:47,727		47.727
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:47,948		47.949
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:47,954		47.954
+
+4D# a -1
+
+!wait 0.107954
+--Current time 0:48, 62		48.062
+
+!stop 4D#
+
+!wait 0.119318
+--Current time 0:48,181		48.182
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:48,403		48.403
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:48,409		48.409
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:48,630		48.631
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:48,636		48.636
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:48,857		48.858
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:48,863		48.864
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:49, 85		49.085
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:49, 90		49.091
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:49,312		49.312
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:49,318		49.318
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:49,539		49.540
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:49,545		49.545
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:49,766		49.767
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:49,772		49.773
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:49,994		49.994
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:49,999		50.000
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:50,221		50.222
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:50,227		50.227
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:50,448		50.449
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:50,454		50.454
+
+4D a -1
+
+!wait 0.221591
+--Current time 0:50,676		50.676
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0:50,681		50.682
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:50,903		50.903
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:50,909		50.909
+
+1A a -1
+
+3A a -1
+
+!wait 0.227273
+--Current time 0:51,136		51.136
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:51,357		51.358
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0:51,363		51.364
+
+2A a -1
+
+!wait 0.227272
+--Current time 0:51,590		51.591
+
+3C a -1
+
+!wait 0.227273
+--Current time 0:51,818		51.818
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:52, 45		52.045
+
+3A a -1
+
+!wait 0.221591
+--Current time 0:52,266		52.267
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0:52,272		52.273
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 0:52,499		52.500
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:52,721		52.722
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:52,727		52.727
+
+2G# a -1
+
+!wait 0.227272
+--Current time 0:52,954		52.954
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:53,181		53.182
+
+3G# a -1
+
+!wait 0.227272
+--Current time 0:53,409		53.409
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:53,630		53.631
+
+!stop 3B
+
+!stop 3G#
+
+!stop 3E
+
+!stop 2G#
+
+!stop 1E
+
+!stop 2E
+
+!wait 0.005682
+--Current time 0:53,636		53.636
+
+1A a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 0:53,863		53.864
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:54, 85		54.085
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:54, 90		54.091
+
+2A a -1
+
+!wait 0.221591
+--Current time 0:54,312		54.312
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0:54,318		54.318
+
+3E a -1
+
+!wait 0.221591
+--Current time 0:54,539		54.540
+
+!stop 3E
+
+!wait 0.005682
+--Current time 0:54,545		54.545
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:54,766		54.767
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:54,772		54.773
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:54,994		54.994
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:54,999		55.000
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:55,221		55.222
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:55,227		55.227
+
+4D# a -1
+
+!wait 0.221591
+--Current time 0:55,448		55.449
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 0:55,454		55.454
+
+4E a -1
+
+!wait 0.221591
+--Current time 0:55,676		55.676
+
+!stop 4E
+
+!wait 0.005682
+--Current time 0:55,681		55.682
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:55,903		55.903
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:55,909		55.909
+
+4D a -1
+
+!wait 0.221591
+--Current time 0:56,130		56.131
+
+!stop 4D
+
+!wait 0.005682
+--Current time 0:56,136		56.136
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:56,357		56.358
+
+!stop 4C
+
+!wait 0.005682
+--Current time 0:56,363		56.364
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 0:56,590		56.591
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:56,812		56.812
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0:56,818		56.818
+
+2A a -1
+
+!wait 0.227272
+--Current time 0:57, 45		57.045
+
+3C a -1
+
+!wait 0.227272
+--Current time 0:57,272		57.273
+
+3E a -1
+
+!wait 0.227273
+--Current time 0:57,499		57.500
+
+3A a -1
+
+!wait 0.221591
+--Current time 0:57,721		57.722
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 0:57,727		57.727
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 0:57,954		57.954
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:58,176		58.176
+
+!stop 3B
+
+!wait 0.005682
+--Current time 0:58,181		58.182
+
+2G# a -1
+
+!wait 0.227273
+--Current time 0:58,409		58.409
+
+3E a -1
+
+!wait 0.227272
+--Current time 0:58,636		58.636
+
+4C a -1
+
+!wait 0.227272
+--Current time 0:58,863		58.864
+
+3B a -1
+
+!wait 0.221591
+--Current time 0:59, 85		59.085
+
+!stop 3B
+
+!stop 4C
+
+!stop 3E
+
+!stop 2G#
+
+!stop 1E
+
+!stop 2E
+
+!wait 0.005682
+--Current time 0:59, 90		59.091
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 0:59,318		59.318
+
+2E a -1
+
+!wait 0.221591
+--Current time 0:59,539		59.540
+
+!stop 3A
+
+!wait 0.005682
+--Current time 0:59,545		59.545
+
+2A a -1
+
+!wait 0.227272
+--Current time 0:59,772		59.773
+
+3E a -1
+
+3C a -1
+
+2A# a -1
+
+4C a -1
+
+!wait 0.221591
+--Current time 0:59,994		59.994
+
+!stop 4C
+
+!stop 2A#
+
+!wait 0.005682
+--Current time 0:59,999		60.000
+
+3F a -1
+
+4C a -1
+
+!wait 0.221591
+--Current time 1:  ,221		60.222
+
+!stop 4C
+
+!stop 3F
+
+!wait 0.005682
+--Current time 1:  ,227		60.227
+
+3F a -1
+
+2A# a -1
+
+4C a -1
+
+3G a -1
+
+2G a -1
+
+!wait 0.003788
+--Current time 1:  ,231		60.231
+
+!stop 2A
+
+!stop 3C
+
+!wait 0.104167
+--Current time 1:  ,335		60.335
+
+!stop 3F
+
+!wait 0.005682
+--Current time 1:  ,340		60.341
+
+3A a -1
+
+!wait 0.107954
+--Current time 1:  ,448		60.449
+
+!stop 3A
+
+!stop 2G
+
+!stop 3G
+
+!stop 4C
+
+!stop 2A#
+
+!stop 1A
+
+!stop 2E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:  ,454		60.454
+
+2F a -1
+
+4C a -1
+
+!wait 0.227273
+--Current time 1:  ,681		60.682
+
+2A a -1
+
+!wait 0.227272
+--Current time 1:  ,909		60.909
+
+3C a -1
+
+!wait 0.448863
+--Current time 1: 1,357		61.358
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1: 1,363		61.364
+
+4F a -1
+
+!wait 0.231060
+--Current time 1: 1,594		61.595
+
+!stop 3C
+
+!stop 2A
+
+!wait 0.104167
+--Current time 1: 1,698		61.699
+
+!stop 4F
+
+!wait 0.005682
+--Current time 1: 1,704		61.704
+
+4E a -1
+
+!wait 0.107954
+--Current time 1: 1,812		61.812
+
+!stop 4E
+
+!stop 2F
+
+!wait 0.005682
+--Current time 1: 1,818		61.818
+
+2F a -1
+
+4E a -1
+
+!wait 0.227272
+--Current time 1: 2, 45		62.045
+
+2A# a -1
+
+!wait 0.221591
+--Current time 1: 2,266		62.267
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1: 2,272		62.273
+
+3D a -1
+
+4D a -1
+
+!wait 0.221591
+--Current time 1: 2,494		62.494
+
+!stop 3D
+
+!wait 0.227272
+--Current time 1: 2,721		62.722
+
+!stop 4D
+
+!stop 2A#
+
+!wait 0.005682
+--Current time 1: 2,727		62.727
+
+3D a -1
+
+4A# a -1
+
+!wait 0.335227
+--Current time 1: 3, 62		63.062
+
+!stop 4A#
+
+!wait 0.005682
+--Current time 1: 3, 68		63.068
+
+4A a -1
+
+!wait 0.107954
+--Current time 1: 3,176		63.176
+
+!stop 4A
+
+!stop 3D
+
+!stop 2F
+
+!wait 0.005682
+--Current time 1: 3,181		63.182
+
+2F a -1
+
+4A a -1
+
+!wait 0.227272
+--Current time 1: 3,409		63.409
+
+3E a -1
+
+4G a -1
+
+!wait 0.221591
+--Current time 1: 3,630		63.631
+
+!stop 4G
+
+!stop 3E
+
+!stop 4A
+
+!stop 2F
+
+!wait 0.005682
+--Current time 1: 3,636		63.636
+
+4F a -1
+
+2F a -1
+
+2G a -1
+
+2A# a -1
+
+!wait 0.227273
+--Current time 1: 3,863		63.864
+
+4E a -1
+
+3E a -1
+
+!wait 0.221591
+--Current time 1: 4, 85		64.085
+
+!stop 3E
+
+!stop 4E
+
+!stop 2A#
+
+!stop 2G
+
+!stop 2F
+
+!stop 4F
+
+!wait 0.005682
+--Current time 1: 4, 90		64.091
+
+2A# a -1
+
+4D a -1
+
+2F a -1
+
+2G a -1
+
+!wait 0.227272
+--Current time 1: 4,318		64.318
+
+4C a -1
+
+3E a -1
+
+!wait 0.221591
+--Current time 1: 4,539		64.540
+
+!stop 3E
+
+!stop 4C
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1: 4,545		64.545
+
+3A# a -1
+
+!wait 0.221591
+--Current time 1: 4,766		64.767
+
+!stop 2G
+
+!stop 2F
+
+!stop 2A#
+
+!wait 0.005682
+--Current time 1: 4,772		64.773
+
+2A a -1
+
+!wait 0.221591
+--Current time 1: 4,994		64.994
+
+!stop 2A
+
+!wait 0.005682
+--Current time 1: 4,999		65.000
+
+3C a -1
+
+3A a -1
+
+!wait 0.221591
+--Current time 1: 5,221		65.222
+
+!stop 3C
+
+!wait 0.005682
+--Current time 1: 5,227		65.227
+
+2A a -1
+
+!wait 0.113636
+--Current time 1: 5,340		65.341
+
+3A# a -1
+
+!wait 0.107954
+--Current time 1: 5,448		65.449
+
+!stop 2A
+
+!stop 3A
+
+!stop 3A#
+
+!wait 0.005682
+--Current time 1: 5,454		65.454
+
+3A a -1
+
+3C a -1
+
+!wait 0.107954
+--Current time 1: 5,562		65.562
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1: 5,568		65.568
+
+3G a -1
+
+!wait 0.107954
+--Current time 1: 5,676		65.676
+
+!stop 3G
+
+!stop 3C
+
+!wait 0.005682
+--Current time 1: 5,681		65.682
+
+3A a -1
+
+2A a -1
+
+!wait 0.107954
+--Current time 1: 5,789		65.790
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1: 5,795		65.795
+
+3A# a -1
+
+!wait 0.107954
+--Current time 1: 5,903		65.903
+
+!stop 3A#
+
+!stop 2A
+
+!wait 0.005682
+--Current time 1: 5,909		65.909
+
+2F a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 1: 6,136		66.136
+
+2A a -1
+
+!wait 0.227272
+--Current time 1: 6,363		66.364
+
+3C a -1
+
+!wait 0.448863
+--Current time 1: 6,812		66.812
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1: 6,818		66.818
+
+4D a -1
+
+!wait 0.221591
+--Current time 1: 7, 39		67.040
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1: 7, 45		67.045
+
+4D# a -1
+
+!wait 0.003788
+--Current time 1: 7, 49		67.049
+
+!stop 3C
+
+!stop 2A
+
+!wait 0.217803
+--Current time 1: 7,266		67.267
+
+!stop 4D#
+
+!stop 2F
+
+!wait 0.005682
+--Current time 1: 7,272		67.273
+
+2E a -1
+
+4E a -1
+
+!wait 0.227272
+--Current time 1: 7,499		67.500
+
+2A a -1
+
+!wait 0.227272
+--Current time 1: 7,727		67.727
+
+3C a -1
+
+!wait 0.448863
+--Current time 1: 8,176		68.176
+
+!stop 3C
+
+!stop 2A
+
+!stop 4E
+
+!stop 2E
+
+!wait 0.005682
+--Current time 1: 8,181		68.182
+
+4F a -1
+
+3D a -1
+
+2D a -1
+
+!wait 0.221591
+--Current time 1: 8,403		68.403
+
+!stop 4F
+
+!wait 0.005682
+--Current time 1: 8,409		68.409
+
+2F a -1
+
+3A a -1
+
+!wait 0.221591
+--Current time 1: 8,630		68.631
+
+!stop 3A
+
+!stop 2F
+
+!stop 2D
+
+!stop 3D
+
+!wait 0.005682
+--Current time 1: 8,636		68.636
+
+4C a -1
+
+2G a -1
+
+!wait 0.227272
+--Current time 1: 8,863		68.864
+
+3E a -1
+
+!wait 0.448863
+--Current time 1: 9,312		69.312
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1: 9,318		69.318
+
+4D a -1
+
+!wait 0.003788
+--Current time 1: 9,321		69.322
+
+!stop 2G
+
+!wait 0.047348
+--Current time 1: 9,369		69.369
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1: 9,374		69.375
+
+4C a -1
+
+!wait 0.051136
+--Current time 1: 9,426		69.426
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1: 9,431		69.432
+
+3B a -1
+
+!wait 0.051136
+--Current time 1: 9,482		69.483
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1: 9,488		69.489
+
+4C a -1
+
+!wait 0.051136
+--Current time 1: 9,539		69.540
+
+!stop 4C
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1: 9,545		69.545
+
+2G a -1
+
+4D a -1
+
+!wait 0.227272
+--Current time 1: 9,772		69.773
+
+3F a -1
+
+!wait 0.107954
+--Current time 1: 9,880		69.881
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1: 9,886		69.886
+
+3B a -1
+
+!wait 0.107954
+--Current time 1: 9,994		69.994
+
+!stop 3B
+
+!stop 3F
+
+!stop 2G
+
+!wait 0.005682
+--Current time 1: 9,999		70.000
+
+4C a -1
+
+3C a -1
+
+3E a -1
+
+!wait 0.113636
+--Current time 1:10,113		70.114
+
+4G a -1
+
+!wait 0.113636
+--Current time 1:10,227		70.227
+
+3G a -1
+
+!wait 0.221591
+--Current time 1:10,448		70.449
+
+!stop 3G
+
+!stop 4G
+
+!stop 3E
+
+!stop 3C
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:10,454		70.454
+
+3A a -1
+
+!wait 0.107954
+--Current time 1:10,562		70.562
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1:10,568		70.568
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:10,676		70.676
+
+!stop 4G
+
+!wait 0.005682
+--Current time 1:10,681		70.682
+
+3B a -1
+
+3F a -1
+
+3G a -1
+
+!wait 0.107954
+--Current time 1:10,789		70.790
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:10,795		70.795
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:10,903		70.903
+
+!stop 4G
+
+!stop 3G
+
+!stop 3F
+
+!wait 0.005682
+--Current time 1:10,909		70.909
+
+4C a -1
+
+3E a -1
+
+3G a -1
+
+!wait 0.107954
+--Current time 1:11, 16		71.017
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:11, 22		71.023
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:11,130		71.131
+
+!stop 4G
+
+!stop 3G
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:11,136		71.136
+
+4D a -1
+
+3D a -1
+
+3F a -1
+
+3G a -1
+
+!wait 0.107954
+--Current time 1:11,244		71.244
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:11,249		71.250
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:11,357		71.358
+
+!stop 4G
+
+!stop 3G
+
+!stop 3F
+
+!stop 3D
+
+!wait 0.005682
+--Current time 1:11,363		71.364
+
+4E a -1
+
+!wait 0.113636
+--Current time 1:11,477		71.477
+
+4G a -1
+
+!wait 0.113636
+--Current time 1:11,590		71.591
+
+5C a -1
+
+!wait 0.113636
+--Current time 1:11,704		71.704
+
+4B a -1
+
+!wait 0.107954
+--Current time 1:11,812		71.812
+
+!stop 4B
+
+!stop 5C
+
+!stop 4G
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:11,818		71.818
+
+4A a -1
+
+2F a -1
+
+2A a -1
+
+!wait 0.107954
+--Current time 1:11,926		71.926
+
+!stop 4A
+
+!wait 0.005682
+--Current time 1:11,931		71.932
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:12, 39		72.040
+
+!stop 4G
+
+!wait 0.005682
+--Current time 1:12, 45		72.045
+
+4F a -1
+
+!wait 0.107954
+--Current time 1:12,153		72.153
+
+!stop 4F
+
+!wait 0.005682
+--Current time 1:12,159		72.159
+
+4E a -1
+
+!wait 0.107954
+--Current time 1:12,266		72.267
+
+!stop 4E
+
+!stop 2A
+
+!stop 2F
+
+!wait 0.005682
+--Current time 1:12,272		72.273
+
+4D a -1
+
+2G a -1
+
+2B a -1
+
+!wait 0.107954
+--Current time 1:12,380		72.381
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:12,386		72.386
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:12,494		72.494
+
+!stop 4G
+
+!wait 0.005682
+--Current time 1:12,499		72.500
+
+4F a -1
+
+!wait 0.107954
+--Current time 1:12,607		72.608
+
+!stop 4F
+
+!wait 0.005682
+--Current time 1:12,613		72.614
+
+4D a -1
+
+!wait 0.107954
+--Current time 1:12,721		72.722
+
+!stop 4D
+
+!stop 2B
+
+!stop 2G
+
+!wait 0.005682
+--Current time 1:12,727		72.727
+
+4C a -1
+
+3C a -1
+
+!wait 0.113636
+--Current time 1:12,840		72.841
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:12,948		72.949
+
+!stop 4G
+
+!wait 0.005682
+--Current time 1:12,954		72.954
+
+3G a -1
+
+!wait 0.113636
+--Current time 1:13, 68		73.068
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:13,176		73.176
+
+!stop 4G
+
+!stop 3C
+
+!wait 0.005682
+--Current time 1:13,181		73.182
+
+3A a -1
+
+!wait 0.113636
+--Current time 1:13,295		73.295
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:13,403		73.403
+
+!stop 4G
+
+!wait 0.005682
+--Current time 1:13,409		73.409
+
+3B a -1
+
+3F a -1
+
+!wait 0.113636
+--Current time 1:13,522		73.523
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:13,630		73.631
+
+!stop 4G
+
+!stop 3F
+
+!wait 0.005682
+--Current time 1:13,636		73.636
+
+3E a -1
+
+!wait 0.113636
+--Current time 1:13,749		73.750
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:13,857		73.858
+
+!stop 4G
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:13,863		73.864
+
+4D a -1
+
+3F a -1
+
+3D a -1
+
+!wait 0.113636
+--Current time 1:13,977		73.977
+
+4G a -1
+
+!wait 0.003788
+--Current time 1:13,980		73.981
+
+!stop 3G
+
+!stop 4C
+
+!wait 0.104167
+--Current time 1:14, 85		74.085
+
+!stop 4G
+
+!stop 3D
+
+!stop 3F
+
+!stop 4D
+
+!stop 3B
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1:14, 90		74.091
+
+4E a -1
+
+3C a -1
+
+3E a -1
+
+3G a -1
+
+!wait 0.113636
+--Current time 1:14,204		74.204
+
+4G a -1
+
+!wait 0.113636
+--Current time 1:14,318		74.318
+
+5C a -1
+
+!wait 0.113636
+--Current time 1:14,431		74.432
+
+4B a -1
+
+!wait 0.107954
+--Current time 1:14,539		74.540
+
+!stop 4B
+
+!stop 5C
+
+!stop 4G
+
+!stop 3G
+
+!stop 3E
+
+!stop 3C
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:14,545		74.545
+
+4A a -1
+
+2F a -1
+
+2A a -1
+
+!wait 0.107954
+--Current time 1:14,653		74.653
+
+!stop 4A
+
+!wait 0.005682
+--Current time 1:14,659		74.659
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:14,766		74.767
+
+!stop 4G
+
+!wait 0.005682
+--Current time 1:14,772		74.773
+
+4F a -1
+
+!wait 0.107954
+--Current time 1:14,880		74.881
+
+!stop 4F
+
+!wait 0.005682
+--Current time 1:14,886		74.886
+
+4E a -1
+
+!wait 0.107954
+--Current time 1:14,994		74.994
+
+!stop 4E
+
+!stop 2A
+
+!stop 2F
+
+!wait 0.005682
+--Current time 1:14,999		75.000
+
+4D a -1
+
+2G a -1
+
+2B a -1
+
+!wait 0.107954
+--Current time 1:15,107		75.108
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:15,113		75.114
+
+4G a -1
+
+!wait 0.107954
+--Current time 1:15,221		75.222
+
+!stop 4G
+
+!wait 0.005682
+--Current time 1:15,227		75.227
+
+4F a -1
+
+!wait 0.107954
+--Current time 1:15,335		75.335
+
+!stop 4F
+
+!wait 0.005682
+--Current time 1:15,340		75.341
+
+4D a -1
+
+!wait 0.107954
+--Current time 1:15,448		75.449
+
+!stop 4D
+
+!stop 2B
+
+!stop 2G
+
+!wait 0.005682
+--Current time 1:15,454		75.454
+
+4E a -1
+
+2B a -1
+
+2G# a -1
+
+!wait 0.113636
+--Current time 1:15,568		75.568
+
+4F a -1
+
+!wait 0.227272
+--Current time 1:15,795		75.795
+
+4D# a -1
+
+!wait 0.107954
+--Current time 1:15,903		75.903
+
+!stop 2G#
+
+!stop 2B
+
+!wait 0.119318
+--Current time 1:16, 22		76.023
+
+3B a -1
+
+!wait 0.335227
+--Current time 1:16,357		76.358
+
+!stop 4D#
+
+!wait 0.236742
+--Current time 1:16,594		76.595
+
+!stop 4E
+
+!stop 3B
+
+!wait 0.104167
+--Current time 1:16,698		76.699
+
+!stop 4F
+
+!wait 0.005682
+--Current time 1:16,704		76.704
+
+4D# a -1
+
+!wait 0.107954
+--Current time 1:16,812		76.812
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:16,818		76.818
+
+4E a -1
+
+!wait 0.676136
+--Current time 1:17,494		77.494
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:17,499		77.500
+
+3B a -1
+
+!wait 0.221591
+--Current time 1:17,721		77.722
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:17,727		77.727
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:17,948		77.949
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:17,954		77.954
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:18,176		78.176
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:18,181		78.182
+
+4E a -1
+
+!wait 0.676136
+--Current time 1:18,857		78.858
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:18,863		78.864
+
+3B a -1
+
+!wait 0.227272
+--Current time 1:19, 90		79.091
+
+4E a -1
+
+!wait 0.227272
+--Current time 1:19,318		79.318
+
+4D# a -1
+
+!wait 0.448863
+--Current time 1:19,766		79.767
+
+!stop 4D#
+
+!stop 4E
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:19,772		79.773
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:19,994		79.994
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:19,999		80.000
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:20,221		80.222
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:20,227		80.227
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:20,448		80.449
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:20,454		80.454
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:20,676		80.676
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:20,681		80.682
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:20,903		80.903
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:20,909		80.909
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:21,130		81.131
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:21,136		81.136
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:21,357		81.358
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:21,363		81.364
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:21,585		81.585
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:21,590		81.591
+
+3B a -1
+
+!wait 0.221591
+--Current time 1:21,812		81.812
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:21,818		81.818
+
+4D a -1
+
+!wait 0.221591
+--Current time 1:22, 39		82.040
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:22, 45		82.045
+
+4C a -1
+
+!wait 0.221591
+--Current time 1:22,266		82.267
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:22,272		82.273
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 1:22,499		82.500
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:22,721		82.722
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1:22,727		82.727
+
+2A a -1
+
+!wait 0.227273
+--Current time 1:22,954		82.954
+
+3C a -1
+
+!wait 0.227272
+--Current time 1:23,181		83.182
+
+3E a -1
+
+!wait 0.221591
+--Current time 1:23,403		83.403
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:23,409		83.409
+
+3A a -1
+
+3E a -1
+
+!wait 0.221591
+--Current time 1:23,630		83.631
+
+!stop 3E
+
+!stop 3A
+
+!stop 3C
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 1:23,636		83.636
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 1:23,863		83.864
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:24, 85		84.085
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:24, 90		84.091
+
+2G# a -1
+
+!wait 0.227272
+--Current time 1:24,318		84.318
+
+3E a -1
+
+!wait 0.227273
+--Current time 1:24,545		84.545
+
+3G# a -1
+
+!wait 0.227272
+--Current time 1:24,772		84.773
+
+3B a -1
+
+!wait 0.221591
+--Current time 1:24,994		84.994
+
+!stop 3B
+
+!stop 3G#
+
+!stop 3E
+
+!stop 2G#
+
+!stop 2E
+
+!stop 1E
+
+!wait 0.005682
+--Current time 1:24,999		85.000
+
+1A a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 1:25,227		85.227
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:25,448		85.449
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:25,454		85.454
+
+2A a -1
+
+!wait 0.221591
+--Current time 1:25,676		85.676
+
+!stop 2A
+
+!stop 1A
+
+!stop 2E
+
+!wait 0.005682
+--Current time 1:25,681		85.682
+
+3E a -1
+
+!wait 0.221591
+--Current time 1:25,903		85.903
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:25,909		85.909
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:26,130		86.131
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:26,136		86.136
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:26,357		86.358
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:26,363		86.364
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:26,585		86.585
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:26,590		86.591
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:26,812		86.812
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:26,818		86.818
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:27, 39		87.040
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:27, 45		87.045
+
+3B a -1
+
+!wait 0.221591
+--Current time 1:27,266		87.267
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:27,272		87.273
+
+4D a -1
+
+!wait 0.221591
+--Current time 1:27,494		87.494
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:27,499		87.500
+
+4C a -1
+
+!wait 0.221591
+--Current time 1:27,721		87.722
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:27,727		87.727
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 1:27,954		87.954
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:28,176		88.176
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1:28,181		88.182
+
+2A a -1
+
+!wait 0.227272
+--Current time 1:28,409		88.409
+
+3C a -1
+
+!wait 0.227272
+--Current time 1:28,636		88.636
+
+3E a -1
+
+!wait 0.227272
+--Current time 1:28,863		88.864
+
+3A a -1
+
+!wait 0.221591
+--Current time 1:29, 85		89.085
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 1:29, 90		89.091
+
+1E a -1
+
+3B a -1
+
+!wait 0.227273
+--Current time 1:29,318		89.318
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:29,539		89.540
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:29,545		89.545
+
+2G# a -1
+
+!wait 0.227272
+--Current time 1:29,772		89.773
+
+3D a -1
+
+!wait 0.227272
+--Current time 1:29,999		90.000
+
+4C a -1
+
+!wait 0.227272
+--Current time 1:30,227		90.227
+
+3B a -1
+
+!wait 0.221591
+--Current time 1:30,448		90.449
+
+!stop 3B
+
+!stop 4C
+
+!stop 3D
+
+!stop 2G#
+
+!stop 2E
+
+!stop 1E
+
+!wait 0.005682
+--Current time 1:30,454		90.454
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 1:30,681		90.682
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:30,903		90.903
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1:30,909		90.909
+
+2A a -1
+
+!wait 0.221591
+--Current time 1:31,130		91.131
+
+!stop 2A
+
+!stop 1A
+
+!stop 2E
+
+!wait 0.005682
+--Current time 1:31,136		91.136
+
+3B a -1
+
+!wait 0.221591
+--Current time 1:31,357		91.358
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:31,363		91.364
+
+4C a -1
+
+!wait 0.221591
+--Current time 1:31,585		91.585
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:31,590		91.591
+
+4D a -1
+
+!wait 0.221591
+--Current time 1:31,812		91.812
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:31,818		91.818
+
+2C a -1
+
+4E a -1
+
+!wait 0.227272
+--Current time 1:32, 45		92.045
+
+2G a -1
+
+!wait 0.227272
+--Current time 1:32,272		92.273
+
+3C a -1
+
+!wait 0.221591
+--Current time 1:32,494		92.494
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:32,499		92.500
+
+3G a -1
+
+!wait 0.227272
+--Current time 1:32,727		92.727
+
+4F a -1
+
+!wait 0.227272
+--Current time 1:32,954		92.954
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:33,176		93.176
+
+!stop 4E
+
+!stop 4F
+
+!stop 2C
+
+!stop 3G
+
+!stop 2G
+
+!stop 3C
+
+!wait 0.005682
+--Current time 1:33,181		93.182
+
+1G a -1
+
+4D a -1
+
+!wait 0.227272
+--Current time 1:33,408		93.409
+
+2G a -1
+
+!wait 0.227272
+--Current time 1:33,636		93.636
+
+2B a -1
+
+!wait 0.221591
+--Current time 1:33,857		93.858
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:33,863		93.864
+
+3F a -1
+
+!wait 0.227273
+--Current time 1:34, 90		94.091
+
+4E a -1
+
+!wait 0.227272
+--Current time 1:34,318		94.318
+
+4D a -1
+
+!wait 0.221591
+--Current time 1:34,539		94.540
+
+!stop 4D
+
+!stop 4E
+
+!stop 3F
+
+!stop 2B
+
+!stop 2G
+
+!stop 1G
+
+!wait 0.005682
+--Current time 1:34,545		94.545
+
+1A a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 1:34,772		94.773
+
+2E a -1
+
+!wait 0.227272
+--Current time 1:34,999		95.000
+
+2A a -1
+
+!wait 0.221591
+--Current time 1:35,221		95.221
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:35,227		95.227
+
+3E a -1
+
+!wait 0.227272
+--Current time 1:35,454		95.454
+
+4D a -1
+
+!wait 0.227273
+--Current time 1:35,681		95.682
+
+4C a -1
+
+!wait 0.221591
+--Current time 1:35,903		95.903
+
+!stop 4C
+
+!stop 4D
+
+!stop 3E
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 1:35,908		95.909
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 1:36,136		96.136
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:36,357		96.358
+
+!stop 2E
+
+!stop 3B
+
+!stop 1E
+
+!wait 0.005682
+--Current time 1:36,363		96.364
+
+3E a -1
+
+!wait 0.221591
+--Current time 1:36,585		96.585
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:36,590		96.591
+
+3E a -1
+
+!wait 0.227272
+--Current time 1:36,818		96.818
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:37, 39		97.040
+
+!stop 4E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:37, 45		97.045
+
+3E a -1
+
+!wait 0.227273
+--Current time 1:37,272		97.273
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:37,494		97.494
+
+!stop 4E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:37,499		97.500
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:37,721		97.721
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:37,727		97.727
+
+5E a -1
+
+!wait 0.221591
+--Current time 1:37,948		97.949
+
+!stop 5E
+
+!wait 0.005682
+--Current time 1:37,954		97.954
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:38,176		98.176
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:38,181		98.182
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:38,403		98.403
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:38,408		98.409
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:38,630		98.631
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:38,636		98.636
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:38,857		98.858
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:38,863		98.864
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:39, 85		99.085
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:39, 90		99.091
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:39,312		99.312
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:39,318		99.318
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:39,539		99.540
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:39,545		99.545
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:39,766		99.767
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:39,772		99.773
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:39,994		99.994
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:39,999		100.000
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:40,221		100.221
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:40,227		100.227
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:40,448		100.449
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:40,454		100.454
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:40,676		100.676
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:40,681		100.682
+
+3B a -1
+
+!wait 0.221591
+--Current time 1:40,903		100.903
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:40,908		100.909
+
+4D a -1
+
+!wait 0.221591
+--Current time 1:41,130		101.131
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:41,136		101.136
+
+4C a -1
+
+!wait 0.221591
+--Current time 1:41,357		101.358
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:41,363		101.364
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 1:41,590		101.591
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:41,812		101.812
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1:41,818		101.818
+
+2A a -1
+
+!wait 0.227273
+--Current time 1:42, 45		102.045
+
+3C a -1
+
+!wait 0.227272
+--Current time 1:42,272		102.273
+
+3E a -1
+
+!wait 0.227272
+--Current time 1:42,499		102.500
+
+3A a -1
+
+!wait 0.221591
+--Current time 1:42,721		102.721
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 1A
+
+!stop 2E
+
+!wait 0.005682
+--Current time 1:42,727		102.727
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 1:42,954		102.954
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:43,176		103.176
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:43,181		103.182
+
+2G# a -1
+
+!wait 0.227272
+--Current time 1:43,408		103.409
+
+3E a -1
+
+!wait 0.227273
+--Current time 1:43,636		103.636
+
+3G# a -1
+
+!wait 0.227272
+--Current time 1:43,863		103.864
+
+3B a -1
+
+!wait 0.221591
+--Current time 1:44, 85		104.085
+
+!stop 3B
+
+!stop 3G#
+
+!stop 1E
+
+!stop 2G#
+
+!stop 2E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:44, 90		104.091
+
+1A a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 1:44,318		104.318
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:44,539		104.540
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:44,545		104.545
+
+2A a -1
+
+!wait 0.221591
+--Current time 1:44,766		104.767
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 1:44,772		104.773
+
+3E a -1
+
+!wait 0.221591
+--Current time 1:44,994		104.994
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:44,999		105.000
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:45,221		105.221
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:45,227		105.227
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:45,448		105.449
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:45,454		105.454
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:45,676		105.676
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:45,681		105.682
+
+4D# a -1
+
+!wait 0.221591
+--Current time 1:45,903		105.903
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 1:45,908		105.909
+
+4E a -1
+
+!wait 0.221591
+--Current time 1:46,130		106.131
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:46,136		106.136
+
+3B a -1
+
+!wait 0.221591
+--Current time 1:46,357		106.358
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:46,363		106.364
+
+4D a -1
+
+!wait 0.221591
+--Current time 1:46,585		106.585
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:46,590		106.591
+
+4C a -1
+
+!wait 0.221591
+--Current time 1:46,812		106.812
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:46,818		106.818
+
+1A a -1
+
+3A a -1
+
+!wait 0.227273
+--Current time 1:47, 45		107.045
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:47,266		107.267
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1:47,272		107.273
+
+2A a -1
+
+!wait 0.227272
+--Current time 1:47,499		107.500
+
+3C a -1
+
+!wait 0.227272
+--Current time 1:47,727		107.727
+
+3E a -1
+
+!wait 0.227272
+--Current time 1:47,954		107.954
+
+3A a -1
+
+!wait 0.221591
+--Current time 1:48,176		108.176
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 1A
+
+!stop 2E
+
+!wait 0.005682
+--Current time 1:48,181		108.182
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 1:48,408		108.409
+
+2E a -1
+
+!wait 0.221591
+--Current time 1:48,630		108.631
+
+!stop 3B
+
+!wait 0.005682
+--Current time 1:48,636		108.636
+
+2G# a -1
+
+!wait 0.227272
+--Current time 1:48,863		108.864
+
+3E a -1
+
+!wait 0.227272
+--Current time 1:49, 90		109.091
+
+4C a -1
+
+!wait 0.227272
+--Current time 1:49,318		109.318
+
+3B a -1
+
+!wait 0.221591
+--Current time 1:49,539		109.540
+
+!stop 3B
+
+!stop 4C
+
+!stop 1E
+
+!stop 2G#
+
+!stop 2E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:49,545		109.545
+
+1A a -1
+
+3A a -1
+
+!wait 0.221591
+--Current time 1:49,766		109.767
+
+!stop 1A
+
+!wait 0.005682
+--Current time 1:49,772		109.773
+
+1A a -1
+
+!wait 0.221591
+--Current time 1:49,994		109.994
+
+!stop 1A
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1:49,999		110.000
+
+1A a -1
+
+!wait 0.685605
+--Current time 1:50,685		110.685
+
+!stop 1A
+
+!wait 0.223485
+--Current time 1:50,908		110.909
+
+1A a -1
+
+3E a -1
+
+3G a -1
+
+4C# a -1
+
+!wait 1.140150
+--Current time 1:52, 49		112.049
+
+!stop 1A
+
+!wait 0.217803
+--Current time 1:52,266		112.267
+
+!stop 4C#
+
+!stop 3G
+
+!stop 3E
+
+!stop 3A#
+
+!wait 0.005682
+--Current time 1:52,272		112.273
+
+4D a -1
+
+3A a -1
+
+3F a -1
+
+1A a -1
+
+!wait 0.685605
+--Current time 1:52,958		112.958
+
+!stop 1A
+
+!wait 0.217803
+--Current time 1:53,176		113.176
+
+!stop 3F
+
+!stop 3A
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:53,181		113.182
+
+4C# a -1
+
+4E a -1
+
+1A a -1
+
+!wait 0.221591
+--Current time 1:53,403		113.403
+
+!stop 1A
+
+!stop 4E
+
+!stop 4C#
+
+!wait 0.005682
+--Current time 1:53,408		113.409
+
+4D a -1
+
+4F a -1
+
+1A a -1
+
+!wait 0.221591
+--Current time 1:53,630		113.631
+
+!stop 1A
+
+!stop 4F
+
+!stop 4D
+
+!wait 0.005682
+--Current time 1:53,636		113.636
+
+1A a -1
+
+4F a -1
+
+4D a -1
+
+3G# a -1
+
+!wait 0.903408
+--Current time 1:54,539		114.540
+
+!stop 3G#
+
+!stop 4D
+
+!stop 4F
+
+!wait 0.005682
+--Current time 1:54,545		114.545
+
+3G# a -1
+
+4D a -1
+
+4F a -1
+
+!wait 0.231060
+--Current time 1:54,776		114.776
+
+!stop 1A
+
+!wait 0.217803
+--Current time 1:54,994		114.994
+
+!stop 4F
+
+!stop 4D
+
+!stop 3G#
+
+!wait 0.005682
+--Current time 1:54,999		115.000
+
+1A a -1
+
+4E a -1
+
+3A a -1
+
+4C a -1
+
+!wait 1.140150
+--Current time 1:56,140		116.140
+
+!stop 1A
+
+!wait 0.217803
+--Current time 1:56,357		116.358
+
+!stop 4C
+
+!stop 3A
+
+!stop 4E
+
+!wait 0.005682
+--Current time 1:56,363		116.364
+
+1D a -1
+
+1A a -1
+
+3F a -1
+
+4D a -1
+
+!wait 0.685605
+--Current time 1:57, 49		117.049
+
+!stop 1A
+
+!stop 1D
+
+!wait 0.217803
+--Current time 1:57,266		117.267
+
+!stop 4D
+
+!stop 3F
+
+!wait 0.005682
+--Current time 1:57,272		117.273
+
+4C a -1
+
+3E a -1
+
+1D a -1
+
+1A a -1
+
+!wait 0.221591
+--Current time 1:57,494		117.494
+
+!stop 3E
+
+!stop 4C
+
+!wait 0.005682
+--Current time 1:57,499		117.500
+
+3B a -1
+
+3D a -1
+
+!wait 0.221591
+--Current time 1:57,721		117.721
+
+!stop 3D
+
+!stop 3B
+
+!stop 1A
+
+!stop 1D
+
+!wait 0.005682
+--Current time 1:57,727		117.727
+
+3A a -1
+
+3C a -1
+
+3F# a -1
+
+1A a -1
+
+1D# a -1
+
+!wait 0.448863
+--Current time 1:58,176		118.176
+
+!stop 1D#
+
+!wait 0.454545
+--Current time 1:58,630		118.631
+
+!stop 3F#
+
+!stop 3C
+
+!stop 3A
+
+!wait 0.005682
+--Current time 1:58,636		118.636
+
+3A a -1
+
+3C a -1
+
+!wait 0.221591
+--Current time 1:58,857		118.858
+
+!stop 3C
+
+!stop 3A
+
+!wait 0.009470
+--Current time 1:58,867		118.867
+
+!stop 1A
+
+!wait 0.223485
+--Current time 1:59, 90		119.091
+
+1E a -1
+
+1A a -1
+
+3C a -1
+
+3A a -1
+
+!wait 0.448863
+--Current time 1:59,539		119.540
+
+!stop 3A
+
+!stop 3C
+
+!wait 0.005682
+--Current time 1:59,545		119.545
+
+3E a -1
+
+4C a -1
+
+!wait 0.231060
+--Current time 1:59,776		119.776
+
+!stop 1A
+
+!stop 1E
+
+!wait 0.217803
+--Current time 1:59,994		119.994
+
+!stop 4C
+
+!stop 3E
+
+!wait 0.005682
+--Current time 1:59,999		120.000
+
+1E a -1
+
+1G# a -1
+
+3D a -1
+
+3B a -1
+
+!wait 0.448863
+--Current time 2:  ,448		120.449
+
+!stop 3B
+
+!stop 3D
+
+!stop 1G#
+
+!stop 1E
+
+!wait 0.005682
+--Current time 2:  ,454		120.454
+
+2A a -1
+
+0A a -1
+
+1A a -1
+
+3A a -1
+
+3C a -1
+
+!wait 0.107954
+--Current time 2:  ,562		120.562
+
+!stop 2A
+
+!wait 0.113636
+--Current time 2:  ,676		120.676
+
+!stop 0A
+
+!wait 0.918560
+--Current time 2: 1,594		121.595
+
+!stop 1A
+
+!wait 0.217803
+--Current time 2: 1,812		121.812
+
+!stop 3C
+
+!stop 3A
+
+!wait 0.005682
+--Current time 2: 1,818		121.818
+
+1A a -1
+
+3E a -1
+
+3G a -1
+
+3B a -1
+
+4C# a -1
+
+!wait 1.140150
+--Current time 2: 2,958		122.958
+
+!stop 1A
+
+!wait 0.217803
+--Current time 2: 3,176		123.176
+
+!stop 4C#
+
+!stop 3B
+
+!stop 3G
+
+!stop 3E
+
+!wait 0.005682
+--Current time 2: 3,181		123.182
+
+1A a -1
+
+3F a -1
+
+3A a -1
+
+4D a -1
+
+!wait 0.448863
+--Current time 2: 3,630		123.631
+
+!stop 4D
+
+!stop 3A
+
+!stop 3F
+
+!wait 0.236742
+--Current time 2: 3,867		123.867
+
+!stop 1A
+
+!wait 0.223485
+--Current time 2: 4, 90		124.091
+
+1A a -1
+
+4C# a -1
+
+4E a -1
+
+!wait 0.221591
+--Current time 2: 4,312		124.312
+
+!stop 4E
+
+!stop 4C#
+
+!stop 1A
+
+!wait 0.005682
+--Current time 2: 4,318		124.318
+
+1A a -1
+
+4D a -1
+
+4F a -1
+
+!wait 0.221591
+--Current time 2: 4,539		124.540
+
+!stop 4F
+
+!stop 4D
+
+!stop 1A
+
+!wait 0.005682
+--Current time 2: 4,545		124.545
+
+1A a -1
+
+4D a -1
+
+4F a -1
+
+!wait 0.903408
+--Current time 2: 5,448		125.449
+
+!stop 4F
+
+!stop 4D
+
+!wait 0.005682
+--Current time 2: 5,454		125.454
+
+4D a -1
+
+4F a -1
+
+!wait 0.231060
+--Current time 2: 5,685		125.685
+
+!stop 1A
+
+!wait 0.217803
+--Current time 2: 5,903		125.903
+
+!stop 4F
+
+!stop 4D
+
+!wait 0.005682
+--Current time 2: 5,908		125.909
+
+1A# a -1
+
+4D a -1
+
+4F a -1
+
+!wait 0.448863
+--Current time 2: 6,357		126.358
+
+!stop 1A#
+
+!wait 0.909090
+--Current time 2: 7,266		127.267
+
+!stop 4F
+
+!stop 4D
+
+!wait 0.005682
+--Current time 2: 7,272		127.273
+
+1A# a -1
+
+3G a -1
+
+4D# a -1
+
+!wait 0.448863
+--Current time 2: 7,721		127.721
+
+!stop 1A#
+
+!wait 0.454545
+--Current time 2: 8,176		128.176
+
+!stop 4D#
+
+!stop 3G
+
+!wait 0.005682
+--Current time 2: 8,181		128.182
+
+1A# a -1
+
+3F a -1
+
+4D a -1
+
+!wait 0.221591
+--Current time 2: 8,403		128.403
+
+!stop 4D
+
+!stop 3F
+
+!wait 0.005682
+--Current time 2: 8,408		128.409
+
+3D# a -1
+
+4C a -1
+
+!wait 0.221591
+--Current time 2: 8,630		128.631
+
+!stop 4C
+
+!stop 3D#
+
+!stop 1A#
+
+!wait 0.005682
+--Current time 2: 8,636		128.636
+
+3D a -1
+
+3F a -1
+
+3A# a -1
+
+1A# a -1
+
+!wait 0.448863
+--Current time 2: 9, 85		129.085
+
+!stop 1A#
+
+!wait 0.454545
+--Current time 2: 9,539		129.540
+
+!stop 3A#
+
+!stop 3F
+
+!stop 3D
+
+!wait 0.005682
+--Current time 2: 9,545		129.545
+
+1A# a -1
+
+3D a -1
+
+3F a -1
+
+3A a -1
+
+!wait 0.448863
+--Current time 2: 9,994		129.994
+
+!stop 3A
+
+!stop 3F
+
+!stop 3D
+
+!stop 1A#
+
+!wait 0.005682
+--Current time 2: 9,999		130.000
+
+1B a -1
+
+3G# a -1
+
+3D a -1
+
+3F a -1
+
+!wait 0.685605
+--Current time 2:10,685		130.685
+
+!stop 1B
+
+!wait 0.217803
+--Current time 2:10,903		130.903
+
+!stop 3F
+
+!stop 3D
+
+!stop 3G#
+
+!wait 0.005682
+--Current time 2:10,908		130.909
+
+1B a -1
+
+3D a -1
+
+3F a -1
+
+3G# a -1
+
+!wait 0.448863
+--Current time 2:11,357		131.358
+
+!stop 3G#
+
+!stop 3F
+
+!stop 3D
+
+!stop 1B
+
+!wait 0.005682
+--Current time 2:11,363		131.364
+
+3A a -1
+
+3E a -1
+
+3C a -1
+
+2C a -1
+
+!wait 0.903408
+--Current time 2:12,266		132.267
+
+!stop 2C
+
+!stop 3C
+
+!stop 3E
+
+!stop 3A
+
+!wait 0.460227
+--Current time 2:12,727		132.727
+
+2G# a -1
+
+2E a -1
+
+3B a -1
+
+3E a -1
+
+3D a -1
+
+!wait 0.448863
+--Current time 2:13,176		133.176
+
+!stop 3D
+
+!stop 3E
+
+!stop 3B
+
+!wait 0.914772
+--Current time 2:14, 90		134.091
+
+2A a -1
+
+0A a -1
+
+!wait 0.145833
+--Current time 2:14,236		134.237
+
+!stop 2A
+
+!wait 0.005682
+--Current time 2:14,242		134.242
+
+3C a -1
+
+!wait 0.145833
+--Current time 2:14,388		134.388
+
+!stop 3C
+
+!wait 0.005682
+--Current time 2:14,393		134.394
+
+3E a -1
+
+!wait 0.107954
+--Current time 2:14,501		134.502
+
+!stop 0A
+
+!wait 0.037879
+--Current time 2:14,539		134.540
+
+!stop 3E
+
+!wait 0.005682
+--Current time 2:14,545		134.545
+
+3A a -1
+
+!wait 0.145833
+--Current time 2:14,691		134.691
+
+!stop 3A
+
+!wait 0.005682
+--Current time 2:14,696		134.697
+
+4C a -1
+
+!wait 0.145833
+--Current time 2:14,842		134.843
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:14,848		134.848
+
+4E a -1
+
+!wait 0.145833
+--Current time 2:14,994		134.994
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:14,999		135.000
+
+4D a -1
+
+3E a -1
+
+3C a -1
+
+2A a -1
+
+!wait 0.145833
+--Current time 2:15,145		135.146
+
+!stop 4D
+
+!wait 0.005682
+--Current time 2:15,151		135.151
+
+4C a -1
+
+!wait 0.145833
+--Current time 2:15,297		135.297
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:15,302		135.303
+
+3B a -1
+
+!wait 0.107954
+--Current time 2:15,410		135.411
+
+!stop 2A
+
+!stop 3C
+
+!stop 3E
+
+!wait 0.037879
+--Current time 2:15,448		135.449
+
+!stop 3B
+
+!wait 0.005682
+--Current time 2:15,454		135.454
+
+3A a -1
+
+2A a -1
+
+3C a -1
+
+3E a -1
+
+!wait 0.145833
+--Current time 2:15,600		135.600
+
+!stop 3A
+
+!wait 0.005682
+--Current time 2:15,605		135.606
+
+4C a -1
+
+!wait 0.145833
+--Current time 2:15,751		135.752
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:15,757		135.757
+
+4E a -1
+
+!wait 0.107954
+--Current time 2:15,865		135.865
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!wait 0.037879
+--Current time 2:15,903		135.903
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:15,908		135.909
+
+4A a -1
+
+!wait 0.145833
+--Current time 2:16, 54		136.055
+
+!stop 4A
+
+!wait 0.005682
+--Current time 2:16, 60		136.060
+
+5C a -1
+
+!wait 0.145833
+--Current time 2:16,206		136.206
+
+!stop 5C
+
+!wait 0.005682
+--Current time 2:16,211		136.212
+
+5E a -1
+
+!wait 0.145833
+--Current time 2:16,357		136.358
+
+!stop 5E
+
+!wait 0.005682
+--Current time 2:16,363		136.363
+
+5D a -1
+
+2A a -1
+
+3C a -1
+
+3E a -1
+
+!wait 0.145833
+--Current time 2:16,509		136.509
+
+!stop 5D
+
+!wait 0.005682
+--Current time 2:16,515		136.515
+
+5C a -1
+
+!wait 0.145833
+--Current time 2:16,660		136.661
+
+!stop 5C
+
+!wait 0.005682
+--Current time 2:16,666		136.667
+
+4B a -1
+
+!wait 0.107954
+--Current time 2:16,774		136.774
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!wait 0.037879
+--Current time 2:16,812		136.812
+
+!stop 4B
+
+!wait 0.005682
+--Current time 2:16,818		136.818
+
+4A a -1
+
+3A a -1
+
+4C a -1
+
+4E a -1
+
+!wait 0.145833
+--Current time 2:16,963		136.964
+
+!stop 4A
+
+!wait 0.005682
+--Current time 2:16,969		136.970
+
+5C a -1
+
+!wait 0.145833
+--Current time 2:17,115		137.115
+
+!stop 5C
+
+!wait 0.005682
+--Current time 2:17,121		137.121
+
+5E a -1
+
+!wait 0.107954
+--Current time 2:17,229		137.229
+
+!stop 4E
+
+!stop 4C
+
+!stop 3A
+
+!wait 0.037879
+--Current time 2:17,266		137.267
+
+!stop 5E
+
+!wait 0.005682
+--Current time 2:17,272		137.273
+
+5A a -1
+
+!wait 0.145833
+--Current time 2:17,418		137.418
+
+!stop 5A
+
+!wait 0.005682
+--Current time 2:17,424		137.424
+
+6C a -1
+
+!wait 0.070076
+--Current time 2:17,494		137.494
+
+!stop 6C
+
+!wait 0.081439
+--Current time 2:17,575		137.576
+
+6E a -1
+
+!wait 0.145833
+--Current time 2:17,721		137.721
+
+!stop 6E
+
+!wait 0.005682
+--Current time 2:17,727		137.727
+
+6D a -1
+
+3A a -1
+
+4C a -1
+
+4E a -1
+
+!wait 0.145833
+--Current time 2:17,872		137.873
+
+!stop 6D
+
+!wait 0.005682
+--Current time 2:17,878		137.879
+
+6C a -1
+
+!wait 0.070076
+--Current time 2:17,948		137.949
+
+!stop 6C
+
+!wait 0.081439
+--Current time 2:18, 30		138.030
+
+5B a -1
+
+!wait 0.107954
+--Current time 2:18,138		138.138
+
+!stop 4E
+
+!stop 4C
+
+!stop 3A
+
+!wait 0.037879
+--Current time 2:18,175		138.176
+
+!stop 5B
+
+!wait 0.005682
+--Current time 2:18,181		138.182
+
+5A# a -1
+
+2A a -1
+
+3C a -1
+
+3E a -1
+
+!wait 0.145833
+--Current time 2:18,327		138.328
+
+!stop 5A#
+
+!wait 0.005682
+--Current time 2:18,333		138.333
+
+5A a -1
+
+!wait 0.145833
+--Current time 2:18,479		138.479
+
+!stop 5A
+
+!wait 0.005682
+--Current time 2:18,484		138.485
+
+5G# a -1
+
+!wait 0.107954
+--Current time 2:18,592		138.593
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!wait 0.037879
+--Current time 2:18,630		138.631
+
+!stop 5G#
+
+!wait 0.005682
+--Current time 2:18,636		138.636
+
+5G a -1
+
+!wait 0.145833
+--Current time 2:18,782		138.782
+
+!stop 5G
+
+!wait 0.005682
+--Current time 2:18,787		138.788
+
+5F# a -1
+
+!wait 0.145833
+--Current time 2:18,933		138.934
+
+!stop 5F#
+
+!wait 0.005682
+--Current time 2:18,939		138.939
+
+5F a -1
+
+!wait 0.145833
+--Current time 2:19, 85		139.085
+
+!stop 5F
+
+!wait 0.005682
+--Current time 2:19, 90		139.091
+
+5E a -1
+
+!wait 0.145833
+--Current time 2:19,236		139.237
+
+!stop 5E
+
+!wait 0.005682
+--Current time 2:19,242		139.242
+
+5D# a -1
+
+!wait 0.145833
+--Current time 2:19,388		139.388
+
+!stop 5D#
+
+!wait 0.005682
+--Current time 2:19,393		139.394
+
+5D a -1
+
+!wait 0.145833
+--Current time 2:19,539		139.540
+
+!stop 5D
+
+!wait 0.005682
+--Current time 2:19,545		139.545
+
+5C# a -1
+
+!wait 0.145833
+--Current time 2:19,691		139.691
+
+!stop 5C#
+
+!wait 0.005682
+--Current time 2:19,696		139.697
+
+5C a -1
+
+!wait 0.145833
+--Current time 2:19,842		139.843
+
+!stop 5C
+
+!wait 0.005682
+--Current time 2:19,848		139.848
+
+4B a -1
+
+!wait 0.145833
+--Current time 2:19,994		139.994
+
+!stop 4B
+
+!wait 0.005682
+--Current time 2:19,999		140.000
+
+4A# a -1
+
+!wait 0.145833
+--Current time 2:20,145		140.146
+
+!stop 4A#
+
+!wait 0.005682
+--Current time 2:20,151		140.151
+
+4A a -1
+
+!wait 0.145833
+--Current time 2:20,297		140.297
+
+!stop 4A
+
+!wait 0.005682
+--Current time 2:20,302		140.303
+
+4G# a -1
+
+!wait 0.145833
+--Current time 2:20,448		140.449
+
+!stop 4G#
+
+!wait 0.005682
+--Current time 2:20,454		140.454
+
+4G a -1
+
+!wait 0.145833
+--Current time 2:20,600		140.600
+
+!stop 4G
+
+!wait 0.005682
+--Current time 2:20,605		140.606
+
+4F# a -1
+
+!wait 0.145833
+--Current time 2:20,751		140.752
+
+!stop 4F#
+
+!wait 0.005682
+--Current time 2:20,757		140.757
+
+4F a -1
+
+!wait 0.145833
+--Current time 2:20,903		140.903
+
+!stop 4F
+
+!wait 0.005682
+--Current time 2:20,908		140.909
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:21,130		141.131
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:21,136		141.136
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:21,357		141.358
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 2:21,363		141.363
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:21,585		141.585
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:21,590		141.591
+
+3B a -1
+
+!wait 0.221591
+--Current time 2:21,812		141.812
+
+!stop 3B
+
+!wait 0.005682
+--Current time 2:21,818		141.818
+
+4D a -1
+
+!wait 0.221591
+--Current time 2:22, 39		142.040
+
+!stop 4D
+
+!wait 0.005682
+--Current time 2:22, 45		142.045
+
+4C a -1
+
+!wait 0.221591
+--Current time 2:22,266		142.267
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:22,272		142.273
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 2:22,499		142.500
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:22,721		142.721
+
+!stop 3A
+
+!wait 0.005682
+--Current time 2:22,727		142.727
+
+2A a -1
+
+!wait 0.227272
+--Current time 2:22,954		142.954
+
+3C a -1
+
+!wait 0.227273
+--Current time 2:23,181		143.182
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:23,408		143.409
+
+3A a -1
+
+!wait 0.221591
+--Current time 2:23,630		143.631
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 2:23,636		143.636
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 2:23,863		143.863
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:24, 85		144.085
+
+!stop 3B
+
+!wait 0.005682
+--Current time 2:24, 90		144.091
+
+2G# a -1
+
+!wait 0.227272
+--Current time 2:24,318		144.318
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:24,545		144.545
+
+3G# a -1
+
+!wait 0.227272
+--Current time 2:24,772		144.773
+
+3B a -1
+
+!wait 0.221591
+--Current time 2:24,994		144.994
+
+!stop 3B
+
+!stop 3G#
+
+!stop 3E
+
+!stop 2G#
+
+!stop 2E
+
+!stop 1E
+
+!wait 0.005682
+--Current time 2:24,999		145.000
+
+1A a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 2:25,227		145.227
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:25,448		145.449
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:25,454		145.454
+
+2A a -1
+
+!wait 0.227272
+--Current time 2:25,681		145.682
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:25,908		145.909
+
+4E a -1
+
+!wait 0.227272
+--Current time 2:26,136		146.136
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:26,357		146.358
+
+!stop 4D#
+
+!stop 4E
+
+!stop 3E
+
+!stop 2A
+
+!stop 1A
+
+!stop 2E
+
+!wait 0.005682
+--Current time 2:26,363		146.363
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:26,585		146.585
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:26,590		146.591
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:26,812		146.812
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 2:26,818		146.818
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:27, 39		147.040
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:27, 45		147.045
+
+3B a -1
+
+!wait 0.221591
+--Current time 2:27,266		147.267
+
+!stop 3B
+
+!wait 0.005682
+--Current time 2:27,272		147.273
+
+4D a -1
+
+!wait 0.221591
+--Current time 2:27,494		147.494
+
+!stop 4D
+
+!wait 0.005682
+--Current time 2:27,499		147.500
+
+4C a -1
+
+!wait 0.221591
+--Current time 2:27,721		147.721
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:27,727		147.727
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 2:27,954		147.954
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:28,175		148.176
+
+!stop 3A
+
+!wait 0.005682
+--Current time 2:28,181		148.182
+
+2A a -1
+
+!wait 0.227272
+--Current time 2:28,408		148.409
+
+3C a -1
+
+!wait 0.227272
+--Current time 2:28,636		148.636
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:28,863		148.863
+
+3A a -1
+
+!wait 0.221591
+--Current time 2:29, 85		149.085
+
+!stop 3A
+
+!wait 0.005682
+--Current time 2:29, 90		149.091
+
+1E a -1
+
+3B a -1
+
+!wait 0.221591
+--Current time 2:29,312		149.312
+
+!stop 1A
+
+!stop 2A
+
+!stop 2E
+
+!stop 3C
+
+!stop 3E
+
+!wait 0.005682
+--Current time 2:29,318		149.318
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:29,539		149.540
+
+!stop 3B
+
+!wait 0.232954
+--Current time 2:29,772		149.773
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:29,999		150.000
+
+4C a -1
+
+!wait 0.227272
+--Current time 2:30,227		150.227
+
+3B a -1
+
+!wait 0.221591
+--Current time 2:30,448		150.449
+
+!stop 3B
+
+!stop 4C
+
+!stop 3E
+
+!stop 1E
+
+!stop 2E
+
+!stop 2G#
+
+!wait 0.005682
+--Current time 2:30,454		150.454
+
+1A a -1
+
+3A a -1
+
+!wait 0.448863
+--Current time 2:30,903		150.903
+
+!stop 3A
+
+!wait 0.005682
+--Current time 2:30,908		150.909
+
+2A a -1
+
+!wait 0.221591
+--Current time 2:31,130		151.131
+
+!stop 2A
+
+!stop 1A
+
+!stop 2E
+
+!wait 0.005682
+--Current time 2:31,136		151.136
+
+3B a -1
+
+!wait 0.221591
+--Current time 2:31,357		151.358
+
+!stop 3B
+
+!wait 0.005682
+--Current time 2:31,363		151.363
+
+4C a -1
+
+!wait 0.221591
+--Current time 2:31,585		151.585
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:31,590		151.591
+
+4D a -1
+
+!wait 0.221591
+--Current time 2:31,812		151.812
+
+!stop 4D
+
+!wait 0.005682
+--Current time 2:31,818		151.818
+
+2C a -1
+
+4E a -1
+
+!wait 0.227272
+--Current time 2:32, 45		152.045
+
+2G a -1
+
+!wait 0.227272
+--Current time 2:32,272		152.273
+
+3C a -1
+
+!wait 0.221591
+--Current time 2:32,494		152.494
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:32,499		152.500
+
+3G a -1
+
+!wait 0.227273
+--Current time 2:32,727		152.727
+
+4F a -1
+
+!wait 0.227272
+--Current time 2:32,954		152.954
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:33,175		153.176
+
+!stop 4E
+
+!stop 4F
+
+!stop 2C
+
+!stop 3G
+
+!stop 2G
+
+!stop 3C
+
+!wait 0.005682
+--Current time 2:33,181		153.182
+
+1G a -1
+
+4D a -1
+
+!wait 0.227272
+--Current time 2:33,408		153.409
+
+2G a -1
+
+!wait 0.227272
+--Current time 2:33,636		153.636
+
+2B a -1
+
+!wait 0.221591
+--Current time 2:33,857		153.858
+
+!stop 4D
+
+!wait 0.005682
+--Current time 2:33,863		153.863
+
+3F a -1
+
+!wait 0.227272
+--Current time 2:34, 90		154.091
+
+4E a -1
+
+!wait 0.227272
+--Current time 2:34,318		154.318
+
+4D a -1
+
+!wait 0.221591
+--Current time 2:34,539		154.540
+
+!stop 4D
+
+!stop 4E
+
+!stop 3F
+
+!stop 2B
+
+!stop 2G
+
+!stop 1G
+
+!wait 0.005682
+--Current time 2:34,545		154.545
+
+1A a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 2:34,772		154.773
+
+2E a -1
+
+!wait 0.227272
+--Current time 2:34,999		155.000
+
+2A a -1
+
+!wait 0.221591
+--Current time 2:35,221		155.221
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:35,227		155.227
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:35,454		155.454
+
+4D a -1
+
+!wait 0.227272
+--Current time 2:35,681		155.682
+
+4C a -1
+
+!wait 0.221591
+--Current time 2:35,903		155.903
+
+!stop 4C
+
+!stop 4D
+
+!stop 3E
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 2:35,908		155.909
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 2:36,136		156.136
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:36,357		156.358
+
+!stop 2E
+
+!stop 3B
+
+!stop 1E
+
+!wait 0.005682
+--Current time 2:36,363		156.363
+
+3E a -1
+
+!wait 0.221591
+--Current time 2:36,585		156.585
+
+!stop 3E
+
+!wait 0.005682
+--Current time 2:36,590		156.591
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:36,818		156.818
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:37, 39		157.040
+
+!stop 4E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 2:37, 45		157.045
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:37,272		157.273
+
+3F a -1
+
+!wait 0.221591
+--Current time 2:37,494		157.494
+
+!stop 3F
+
+!stop 3E
+
+!wait 0.005682
+--Current time 2:37,499		157.500
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:37,721		157.721
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:37,727		157.727
+
+5E a -1
+
+!wait 0.221591
+--Current time 2:37,948		157.949
+
+!stop 5E
+
+!wait 0.005682
+--Current time 2:37,954		157.954
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:38,175		158.176
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 2:38,181		158.182
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:38,403		158.403
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:38,408		158.409
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:38,630		158.631
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 2:38,636		158.636
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:38,857		158.858
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:38,863		158.863
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:39, 85		159.085
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 2:39, 90		159.091
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:39,312		159.312
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:39,318		159.318
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:39,539		159.540
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 2:39,545		159.545
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:39,766		159.767
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:39,772		159.773
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:39,994		159.994
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 2:39,999		160.000
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:40,221		160.221
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:40,227		160.227
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:40,448		160.449
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 2:40,454		160.454
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:40,675		160.676
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:40,681		160.682
+
+3B a -1
+
+!wait 0.221591
+--Current time 2:40,903		160.903
+
+!stop 3B
+
+!wait 0.005682
+--Current time 2:40,908		160.909
+
+4D a -1
+
+!wait 0.221591
+--Current time 2:41,130		161.131
+
+!stop 4D
+
+!wait 0.005682
+--Current time 2:41,136		161.136
+
+4C a -1
+
+!wait 0.221591
+--Current time 2:41,357		161.358
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:41,363		161.363
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 2:41,590		161.591
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:41,812		161.812
+
+!stop 3A
+
+!wait 0.005682
+--Current time 2:41,818		161.818
+
+2A a -1
+
+!wait 0.227272
+--Current time 2:42, 45		162.045
+
+3C a -1
+
+!wait 0.227273
+--Current time 2:42,272		162.273
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:42,499		162.500
+
+3A a -1
+
+!wait 0.221591
+--Current time 2:42,721		162.721
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 1A
+
+!stop 2E
+
+!wait 0.005682
+--Current time 2:42,727		162.727
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 2:42,954		162.954
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:43,175		163.176
+
+!stop 3B
+
+!wait 0.005682
+--Current time 2:43,181		163.182
+
+2G# a -1
+
+!wait 0.227272
+--Current time 2:43,408		163.409
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:43,636		163.636
+
+3G# a -1
+
+!wait 0.227272
+--Current time 2:43,863		163.863
+
+3B a -1
+
+!wait 0.221591
+--Current time 2:44, 85		164.085
+
+!stop 3B
+
+!stop 3G#
+
+!stop 1E
+
+!stop 2G#
+
+!stop 2E
+
+!stop 3E
+
+!wait 0.005682
+--Current time 2:44, 90		164.091
+
+1A a -1
+
+4C a -1
+
+!wait 0.227272
+--Current time 2:44,318		164.318
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:44,539		164.540
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:44,545		164.545
+
+2A a -1
+
+!wait 0.221591
+--Current time 2:44,766		164.767
+
+!stop 2A
+
+!stop 2E
+
+!stop 1A
+
+!wait 0.005682
+--Current time 2:44,772		164.773
+
+3E a -1
+
+!wait 0.221591
+--Current time 2:44,994		164.994
+
+!stop 3E
+
+!wait 0.005682
+--Current time 2:44,999		165.000
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:45,221		165.221
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:45,227		165.227
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:45,448		165.449
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 2:45,454		165.454
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:45,675		165.676
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:45,681		165.682
+
+4D# a -1
+
+!wait 0.221591
+--Current time 2:45,903		165.903
+
+!stop 4D#
+
+!wait 0.005682
+--Current time 2:45,908		165.909
+
+4E a -1
+
+!wait 0.221591
+--Current time 2:46,130		166.131
+
+!stop 4E
+
+!wait 0.005682
+--Current time 2:46,136		166.136
+
+3B a -1
+
+!wait 0.221591
+--Current time 2:46,357		166.358
+
+!stop 3B
+
+!wait 0.005682
+--Current time 2:46,363		166.363
+
+4D a -1
+
+!wait 0.221591
+--Current time 2:46,585		166.585
+
+!stop 4D
+
+!wait 0.005682
+--Current time 2:46,590		166.591
+
+4C a -1
+
+!wait 0.221591
+--Current time 2:46,812		166.812
+
+!stop 4C
+
+!wait 0.005682
+--Current time 2:46,818		166.818
+
+1A a -1
+
+3A a -1
+
+!wait 0.227272
+--Current time 2:47, 45		167.045
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:47,266		167.267
+
+!stop 3A
+
+!wait 0.005682
+--Current time 2:47,272		167.273
+
+2A a -1
+
+!wait 0.227272
+--Current time 2:47,499		167.500
+
+3C a -1
+
+!wait 0.227272
+--Current time 2:47,727		167.727
+
+3E a -1
+
+!wait 0.227272
+--Current time 2:47,954		167.954
+
+3A a -1
+
+!wait 0.221591
+--Current time 2:48,175		168.176
+
+!stop 3A
+
+!stop 3E
+
+!stop 3C
+
+!stop 2A
+
+!stop 1A
+
+!stop 2E
+
+!wait 0.005682
+--Current time 2:48,181		168.182
+
+1E a -1
+
+3B a -1
+
+!wait 0.227272
+--Current time 2:48,408		168.409
+
+2E a -1
+
+!wait 0.221591
+--Current time 2:48,630		168.631
+
+!stop 3B
+
+!wait 0.005682
+--Current time 2:48,636		168.636
+
+2G# a -1
+
+!wait 0.227273
+--Current time 2:48,863		168.863
+
+3D a -1
+
+!wait 0.227272
+--Current time 2:49, 90		169.091
+
+4C a -1
+
+!wait 0.227272
+--Current time 2:49,318		169.318
+
+3B a -1
+
+!wait 0.221591
+--Current time 2:49,539		169.540
+
+!stop 3B
+
+!stop 4C
+
+!stop 1E
+
+!stop 2G#
+
+!stop 2E
+
+!stop 3D
+
+!wait 0.005682
+--Current time 2:49,545		169.545
+
+3A a -1
+
+3C a -1
+
+0A a -1
+
+!wait 0.903408
+--Current time 2:50,448		170.449
+
+!stop 0A
+
+!stop 3C
+
+!stop 3A
+

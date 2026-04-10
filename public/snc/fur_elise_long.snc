@@ -1,0 +1,320 @@
+--Fur Elsie, Beethoven
+--################ 1 step 
+3E a -1
+!wait 0.25
+
+3D# a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+3D# a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+3D a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2A a -1
+!wait 0.75
+
+--################ 2 step
+2C a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.75
+
+2E a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+3C a -1
+!wait 0.75
+
+--################ 3 step
+2G a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+3D# a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+3D# a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+3D a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2A a -1
+!wait 0.75
+
+2C a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.75
+
+2E a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+2A a -1
+!wait 0.75
+
+--################ 4 step
+2B a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+3B a -1
+!wait 0.25
+
+3E a -1
+!wait 0.75
+
+2G a -1
+!wait 0.25
+
+3F a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+3D a -1
+!wait 0.75
+
+2F a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+3D a -1
+!wait 0.25
+
+3C a -1
+!wait 0.75
+
+2E a -1
+!wait 0.25
+
+3D a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2B a -1
+!wait 0.75
+
+1E a -1
+!wait 0.25
+
+--######################### Repeat
+--################ 1 step
+3E a -1
+!wait 0.25
+
+3D# a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+3D# a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+3D a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2A a -1
+!wait 0.75
+
+--################ 2 step
+2C a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.75
+
+2E a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+3C a -1
+!wait 0.75
+
+--################ 3 step
+2G a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+3D# a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+3D# a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+3D a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2A a -1
+!wait 0.75
+
+2C a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.75
+
+2E a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+2A a -1
+!wait 0.75
+
+--################ 4 step
+2B a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+3B a -1
+!wait 0.25
+
+3E a -1
+!wait 0.75
+
+2G a -1
+!wait 0.25
+
+3F a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+3D a -1
+!wait 0.75
+
+2F a -1
+!wait 0.25
+
+3E a -1
+!wait 0.25
+
+3D a -1
+!wait 0.25
+
+3C a -1
+!wait 0.75
+
+2E a -1
+!wait 0.25
+
+3D a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2B a -1
+!wait 0.75
+
+!wait 1

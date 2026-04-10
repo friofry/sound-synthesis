@@ -19,6 +19,22 @@ function createConstantStream(value: number) {
 }
 
 describe("parseSncText", () => {
+  it("strips inline -- comments from command lines", () => {
+    const parsed = parseSncText("1G a 0.5 --f\n!wait 0.5\n");
+    expect(parsed.commands).toEqual([
+      { type: "alias", name: "1G", flag: "a", duration: 0.5 },
+      { type: "wait", seconds: 0.5 },
+    ]);
+  });
+
+  it("maps !stop alias to release", () => {
+    const parsed = parseSncText("4E a -1\n!stop 4E\n");
+    expect(parsed.commands).toEqual([
+      { type: "alias", name: "4E", flag: "a", duration: -1 },
+      { type: "alias", name: "4E", flag: "r", duration: 0 },
+    ]);
+  });
+
   it("parses alias blocks and command lines", () => {
     const parsed = parseSncText(`
       !begin alias
@@ -88,5 +104,52 @@ describe("executeSncCommands", () => {
         },
       ),
     ).toThrow(/Unknown alias/);
+  });
+
+  it("resets the stream when the same alias is attacked again with a -1", () => {
+    const pcm = Int16Array.from([7, 8, 9, 1, 2, 3, 4, 5, 6]);
+    let resetCount = 0;
+    const commands: SncCommand[] = [
+      { type: "alias", name: "n", flag: "a", duration: -1 as const },
+      { type: "wait", seconds: 0.2 },
+      { type: "alias", name: "n", flag: "a", duration: -1 as const },
+      { type: "wait", seconds: 0.2 },
+    ];
+    const mixer = new SimpleMixer();
+    const waits: Int16Array[] = [];
+
+    executeSncCommands(
+      commands,
+      mixer,
+      {
+        sampleRate: 10,
+        knownAliases: ["n"],
+        createStreamForAlias: () => {
+          let offset = 0;
+          return {
+            getSamples(durationSeconds: number) {
+              const sampleCount = Math.max(0, Math.round(durationSeconds * 10));
+              const chunk = new Int16Array(sampleCount);
+              const available = Math.max(0, Math.min(sampleCount, pcm.length - offset));
+              if (available > 0) {
+                chunk.set(pcm.subarray(offset, offset + available));
+                offset += available;
+              }
+              return chunk;
+            },
+            reset() {
+              resetCount += 1;
+              offset = 0;
+            },
+          };
+        },
+      },
+      (chunk) => waits.push(chunk),
+    );
+
+    expect(resetCount).toBe(1);
+    expect(waits).toHaveLength(2);
+    expect(Array.from(waits[0])).toEqual([7, 8]);
+    expect(Array.from(waits[1])).toEqual([7, 8]);
   });
 });

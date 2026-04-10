@@ -45,6 +45,7 @@ type PianoStore = {
   recording: boolean;
   lastSncText: string;
   lastRenderedWav: Blob | null;
+  communitySncDialogOpen: boolean;
   pressKey: (index: number) => void;
   releaseKey: (index: number) => void;
   releaseAll: () => void;
@@ -63,6 +64,8 @@ type PianoStore = {
   setRecording: (recording: boolean) => void;
   setLastSncText: (text: string) => void;
   setLastRenderedWav: (blob: Blob | null) => void;
+  openCommunitySncDialog: () => void;
+  closeCommunitySncDialog: () => void;
 };
 
 export const usePianoStore = create<PianoStore>((set) => ({
@@ -82,6 +85,7 @@ export const usePianoStore = create<PianoStore>((set) => ({
   recording: false,
   lastSncText: "",
   lastRenderedWav: null,
+  communitySncDialogOpen: false,
   pressKey: (index) =>
     set((state) => {
       if (state.pressedKeys.has(index)) {
@@ -156,4 +160,6 @@ export const usePianoStore = create<PianoStore>((set) => ({
   setRecording: (recording) => set({ recording }),
   setLastSncText: (text) => set({ lastSncText: text }),
   setLastRenderedWav: (blob) => set({ lastRenderedWav: blob }),
+  openCommunitySncDialog: () => set({ communitySncDialogOpen: true }),
+  closeCommunitySncDialog: () => set({ communitySncDialogOpen: false }),
 }));

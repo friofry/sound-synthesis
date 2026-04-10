@@ -1,0 +1,104 @@
+--The Calling - Wherever you will go
+
+--Intro
+--1st step
+2C a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+--2nd step
+1B a -1
+!wait 0.25
+
+2D a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+2D a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+2D a -1
+!wait 0.25
+
+--3rd step
+1A a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+--4th step
+1F a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+2G a -1
+!wait 0.25
+
+1F a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+1G a -1
+!wait 0.25
+
+3C a -1
+!wait 0.25
+
+!wait 0.5

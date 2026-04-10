@@ -1,0 +1,185 @@
+--Popcorn
+--1 step
+2B a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+2F# a -1
+!wait 0.25
+
+2D a -1
+!wait 0.125
+
+2F# a -1
+!wait 0.25
+
+1B a -1
+!wait 0.6
+
+--1 step repeat
+2B a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+2F# a -1
+!wait 0.25
+
+2D a -1
+!wait 0.125
+
+2F# a -1
+!wait 0.25
+
+1B a -1
+!wait 0.5
+
+--2 step
+2B a -1
+!wait 0.25
+
+3C# a -1
+!wait 0.25
+
+3D a -1
+!wait 0.25
+
+3C# a -1
+!wait 0.125
+
+3D a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+3C# a -1
+!wait 0.25
+
+2B a -1
+!wait 0.125
+
+3C# a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+2A a -1
+!wait 0.125
+
+2F# a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.6
+
+--Next part
+--1 step
+2B a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+2F# a -1
+!wait 0.25
+
+2D a -1
+!wait 0.125
+
+2F# a -1
+!wait 0.25
+
+1B a -1
+!wait 0.6
+
+--1 step repeat
+2B a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+2F# a -1
+!wait 0.25
+
+2D a -1
+!wait 0.125
+
+2F# a -1
+!wait 0.25
+
+1B a -1
+!wait 0.5
+
+--2 step
+2B a -1
+!wait 0.25
+
+3C# a -1
+!wait 0.25
+
+3D a -1
+!wait 0.25
+
+3C# a -1
+!wait 0.125
+
+3D a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+3C# a -1
+!wait 0.25
+
+2B a -1
+!wait 0.125
+
+3C# a -1
+!wait 0.25
+
+2A a -1
+!wait 0.25
+
+2B a -1
+!wait 0.25
+
+2A a -1
+!wait 0.125
+
+2B a -1
+!wait 0.25
+
+3C# a -1
+!wait 0.25
+
+3D a -1
+!wait 0.6
+
+
+!wait 1
+

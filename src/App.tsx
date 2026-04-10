@@ -5,13 +5,17 @@ import { MembraneModellerPage } from "./pages/MembraneModellerPage";
 import { PianoPlayerPage } from "./pages/PianoPlayerPage";
 import { FrequencyAnalyzerPage } from "./pages/FrequencyAnalyzerPage";
 import { graphFromBinary, graphToBinary } from "./engine/fileIO/graphFile";
+import { renderSncTextToWav } from "./engine/snc/renderSncFromText";
+import { CommunitySncDialog } from "./components/PianoPlayer/CommunitySncDialog";
 import { useGraphStore } from "./store/graphStore";
+import { usePianoStore } from "./store/pianoStore";
 
 type AppTab = "modeller" | "piano" | "frequency-analyzer";
 
 function App() {
   const [tab, setTab] = useState<AppTab>("modeller");
   const graphInputRef = useRef<HTMLInputElement | null>(null);
+  const communitySncAudioRef = useRef<HTMLAudioElement | null>(null);
   const openInsertDialog = useGraphStore((s) => s.openInsertDialog);
   const openCellTemplateDialog = useGraphStore((s) => s.openCellTemplateDialog);
   const openHexTemplateDialog = useGraphStore((s) => s.openHexTemplateDialog);
@@ -21,6 +25,33 @@ function App() {
   const clearGraph = useGraphStore((s) => s.clearGraph);
   const loadGraph = useGraphStore((s) => s.loadGraph);
   const serializeGraph = useGraphStore((s) => s.serializeGraph);
+
+  const communitySncDialogOpen = usePianoStore((s) => s.communitySncDialogOpen);
+  const openCommunitySncDialog = usePianoStore((s) => s.openCommunitySncDialog);
+  const closeCommunitySncDialog = usePianoStore((s) => s.closeCommunitySncDialog);
+  const setLastSncText = usePianoStore((s) => s.setLastSncText);
+  const setLastRenderedWav = usePianoStore((s) => s.setLastRenderedWav);
+
+  const handleOpenCommunitySnc = useCallback(async (sncPath: string) => {
+    const { instrumentNotes } = usePianoStore.getState();
+    if (instrumentNotes.length === 0) {
+      throw new Error("Generate or load an instrument first.");
+    }
+    const response = await fetch(`/snc/${encodeURIComponent(sncPath)}`, { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const text = await response.text();
+    const { wavBlob } = renderSncTextToWav(text, instrumentNotes);
+    setLastSncText(text);
+    setLastRenderedWav(wavBlob);
+    const url = URL.createObjectURL(wavBlob);
+    const audio = new Audio(url);
+    communitySncAudioRef.current?.pause();
+    communitySncAudioRef.current = audio;
+    void audio.play();
+    audio.onended = () => URL.revokeObjectURL(url);
+  }, [setLastRenderedWav, setLastSncText]);
 
   const handleOpenGraph = async (event: ChangeEvent<HTMLInputElement>) => {
     const [file] = Array.from(event.target.files ?? []);
@@ -143,6 +174,11 @@ function App() {
         ],
       },
       {
+        id: "piano",
+        label: "Piano",
+        items: [{ id: "community-snc", label: "Community SNC...", onClick: openCommunitySncDialog }],
+      },
+      {
         id: "graph",
         label: "Graph",
         items: [
@@ -178,6 +214,7 @@ function App() {
       handleSaveGraph,
       openCellTemplateDialog,
       openCommunityGraphsDialog,
+      openCommunitySncDialog,
       openFrequencyAnalyzer,
       openHexTemplateDialog,
       openInsertDialog,
@@ -215,6 +252,11 @@ function App() {
         accept=".gph,application/octet-stream"
         className="hidden-input"
         onChange={handleOpenGraph}
+      />
+      <CommunitySncDialog
+        open={communitySncDialogOpen}
+        onClose={closeCommunitySncDialog}
+        onOpenSnc={handleOpenCommunitySnc}
       />
     </main>
   );

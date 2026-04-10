@@ -15,6 +15,15 @@ function parseNumber(value: string, lineNo: number, label: string): number {
   return parsed;
 }
 
+/** Legacy scores use `1G a 0.5 -- comment` — strip from ` --` so the line stays three tokens. */
+function stripInlineComment(line: string): string {
+  const idx = line.search(/\s--/);
+  if (idx === -1) {
+    return line;
+  }
+  return line.slice(0, idx).trimEnd();
+}
+
 function parseAliasBlockLine(line: string, lineNo: number): SncAliasDefinition {
   const parts = line.split(/\s+/);
   if (parts.length !== 3) {
@@ -34,6 +43,14 @@ function parseCommandLine(line: string, lineNo: number): SncCommand {
   if (line.startsWith("!wait ")) {
     const waitValue = line.slice("!wait ".length).trim();
     return { type: "wait", seconds: parseNumber(waitValue, lineNo, "wait duration") };
+  }
+  /** MIDI export / tooling: `!stop 4E` releases that alias (same as `4E r 0`). */
+  if (line.startsWith("!stop ")) {
+    const name = line.slice("!stop ".length).trim();
+    if (!name.length) {
+      throw new Error(`Invalid !stop at line ${lineNo}`);
+    }
+    return { type: "alias", name, flag: "r", duration: 0 };
   }
 
   const parts = line.split(/\s+/);
@@ -61,7 +78,7 @@ export function parseSncText(text: string): SncParseResult {
   for (let index = 0; index < lines.length; index += 1) {
     const lineNo = index + 1;
     const raw = lines[index];
-    const line = raw.trim();
+    let line = stripInlineComment(raw.trim()).trim();
 
     if (line.length === 0 || line.startsWith("--")) {
       continue;
@@ -104,6 +121,9 @@ function getOrCreateStream(
   if (!stream) {
     stream = context.createStreamForAlias(alias);
     activeStreams.set(alias, stream);
+  } else {
+    /** Re-triggering the same note (`a -1`) must restart the sample; otherwise the PCM offset stays at EOF and the note is silent. */
+    stream.reset();
   }
   return stream;
 }
