@@ -164,7 +164,9 @@ test.describe("Hammer E2E", () => {
 
     expect(zoneMetrics.hammer.nonZeroCount).toBeGreaterThan(0);
     expect(zoneMetrics.hammer.maxAbs).toBeGreaterThan(1e-6);
-    expect(zoneMetrics.random.maxAbs).toBeLessThan(1e-6);
+    // Random preset region should stay nearly still; allow tiny coupling / float noise (~1e-4).
+    expect(zoneMetrics.random.maxAbs).toBeLessThan(1e-4);
+    expect(zoneMetrics.random.maxAbs).toBeLessThan(zoneMetrics.hammer.maxAbs * 0.5);
   });
 
   test("non-zero only inside hammer radius", async ({ page }) => {

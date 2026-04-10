@@ -31,7 +31,8 @@ test.describe("Piano Toolbar on Membrane Modeller", () => {
   test("toolbar has separators between button groups", async ({ page }) => {
     const panel = page.locator(".piano-panel .piano-toolbar-mfc");
     const separators = panel.locator('[role="separator"]');
-    await expect(separators).toHaveCount(3);
+    // sep after gen / after record / after load instrument + optional sep before Window nav (Membrane Modeller).
+    await expect(separators).toHaveCount(4);
   });
 
   test("toolbar is rendered above the keyboard", async ({ page }) => {

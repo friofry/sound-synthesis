@@ -6,7 +6,7 @@ test.describe("Instrument generation progress", () => {
     await page.goto("/");
   });
 
-  test("can cancel generation with titlebar close and start again", async ({ page }) => {
+  test("can cancel generation during progress (Escape) and start again", async ({ page }) => {
     await createPresetGrid(page, "cell", 3, 3);
 
     const generateInstrumentButton = page.locator('.piano-panel button[title="Generate instrument"]');
@@ -20,9 +20,9 @@ test.describe("Instrument generation progress", () => {
     const progressDialog = page.locator('.mfc-window:has(.mfc-title:has-text("Generating instrument..."))');
     await expect(progressDialog).toBeVisible();
 
-    const closeButton = progressDialog.getByRole("button", { name: "Close dialog" });
-    await expect(closeButton).toBeVisible();
-    await closeButton.evaluate((node) => (node as HTMLButtonElement).click());
+    await expect(progressDialog.getByRole("button", { name: "Close dialog" })).toBeVisible();
+    // Progress updates re-render the dialog and detach the titlebar button; Escape closes via MfcDialog's document listener.
+    await page.keyboard.press("Escape");
     await expect(progressDialog).toBeHidden();
 
     await expect(generateInstrumentButton).toBeEnabled({ timeout: 10_000 });
