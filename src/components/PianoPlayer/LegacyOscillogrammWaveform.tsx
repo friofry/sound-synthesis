@@ -7,13 +7,24 @@ type LegacyOscillogrammWaveformProps = {
   buffer: Float32Array | null;
   sampleRate: number;
   compact?: boolean;
+  navigationButton?: {
+    label: string;
+    title?: string;
+    text: string;
+    onClick: () => void;
+  };
 };
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-export function LegacyOscillogrammWaveform({ buffer, sampleRate, compact = false }: LegacyOscillogrammWaveformProps) {
+export function LegacyOscillogrammWaveform({
+  buffer,
+  sampleRate,
+  compact = false,
+  navigationButton,
+}: LegacyOscillogrammWaveformProps) {
   const waveformCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const positionRef = useRef(0);
   const shagRef = useRef(1);
@@ -241,6 +252,17 @@ export function LegacyOscillogrammWaveform({ buffer, sampleRate, compact = false
             <span className="toolbar-sprite oscill-toolbar-sprite" style={{ "--sprite-index": 4 } as CSSProperties} aria-hidden />
             <span className="sr-only">Expand Y</span>
           </button>
+          {navigationButton ? (
+            <button
+              type="button"
+              className="osc-btn osc-icon-btn"
+              onClick={navigationButton.onClick}
+              title={navigationButton.title ?? navigationButton.label}
+              aria-label={navigationButton.label}
+            >
+              <span aria-hidden>{navigationButton.text}</span>
+            </button>
+          ) : null}
         </div>
       )}
       <canvas

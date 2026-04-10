@@ -42,9 +42,10 @@ import { e2eRecordHammerPreview, e2eSetLastHammerImpact, installE2EHarness } fro
 
 type MembraneModellerPageProps = {
   onOpenPianoPlayer: () => void;
+  onOpenFrequencyAnalyzer: () => void;
 };
 
-export function MembraneModellerPage({ onOpenPianoPlayer }: MembraneModellerPageProps) {
+export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyzer }: MembraneModellerPageProps) {
   const skipAutoRandomInit = import.meta.env.VITE_E2E === "1";
   const fuzzyGraphInitializedRef = useRef(false);
   const {
@@ -335,6 +336,12 @@ export function MembraneModellerPage({ onOpenPianoPlayer }: MembraneModellerPage
             <LegacyOscillogrammWaveform
               buffer={activeBuffer}
               sampleRate={activeSampleRate || simulationParams.sampleRate}
+              navigationButton={{
+                label: "Open Frequency Analyzer",
+                title: "Open Frequency Analyzer",
+                text: "⤴️",
+                onClick: onOpenFrequencyAnalyzer,
+              }}
             />
           </section>
           <section className="right-panel frequency-panel">

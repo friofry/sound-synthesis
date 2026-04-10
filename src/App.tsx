@@ -3,10 +3,11 @@ import "./App.css";
 import { MfcMenuBar, type MfcMenuBarItem } from "./components/ui/MfcMenu";
 import { MembraneModellerPage } from "./pages/MembraneModellerPage";
 import { PianoPlayerPage } from "./pages/PianoPlayerPage";
+import { FrequencyAnalyzerPage } from "./pages/FrequencyAnalyzerPage";
 import { graphFromBinary, graphToBinary } from "./engine/fileIO/graphFile";
 import { useGraphStore } from "./store/graphStore";
 
-type AppTab = "modeller" | "piano";
+type AppTab = "modeller" | "piano" | "frequency-analyzer";
 
 function App() {
   const [tab, setTab] = useState<AppTab>("modeller");
@@ -51,6 +52,10 @@ function App() {
 
   const openPianoPlayer = useCallback(() => {
     setTab("piano");
+  }, []);
+
+  const openFrequencyAnalyzer = useCallback(() => {
+    setTab("frequency-analyzer");
   }, []);
 
   const menuItems = useMemo<MfcMenuBarItem[]>(
@@ -103,6 +108,13 @@ function App() {
             disabled: tab === "piano",
             onClick: openPianoPlayer,
           },
+          { kind: "separator", id: "window-sep-1" },
+          {
+            id: "show-frequency-analyzer",
+            label: "Frequency Analyzer",
+            disabled: tab === "frequency-analyzer",
+            onClick: openFrequencyAnalyzer,
+          },
         ],
       },
       {
@@ -141,6 +153,7 @@ function App() {
       handleSaveGraph,
       openCellTemplateDialog,
       openCommunityGraphsDialog,
+      openFrequencyAnalyzer,
       openHexTemplateDialog,
       openInsertDialog,
       openModeller,
@@ -156,10 +169,13 @@ function App() {
       <MfcMenuBar items={menuItems} className="menu-bar" />
       <section className="app-content">
         <div className={`app-page ${tab === "modeller" ? "" : "is-hidden"}`}>
-          <MembraneModellerPage onOpenPianoPlayer={openPianoPlayer} />
+          <MembraneModellerPage onOpenPianoPlayer={openPianoPlayer} onOpenFrequencyAnalyzer={openFrequencyAnalyzer} />
         </div>
         <div className={`app-page ${tab === "piano" ? "" : "is-hidden"}`}>
           <PianoPlayerPage onBackToModeller={openModeller} />
+        </div>
+        <div className={`app-page ${tab === "frequency-analyzer" ? "" : "is-hidden"}`}>
+          <FrequencyAnalyzerPage onBack={() => setTab("modeller")} />
         </div>
       </section>
       <input
