@@ -341,63 +341,61 @@ function offsetPolygon(polygon: Point2D[], distance: number): Point2D[] {
 }
 
 function pickLegCorners(hull: Point2D[]): Point2D[] {
-  if (hull.length < 4) {
+  const n = hull.length;
+  if (n < 4) {
     return hull.slice();
   }
 
-  const n = hull.length;
-  const perimeterLengths = new Array<number>(n);
-  let totalPerimeter = 0;
+  const cx = hull.reduce((s, p) => s + p.x, 0) / n;
+  const cz = hull.reduce((s, p) => s + p.z, 0) / n;
 
-  for (let i = 0; i < n; i++) {
-    const next = hull[(i + 1) % n];
-    const dx = next.x - hull[i].x;
-    const dz = next.z - hull[i].z;
-    totalPerimeter += Math.sqrt(dx * dx + dz * dz);
-    perimeterLengths[i] = totalPerimeter;
+  const withAngle = hull.map((p) => ({
+    ...p,
+    angle: Math.atan2(p.z - cz, p.x - cx),
+  }));
+  withAngle.sort((a, b) => a.angle - b.angle);
+
+  const legCount = Math.min(n, 6);
+  if (legCount >= n) {
+    return withAngle;
   }
 
-  const cumulativeAtVertex = [0, ...perimeterLengths];
-  const quarter = totalPerimeter / 4;
-  const result: Point2D[] = [];
+  return selectSpreadVertices(withAngle, legCount);
+}
 
-  for (let leg = 0; leg < 4; leg++) {
-    const target = leg * quarter;
-    let bestIdx = 0;
-    let bestDist = Infinity;
+function selectSpreadVertices(
+  sorted: (Point2D & { angle: number })[],
+  count: number,
+): Point2D[] {
+  const n = sorted.length;
+  if (n <= count) return sorted;
 
-    for (let i = 0; i < n; i++) {
-      const dist = Math.abs(cumulativeAtVertex[i] - target);
-      const distWrap = Math.abs(cumulativeAtVertex[i] - target + totalPerimeter);
-      const distWrap2 = Math.abs(cumulativeAtVertex[i] - target - totalPerimeter);
-      const d = Math.min(dist, distWrap, distWrap2);
-      if (d < bestDist) {
-        bestDist = d;
-        bestIdx = i;
-      }
+  let bestScore = -Infinity;
+  let bestSet: number[] = [];
+
+  for (let start = 0; start < n; start++) {
+    const indices = [start];
+    const step = n / count;
+    for (let k = 1; k < count; k++) {
+      const ideal = start + k * step;
+      const idx = Math.round(ideal) % n;
+      indices.push(idx);
     }
 
-    const candidate = hull[bestIdx];
-    if (!result.some((r) => r.x === candidate.x && r.z === candidate.z)) {
-      result.push(candidate);
+    let minGap = Infinity;
+    for (let k = 0; k < indices.length; k++) {
+      const a = sorted[indices[k]].angle;
+      const b = sorted[indices[(k + 1) % indices.length]].angle;
+      let gap = b - a;
+      if (gap <= 0) gap += Math.PI * 2;
+      if (gap < minGap) minGap = gap;
     }
-  }
 
-  if (result.length < 4) {
-    const step = Math.max(1, Math.floor(n / 4));
-    for (let i = 0; i < n && result.length < 4; i += step) {
-      const p = hull[i];
-      if (!result.some((r) => r.x === p.x && r.z === p.z)) {
-        result.push(p);
-      }
-    }
-    for (let i = 0; i < n && result.length < 4; i++) {
-      const p = hull[i];
-      if (!result.some((r) => r.x === p.x && r.z === p.z)) {
-        result.push(p);
-      }
+    if (minGap > bestScore) {
+      bestScore = minGap;
+      bestSet = indices;
     }
   }
 
-  return result;
+  return bestSet.map((i) => sorted[i]);
 }
