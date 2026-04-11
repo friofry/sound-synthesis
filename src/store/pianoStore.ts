@@ -102,9 +102,13 @@ export const usePianoStore = create<PianoStore>((set) => ({
       }
       const next = new Set(state.pressedKeys);
       next.delete(index);
-      return { pressedKeys: next };
+      let lastPressedKeyIndex = state.lastPressedKeyIndex;
+      if (lastPressedKeyIndex === index) {
+        lastPressedKeyIndex = next.size === 0 ? null : Math.max(...next);
+      }
+      return { pressedKeys: next, lastPressedKeyIndex };
     }),
-  releaseAll: () => set({ pressedKeys: new Set<number>() }),
+  releaseAll: () => set({ pressedKeys: new Set<number>(), lastPressedKeyIndex: null }),
   setActiveBuffer: (buffer, sampleRate = 48_000) =>
     set({
       activeBuffer: buffer,

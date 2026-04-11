@@ -11,6 +11,8 @@ export class AudioEngine {
   private readonly noteBuffers = new Map<string, AudioBuffer>();
   private readonly rawNotes = new Map<string, RawInstrumentNote>();
   private readonly activeVoices = new Map<string, Set<ActiveVoice>>();
+  /** One MediaElementAudioSourceNode per HTMLMediaElement (browser limit). */
+  private readonly htmlMediaElementSources = new Map<HTMLAudioElement, MediaElementAudioSourceNode>();
 
   public constructor() {
     this.audioContext = new AudioContext();
@@ -113,6 +115,23 @@ export class AudioEngine {
     for (const alias of aliases) {
       this.stopNote(alias, immediate);
     }
+  }
+
+  /**
+   * Routes an HTML5 audio element through the same analyser as note playback so visualizers
+   * (e.g. wall equalizers) see spectrum during SNC / WAV preview.
+   */
+  public async connectHtml5AudioForVisualization(audio: HTMLAudioElement): Promise<() => void> {
+    await this.ensureRunning();
+    let node = this.htmlMediaElementSources.get(audio);
+    if (!node) {
+      node = this.audioContext.createMediaElementSource(audio);
+      this.htmlMediaElementSources.set(audio, node);
+    }
+    node.connect(this.analyserNode);
+    return () => {
+      node.disconnect();
+    };
   }
 
   private async ensureRunning(): Promise<void> {

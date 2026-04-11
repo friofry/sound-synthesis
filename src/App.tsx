@@ -5,8 +5,10 @@ import { MembraneModellerPage } from "./pages/MembraneModellerPage";
 import { PianoPlayerPage } from "./pages/PianoPlayerPage";
 import { FrequencyAnalyzerPage } from "./pages/FrequencyAnalyzerPage";
 import { graphFromBinary, graphToBinary } from "./engine/fileIO/graphFile";
+import { buildSncPlaybackIntervals, scheduleSncPlaybackKeySimulation } from "./engine/snc/sncPlaybackKeys";
 import { renderSncTextToWav } from "./engine/snc/renderSncFromText";
 import { CommunitySncDialog } from "./components/PianoPlayer/CommunitySncDialog";
+import { connectMelodyPreviewToAnalyser } from "./audio/melodyPreviewBridge";
 import { useGraphStore } from "./store/graphStore";
 import { usePianoStore } from "./store/pianoStore";
 
@@ -16,6 +18,8 @@ function App() {
   const [tab, setTab] = useState<AppTab>("modeller");
   const graphInputRef = useRef<HTMLInputElement | null>(null);
   const communitySncAudioRef = useRef<HTMLAudioElement | null>(null);
+  const communitySncPlaybackCleanupRef = useRef<(() => void) | null>(null);
+  const communitySncAnalyserDisconnectRef = useRef<(() => void) | null>(null);
   const openInsertDialog = useGraphStore((s) => s.openInsertDialog);
   const openCellTemplateDialog = useGraphStore((s) => s.openCellTemplateDialog);
   const openHexTemplateDialog = useGraphStore((s) => s.openHexTemplateDialog);
@@ -31,7 +35,6 @@ function App() {
   const closeCommunitySncDialog = usePianoStore((s) => s.closeCommunitySncDialog);
   const setLastSncText = usePianoStore((s) => s.setLastSncText);
   const setLastRenderedWav = usePianoStore((s) => s.setLastRenderedWav);
-
   const handleOpenCommunitySnc = useCallback(async (sncPath: string) => {
     const { instrumentNotes } = usePianoStore.getState();
     if (instrumentNotes.length === 0) {
@@ -47,10 +50,23 @@ function App() {
     setLastRenderedWav(wavBlob);
     const url = URL.createObjectURL(wavBlob);
     const audio = new Audio(url);
+    communitySncAnalyserDisconnectRef.current?.();
+    communitySncAnalyserDisconnectRef.current = null;
+    communitySncPlaybackCleanupRef.current?.();
     communitySncAudioRef.current?.pause();
     communitySncAudioRef.current = audio;
-    void audio.play();
-    audio.onended = () => URL.revokeObjectURL(url);
+    communitySncAnalyserDisconnectRef.current = await connectMelodyPreviewToAnalyser(audio);
+    const intervals = buildSncPlaybackIntervals(text, instrumentNotes);
+    const { pressKey, releaseKey } = usePianoStore.getState();
+    communitySncPlaybackCleanupRef.current = scheduleSncPlaybackKeySimulation(audio, intervals, pressKey, releaseKey);
+    await audio.play();
+    audio.onended = () => {
+      communitySncAnalyserDisconnectRef.current?.();
+      communitySncAnalyserDisconnectRef.current = null;
+      communitySncPlaybackCleanupRef.current?.();
+      communitySncPlaybackCleanupRef.current = null;
+      URL.revokeObjectURL(url);
+    };
   }, [setLastRenderedWav, setLastSncText]);
 
   const handleOpenGraph = async (event: ChangeEvent<HTMLInputElement>) => {
