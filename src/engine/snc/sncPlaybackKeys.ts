@@ -18,7 +18,8 @@ function noteIndexFromNormalizedAlias(name: string): number | null {
 
 /**
  * Builds time intervals [start, end) during which each piano key index should appear held,
- * matching sustain (`a -1` / `r`) and one-shot (`a` duration ≥ 0) commands in order.
+ * aligned with `executeSncCommands`: each `a -1` keeps a separate sustain until `r` / `!clear` / EOF.
+ * One-shot (`a` duration ≥ 0) uses explicit duration.
  */
 export function buildSncPlaybackIntervals(
   sncText: string,
@@ -69,13 +70,6 @@ export function buildSncPlaybackIntervals(
 
     if (cmd.flag === "a") {
       if (cmd.duration === -1) {
-        // Lead lines often omit `r` between notes; without this, every distinct key stays
-        // "held" until EOF (only same-alias retrigger closed). Release other sustains here.
-        for (const other of [...sustainStart.keys()]) {
-          if (other !== index) {
-            closeSustain(other, t);
-          }
-        }
         closeSustain(index, t);
         sustainStart.set(index, t);
       } else if (cmd.duration >= 0) {

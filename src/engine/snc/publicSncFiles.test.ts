@@ -32,7 +32,9 @@ const sncFiles = readdirSync(SNC_DIR)
 const EXPECT_RENDER_FAIL = new Set(["axel_w_drum.snc", "fur_elise_drum.snc"]);
 
 describe("public/snc/*.snc", () => {
-  expect(sncFiles.length).toBeGreaterThan(0);
+  it("has at least one .snc fixture", () => {
+    expect(sncFiles.length).toBeGreaterThan(0);
+  });
 
   describe.each(sncFiles)("%s", (filename) => {
     it("parseSncText succeeds", () => {

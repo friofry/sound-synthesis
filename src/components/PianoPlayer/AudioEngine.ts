@@ -129,8 +129,16 @@ export class AudioEngine {
       this.htmlMediaElementSources.set(audio, node);
     }
     node.connect(this.analyserNode);
+    let cleanedUp = false;
     return () => {
-      node.disconnect();
+      if (cleanedUp) {
+        return;
+      }
+      cleanedUp = true;
+      node.disconnect(this.analyserNode);
+      if (this.htmlMediaElementSources.get(audio) === node) {
+        this.htmlMediaElementSources.delete(audio);
+      }
     };
   }
 

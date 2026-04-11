@@ -31,6 +31,8 @@ export type PianoGenerateSettings = {
 type PianoStore = {
   noteCount: number;
   pressedKeys: Set<number>;
+  /** Order keys were pressed (each index at most once); used for "last held" after releases. */
+  pressOrder: number[];
   lastPressedKeyIndex: number | null;
   viewerBaseGraphSnapshots: Record<string, SerializedGraph>;
   activeBuffer: Float32Array | null;
@@ -71,6 +73,7 @@ type PianoStore = {
 export const usePianoStore = create<PianoStore>((set) => ({
   noteCount: APP_DEFAULTS.piano.noteCount,
   pressedKeys: new Set<number>(),
+  pressOrder: [],
   lastPressedKeyIndex: null,
   viewerBaseGraphSnapshots: {},
   activeBuffer: null,
@@ -93,7 +96,8 @@ export const usePianoStore = create<PianoStore>((set) => ({
       }
       const next = new Set(state.pressedKeys);
       next.add(index);
-      return { pressedKeys: next, lastPressedKeyIndex: index };
+      const pressOrder = [...state.pressOrder, index];
+      return { pressedKeys: next, pressOrder, lastPressedKeyIndex: index };
     }),
   releaseKey: (index) =>
     set((state) => {
@@ -102,13 +106,15 @@ export const usePianoStore = create<PianoStore>((set) => ({
       }
       const next = new Set(state.pressedKeys);
       next.delete(index);
-      let lastPressedKeyIndex = state.lastPressedKeyIndex;
-      if (lastPressedKeyIndex === index) {
-        lastPressedKeyIndex = next.size === 0 ? null : Math.max(...next);
+      const pressOrder = [...state.pressOrder];
+      const pos = pressOrder.lastIndexOf(index);
+      if (pos >= 0) {
+        pressOrder.splice(pos, 1);
       }
-      return { pressedKeys: next, lastPressedKeyIndex };
+      const lastPressedKeyIndex = pressOrder.at(-1) ?? null;
+      return { pressedKeys: next, pressOrder, lastPressedKeyIndex };
     }),
-  releaseAll: () => set({ pressedKeys: new Set<number>(), lastPressedKeyIndex: null }),
+  releaseAll: () => set({ pressedKeys: new Set<number>(), pressOrder: [], lastPressedKeyIndex: null }),
   setActiveBuffer: (buffer, sampleRate = 48_000) =>
     set({
       activeBuffer: buffer,

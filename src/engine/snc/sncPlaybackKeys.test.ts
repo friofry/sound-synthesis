@@ -15,7 +15,7 @@ function dummyNotes(n: number): RawInstrumentNote[] {
 }
 
 describe("buildSncPlaybackIntervals", () => {
-  it("covers sustained notes across waits", () => {
+  it("covers sustained notes across waits (polyphonic until explicit release)", () => {
     const text = `
 note-1 a -1
 !wait 0.25
@@ -26,8 +26,21 @@ note-1 r 0
     const iv = buildSncPlaybackIntervals(text, dummyNotes(24));
     const one = iv.filter((x) => x.index === 1);
     const two = iv.filter((x) => x.index === 2);
-    expect(one.some((x) => x.startSec === 0 && x.endSec === 0.25)).toBe(true);
+    expect(one.some((x) => x.startSec === 0 && x.endSec === 0.5)).toBe(true);
     expect(two.some((x) => x.startSec === 0.25 && x.endSec === 0.5)).toBe(true);
+  });
+
+  it("allows multiple simultaneous a -1 at the same time", () => {
+    const text = `
+note-0 a -1
+note-1 a -1
+!wait 0.1
+note-0 r 0
+note-1 r 0
+`;
+    const iv = buildSncPlaybackIntervals(text, dummyNotes(24));
+    expect(iv).toContainEqual({ startSec: 0, endSec: 0.1, index: 0 });
+    expect(iv).toContainEqual({ startSec: 0, endSec: 0.1, index: 1 });
   });
 
   it("covers one-shot durations", () => {

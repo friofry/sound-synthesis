@@ -804,14 +804,20 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
         audioPreviewRef.current = audio;
         previewAudioAnalyserDisconnectRef.current = await audioEngine.connectHtml5AudioForVisualization(audio);
         startSncPlaybackKeySimulation(audio, text);
-        await audio.play();
-        audio.onended = () => {
+        const cleanupPlayback = () => {
           previewAudioAnalyserDisconnectRef.current?.();
           previewAudioAnalyserDisconnectRef.current = null;
           sncPlaybackCleanupRef.current?.();
           sncPlaybackCleanupRef.current = null;
           URL.revokeObjectURL(url);
         };
+        audio.onended = cleanupPlayback;
+        try {
+          await audio.play();
+        } catch (playError) {
+          cleanupPlayback();
+          throw playError;
+        }
       } catch (error) {
         window.alert(`Failed to play SNC: ${(error as Error).message}`);
       }
@@ -847,14 +853,20 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     if (lastSncText) {
       startSncPlaybackKeySimulation(audio, lastSncText);
     }
-    await audio.play();
-    audio.onended = () => {
+    const cleanupPlayback = () => {
       previewAudioAnalyserDisconnectRef.current?.();
       previewAudioAnalyserDisconnectRef.current = null;
       sncPlaybackCleanupRef.current?.();
       sncPlaybackCleanupRef.current = null;
       URL.revokeObjectURL(url);
     };
+    audio.onended = cleanupPlayback;
+    try {
+      await audio.play();
+    } catch (error) {
+      cleanupPlayback();
+      window.alert(`Playback failed: ${(error as Error).message}`);
+    }
   }, [audioEngine, lastRenderedWav, lastSncText, startSncPlaybackKeySimulation]);
 
   return {

@@ -59,14 +59,23 @@ function App() {
     const intervals = buildSncPlaybackIntervals(text, instrumentNotes);
     const { pressKey, releaseKey } = usePianoStore.getState();
     communitySncPlaybackCleanupRef.current = scheduleSncPlaybackKeySimulation(audio, intervals, pressKey, releaseKey);
-    await audio.play();
-    audio.onended = () => {
+    const cleanupPlayback = () => {
       communitySncAnalyserDisconnectRef.current?.();
       communitySncAnalyserDisconnectRef.current = null;
       communitySncPlaybackCleanupRef.current?.();
       communitySncPlaybackCleanupRef.current = null;
+      if (communitySncAudioRef.current === audio) {
+        communitySncAudioRef.current = null;
+      }
       URL.revokeObjectURL(url);
     };
+    audio.onended = cleanupPlayback;
+    try {
+      await audio.play();
+    } catch (error) {
+      cleanupPlayback();
+      throw error;
+    }
   }, [setLastRenderedWav, setLastSncText]);
 
   const handleOpenGraph = async (event: ChangeEvent<HTMLInputElement>) => {
