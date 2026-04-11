@@ -11,6 +11,7 @@ type PianoToolbarProps = {
   onLoadInstrumentFile: (file: File) => void | Promise<void>;
   onSaveSnc: () => void;
   onLoadSncFile: (file: File) => void | Promise<void>;
+  onPlayPopcorn: () => void | Promise<void>;
   navigationButton?: {
     label: string;
     title?: string;
@@ -19,7 +20,18 @@ type PianoToolbarProps = {
   };
 };
 
-type PianoActionId = "none" | "navigate" | "one" | "generate" | "record" | "stop" | "saveIns" | "loadIns" | "saveSnc" | "loadSnc";
+type PianoActionId =
+  | "none"
+  | "navigate"
+  | "one"
+  | "generate"
+  | "record"
+  | "stop"
+  | "saveIns"
+  | "loadIns"
+  | "saveSnc"
+  | "loadSnc"
+  | "popcorn";
 
 type PianoToolbarButton = MfcToolbarItem<PianoActionId> & {
   spriteIndex?: number;
@@ -39,6 +51,7 @@ export function PianoToolbar({
   onLoadInstrumentFile,
   onSaveSnc,
   onLoadSncFile,
+  onPlayPopcorn,
   navigationButton,
 }: PianoToolbarProps) {
   const instrumentInputRef = useRef<HTMLInputElement | null>(null);
@@ -118,13 +131,26 @@ export function PianoToolbar({
       ? [
           { kind: "separator" as const, id: "sep-nav" },
           {
+            id: "popcorn" as const,
+            label: "Play popcorn.snc",
+            title: "Play popcorn.snc from library",
+            text: "🍿",
+          },
+          {
             id: "navigate" as const,
             label: navigationButton.label,
             title: navigationButton.title ?? navigationButton.label,
             text: navigationButton.text,
           },
         ]
-      : []),
+      : [
+          {
+            id: "popcorn" as const,
+            label: "Play popcorn.snc",
+            title: "Play popcorn.snc from library",
+            text: "🍿",
+          },
+        ]),
   ];
 
   const buttonItems = items.map((entry) =>
@@ -162,6 +188,9 @@ export function PianoToolbar({
               return;
             case "loadSnc":
               sncInputRef.current?.click();
+              return;
+            case "popcorn":
+              void onPlayPopcorn();
               return;
             default:
               return;

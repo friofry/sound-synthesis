@@ -43,6 +43,7 @@ export function PianoPlayerPage({ onBackToModeller, visible = true }: PianoPlaye
     handleLoadInstrumentFile,
     handleSaveSnc,
     handleLoadSncFile,
+    handlePlayPopcornSnc,
   } = usePianoToolbar({ graph, simulationParams });
 
   const setAnalyser = useAudioAnalyserStore((s) => s.setAnalyser);
@@ -77,6 +78,7 @@ export function PianoPlayerPage({ onBackToModeller, visible = true }: PianoPlaye
         onLoadInstrumentFile={handleLoadInstrumentFile}
         onSaveSnc={handleSaveSnc}
         onLoadSncFile={handleLoadSncFile}
+        onPlayPopcorn={handlePlayPopcornSnc}
         navigationButton={{
           label: "Back to Membrane Modeller",
           title: "Back to Membrane Modeller",

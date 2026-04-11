@@ -78,6 +78,7 @@ export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyze
     handleLoadInstrumentFile,
     handleSaveSnc,
     handleLoadSncFile,
+    handlePlayPopcornSnc,
   } = usePianoToolbar({ graph, simulationParams });
 
   const setAnalyser = useAudioAnalyserStore((s) => s.setAnalyser);
@@ -293,6 +294,7 @@ export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyze
               onLoadInstrumentFile={handleLoadInstrumentFile}
               onSaveSnc={handleSaveSnc}
               onLoadSncFile={handleLoadSncFile}
+              onPlayPopcorn={handlePlayPopcornSnc}
               navigationButton={{
                 label: "Open Piano Player",
                 title: "Open Piano Player",

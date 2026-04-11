@@ -819,6 +819,21 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     [audioEngine, instrumentNotes, setLastSncText, setLastRenderedWav, startSncPlaybackKeySimulation],
   );
 
+  const handlePlayPopcornSnc = useCallback(async () => {
+    try {
+      const response = await fetch(`/snc/${encodeURIComponent("popcorn.snc")}`, { cache: "no-store" });
+      if (!response.ok) {
+        window.alert(`Failed to load popcorn.snc: HTTP ${response.status}`);
+        return;
+      }
+      const text = await response.text();
+      const file = new File([text], "popcorn.snc", { type: "text/plain" });
+      await handleLoadSncFile(file);
+    } catch (error) {
+      window.alert(`Failed to load popcorn.snc: ${(error as Error).message}`);
+    }
+  }, [handleLoadSncFile]);
+
   const handlePlayRenderedWav = useCallback(async () => {
     if (!lastRenderedWav) return;
     const url = URL.createObjectURL(lastRenderedWav);
@@ -869,6 +884,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     handleLoadInstrumentFile,
     handleSaveSnc,
     handleLoadSncFile,
+    handlePlayPopcornSnc,
     handlePlayRenderedWav,
   };
 }
