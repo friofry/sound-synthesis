@@ -24,6 +24,16 @@
   overflow: hidden;
 }
 
+.app-page {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.app-page.is-hidden {
+  display: none;
+}
+
 .workspace-layout {
   height: 100%;
   min-height: 0;
@@ -710,4 +720,198 @@
   .modeller-right-column {
     border-top: 1px solid #6f6b65;
   }
+}
+
+/* ── Frequency Analyzer Page ── */
+
+.freq-analyzer-page {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #d4d0c8;
+  color: #000;
+  overflow: hidden;
+  font-family: Tahoma, "Segoe UI", sans-serif;
+}
+
+.freq-analyzer-toolbar {
+  flex: 0 0 auto;
+  min-height: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: #d4d0c8;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 #dfdfdf,
+    inset -1px -1px 0 #404040;
+  font-size: 12px;
+}
+
+.freq-toolbar-btn {
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #404040;
+  border-bottom: 1px solid #404040;
+  box-shadow:
+    inset -1px -1px 0 #808080,
+    inset 1px 1px 0 #dfdfdf;
+  background: #ece9d8;
+  color: #000;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.freq-toolbar-btn:hover {
+  background: #f4f1e5;
+}
+
+.freq-toolbar-btn-active {
+  border-top: 1px solid #404040;
+  border-left: 1px solid #404040;
+  border-right: 1px solid #fff;
+  border-bottom: 1px solid #fff;
+  box-shadow:
+    inset 1px 1px 0 #808080,
+    inset -1px -1px 0 #dfdfdf;
+  background: #ddd9ce;
+  color: #000;
+}
+
+.freq-toolbar-btn-active:hover {
+  background: #ddd9ce;
+}
+
+.freq-toolbar-separator {
+  width: 2px;
+  height: 22px;
+  background: #d4d0c8;
+  border-left: 1px solid #808080;
+  border-right: 1px solid #fff;
+}
+
+.freq-toolbar-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #000;
+  font-size: 11px;
+}
+
+.freq-toolbar-label-wide {
+  min-width: 170px;
+}
+
+.freq-toolbar-select {
+  min-width: 80px;
+  background: #fff;
+  border: 1px solid #7f9db9;
+  color: #000;
+  padding: 2px 4px;
+  font-size: 11px;
+  font-family: inherit;
+}
+
+.freq-toolbar-range {
+  width: 80px;
+}
+
+.freq-toolbar-value {
+  min-width: 28px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #000;
+}
+
+.freq-toolbar-status {
+  margin-left: auto;
+  min-width: 240px;
+  color: #333;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.freq-analyzer-error {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  background: #fff3f1;
+  color: #8a2017;
+  font-size: 11px;
+}
+
+.freq-analyzer-content {
+  flex: 1;
+  min-height: 0;
+  padding: 4px;
+  background: #d4d0c8;
+}
+
+.freq-analyzer-piano-inner {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.freq-analyzer-split-view {
+  width: 100%;
+  height: 100%;
+}
+
+.freq-analyzer-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #d4d0c8;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 #dfdfdf,
+    inset -1px -1px 0 #404040;
+}
+
+.freq-analyzer-panel-title {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  background: linear-gradient(90deg, #0a246a 0%, #245edc 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.freq-analyzer-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  padding: 4px;
+  background: #fff;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.freq-analyzer-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
 }

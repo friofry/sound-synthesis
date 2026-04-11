@@ -442,7 +442,12 @@ export function normalizePerturbationForDotCount(
   return {
     kind: "instant",
     playingPoint:
-      Number.isInteger(rawPlayingPoint) && rawPlayingPoint >= 0 && rawPlayingPoint < dotCount ? rawPlayingPoint : null,
+      typeof rawPlayingPoint === "number" &&
+      Number.isInteger(rawPlayingPoint) &&
+      rawPlayingPoint >= 0 &&
+      rawPlayingPoint < dotCount
+        ? rawPlayingPoint
+        : null,
     points: Array.from({ length: dotCount }, (_, index) => ({
       u: sourcePoints[index]?.u ?? START_U,
       v: sourcePoints[index]?.v ?? START_V,

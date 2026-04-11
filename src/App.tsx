@@ -1,12 +1,13 @@
-import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import "./App.css";
 import { MfcMenuBar, type MfcMenuBarItem } from "./components/ui/MfcMenu";
 import { MembraneModellerPage } from "./pages/MembraneModellerPage";
 import { PianoPlayerPage } from "./pages/PianoPlayerPage";
+import { FrequencyAnalyzerPage } from "./pages/FrequencyAnalyzerPage";
 import { graphFromBinary, graphToBinary } from "./engine/fileIO/graphFile";
 import { useGraphStore } from "./store/graphStore";
 
-type AppTab = "modeller" | "piano";
+type AppTab = "modeller" | "piano" | "frequency-analyzer";
 
 function App() {
   const [tab, setTab] = useState<AppTab>("modeller");
@@ -44,6 +45,43 @@ function App() {
       window.alert(`Failed to save graph file: ${(error as Error).message}`);
     }
   }, [serializeGraph]);
+
+  const openModeller = useCallback(() => {
+    setTab("modeller");
+  }, []);
+
+  const openPianoPlayer = useCallback(() => {
+    setTab("piano");
+  }, []);
+
+  const openFrequencyAnalyzer = useCallback(() => {
+    setTab("frequency-analyzer");
+  }, []);
+
+  const TAB_CYCLE: AppTab[] = useMemo(() => ["modeller", "piano", "frequency-analyzer"], []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "1") {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable) {
+        return;
+      }
+      if (document.querySelector(".mfc-overlay")) {
+        return;
+      }
+      event.preventDefault();
+      setTab((current) => {
+        const index = TAB_CYCLE.indexOf(current);
+        return TAB_CYCLE[(index + 1) % TAB_CYCLE.length];
+      });
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [TAB_CYCLE]);
 
   const menuItems = useMemo<MfcMenuBarItem[]>(
     () => [
@@ -87,13 +125,20 @@ function App() {
             id: "show-modeller",
             label: "Membrane Modeller",
             disabled: tab === "modeller",
-            onClick: () => setTab("modeller"),
+            onClick: openModeller,
           },
           {
             id: "show-piano-player",
             label: "Piano Player",
             disabled: tab === "piano",
-            onClick: () => setTab("piano"),
+            onClick: openPianoPlayer,
+          },
+          { kind: "separator", id: "window-sep-1" },
+          {
+            id: "show-frequency-analyzer",
+            label: "Frequency Analyzer",
+            disabled: tab === "frequency-analyzer",
+            onClick: openFrequencyAnalyzer,
           },
         ],
       },
@@ -133,8 +178,11 @@ function App() {
       handleSaveGraph,
       openCellTemplateDialog,
       openCommunityGraphsDialog,
+      openFrequencyAnalyzer,
       openHexTemplateDialog,
       openInsertDialog,
+      openModeller,
+      openPianoPlayer,
       resetViewport,
       tab,
       zoomViewport,
@@ -144,7 +192,23 @@ function App() {
   return (
     <main className="app-shell">
       <MfcMenuBar items={menuItems} className="menu-bar" />
-      <section className="app-content">{tab === "modeller" ? <MembraneModellerPage /> : <PianoPlayerPage />}</section>
+      <section className="app-content">
+        {tab === "modeller" ? (
+          <div className="app-page">
+            <MembraneModellerPage onOpenPianoPlayer={openPianoPlayer} onOpenFrequencyAnalyzer={openFrequencyAnalyzer} visible />
+          </div>
+        ) : null}
+        {tab === "piano" ? (
+          <div className="app-page">
+            <PianoPlayerPage onBackToModeller={openModeller} visible />
+          </div>
+        ) : null}
+        {tab === "frequency-analyzer" ? (
+          <div className="app-page">
+            <FrequencyAnalyzerPage onBack={() => setTab("modeller")} />
+          </div>
+        ) : null}
+      </section>
       <input
         ref={graphInputRef}
         type="file"

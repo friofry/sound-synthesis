@@ -11,12 +11,19 @@ type PianoToolbarProps = {
   onLoadInstrumentFile: (file: File) => void | Promise<void>;
   onSaveSnc: () => void;
   onLoadSncFile: (file: File) => void | Promise<void>;
+  navigationButton?: {
+    label: string;
+    title?: string;
+    text: string;
+    onClick: () => void;
+  };
 };
 
-type PianoActionId = "none" | "one" | "generate" | "record" | "stop" | "saveIns" | "loadIns" | "saveSnc" | "loadSnc";
+type PianoActionId = "none" | "navigate" | "one" | "generate" | "record" | "stop" | "saveIns" | "loadIns" | "saveSnc" | "loadSnc";
 
 type PianoToolbarButton = MfcToolbarItem<PianoActionId> & {
-  spriteIndex: number;
+  spriteIndex?: number;
+  text?: string;
   disabled?: boolean;
 };
 
@@ -32,6 +39,7 @@ export function PianoToolbar({
   onLoadInstrumentFile,
   onSaveSnc,
   onLoadSncFile,
+  navigationButton,
 }: PianoToolbarProps) {
   const instrumentInputRef = useRef<HTMLInputElement | null>(null);
   const sncInputRef = useRef<HTMLInputElement | null>(null);
@@ -106,6 +114,17 @@ export function PianoToolbar({
       title: "Play melody from file (SNC, WAV)",
       spriteIndex: 7,
     },
+    ...(navigationButton
+      ? [
+          { kind: "separator" as const, id: "sep-nav" },
+          {
+            id: "navigate" as const,
+            label: navigationButton.label,
+            title: navigationButton.title ?? navigationButton.label,
+            text: navigationButton.text,
+          },
+        ]
+      : []),
   ];
 
   const buttonItems = items.map((entry) =>
@@ -121,6 +140,9 @@ export function PianoToolbar({
           switch (id) {
             case "one":
               onGenerateOne();
+              return;
+            case "navigate":
+              navigationButton?.onClick();
               return;
             case "generate":
               onGenerateInstrument();
@@ -149,11 +171,15 @@ export function PianoToolbar({
         buttonClassName="toolbar-icon-btn"
         renderItem={(entry) => (
           <>
-            <span
-              className="toolbar-sprite piano-toolbar-sprite"
-              style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
-              aria-hidden
-            />
+            {entry.text ? (
+              <span aria-hidden>{entry.text}</span>
+            ) : (
+              <span
+                className="toolbar-sprite piano-toolbar-sprite"
+                style={{ "--sprite-index": entry.spriteIndex } as CSSProperties}
+                aria-hidden
+              />
+            )}
             <span className="sr-only">{entry.label}</span>
           </>
         )}

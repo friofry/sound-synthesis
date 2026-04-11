@@ -10,18 +10,18 @@ simulation:
   graphStore:
     sampleRate: 44100
     lengthK: 8
-    attenuation: 4
-    squareAttenuation: 0.08
+    attenuation: 2
+    squareAttenuation: 0.01
     playingPoint: 0
 
   dialogDefaults:
     piano:
       octaves: 2
-      durationMs: 150
+      durationMs: 500
       tillSilence: false
       sampleRate: 44100
-      attenuation: 4
-      squareAttenuation: 0.08
+      attenuation: 2
+      squareAttenuation: 0.01
       method: runge-kutta
       backend: wasm-hotloop-simd
       precision: 64
@@ -33,9 +33,9 @@ simulation:
       weight: 1
       velocity: 200
       restitution: 0.5
-      attenuation: 4
-      squareAttenuation: 0.08
-      radius: 36
+      attenuation: 2
+      squareAttenuation: 0.01
+      radius: 75
       playingPointMode: impact-point
 
     cellTemplate:
@@ -94,8 +94,8 @@ simulation:
       durationMs: 150
       tillSilence: false
       sampleRate: 44100
-      attenuation: 4
-      squareAttenuation: 0.08
+      attenuation: 2
+      squareAttenuation: 0.01
       method: euler
       backend: wasm-hotloop
 
@@ -108,8 +108,8 @@ simulation:
       durationMs: 150
       tillSilence: false
       sampleRate: 44100
-      attenuation: 4
-      squareAttenuation: 0.08
+      attenuation: 2
+      squareAttenuation: 0.01
       method: euler
       backend: wasm-hotloop
       precision: 32
@@ -121,8 +121,8 @@ simulation:
       durationMs: 150
       tillSilence: false
       sampleRate: 44100
-      attenuation: 4
-      squareAttenuation: 0.08
+      attenuation: 2
+      squareAttenuation: 0.01
       method: euler
       backend: wasm-hotloop-simd
       precision: 64
@@ -134,8 +134,8 @@ simulation:
       durationMs: 150
       tillSilence: false
       sampleRate: 44100
-      attenuation: 4
-      squareAttenuation: 0.08
+      attenuation: 2
+      squareAttenuation: 0.01
       method: runge-kutta
       backend: edge-list
       precision: 64
@@ -144,11 +144,11 @@ simulation:
 
     oneNoteGenerator:
       octaves: 1
-      durationMs: 150
+      durationMs: 500
       tillSilence: false
       sampleRate: 44100
-      attenuation: 4
-      squareAttenuation: 0.08
+      attenuation: 2
+      squareAttenuation: 0.01
       method: euler
       backend: wasm-hotloop-simd
       precision: 64
@@ -160,8 +160,8 @@ simulation:
       durationMs: 500
       tillSilence: false
       sampleRate: 44100
-      attenuation: 4
-      squareAttenuation: 0.08
+      attenuation: 2
+      squareAttenuation: 0.01
       method: runge-kutta
       backend: wasm-hotloop-simd-packed
       precision: 64

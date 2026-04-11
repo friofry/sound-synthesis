@@ -4,10 +4,12 @@ import {
   Color,
   DataTexture,
   FloatType,
+  Mesh,
   PlaneGeometry,
   RedFormat,
   ShaderMaterial,
 } from "three";
+import { projectDecibelSpectrumToLogBands } from "../../engine/audioSpectrum";
 
 const BAR_COUNT = 48;
 const MIN_FREQ = 30;
@@ -110,7 +112,7 @@ export function WallEqualizer({
   height,
   colorScheme = "neon",
 }: WallEqualizerProps) {
-  const matRef = useRef<ShaderMaterial>(null);
+  const meshRef = useRef<Mesh>(null);
   const dataRef = useRef<Float32Array>(new Float32Array(BAR_COUNT));
   const smoothedRef = useRef<Float32Array>(new Float32Array(BAR_COUNT));
   const floatBufRef = useRef<Float32Array | null>(null);
@@ -144,10 +146,14 @@ export function WallEqualizer({
   }, [width, height, colorScheme]);
 
   useFrame(({ clock }) => {
-    if (!matRef.current) return;
+    const mat = meshRef.current?.material;
+    if (!mat || Array.isArray(mat)) {
+      return;
+    }
+    const shaderMaterial = mat as ShaderMaterial;
 
     const t = clock.getElapsedTime();
-    matRef.current.uniforms.uTime.value = t;
+    shaderMaterial.uniforms.uTime.value = t;
 
     const data = dataRef.current;
     const smoothed = smoothedRef.current;
@@ -156,30 +162,16 @@ export function WallEqualizer({
       if (!floatBufRef.current || floatBufRef.current.length !== analyser.frequencyBinCount) {
         floatBufRef.current = new Float32Array(analyser.frequencyBinCount);
       }
-      analyser.getFloatFrequencyData(floatBufRef.current);
+      const floatBuf = floatBufRef.current;
+      analyser.getFloatFrequencyData(floatBuf as Float32Array<ArrayBuffer>);
 
-      const nyquist = analyser.context.sampleRate / 2;
-      const logMin = Math.log(MIN_FREQ);
-      const logRange = Math.log(Math.min(MAX_FREQ, nyquist)) - logMin;
-      const minDb = analyser.minDecibels;
-      const maxDb = analyser.maxDecibels;
-      const dbRange = maxDb - minDb;
-
-      for (let i = 0; i < BAR_COUNT; i++) {
-        const freqStart = Math.exp(logMin + (i / BAR_COUNT) * logRange);
-        const freqEnd = Math.exp(logMin + ((i + 1) / BAR_COUNT) * logRange);
-        const binStart = Math.max(1, Math.floor((freqStart / nyquist) * floatBufRef.current.length));
-        const binEnd = Math.min(
-          floatBufRef.current.length - 1,
-          Math.ceil((freqEnd / nyquist) * floatBufRef.current.length),
-        );
-
-        let maxVal = minDb;
-        for (let b = binStart; b <= binEnd; b++) {
-          if (floatBufRef.current[b] > maxVal) maxVal = floatBufRef.current[b];
-        }
-        data[i] = Math.max(0, Math.min(1, (maxVal - minDb) / dbRange));
-      }
+      data.set(projectDecibelSpectrumToLogBands(floatBuf, analyser.context.sampleRate, {
+        barCount: BAR_COUNT,
+        minFrequency: MIN_FREQ,
+        maxFrequency: MAX_FREQ,
+        minDecibels: analyser.minDecibels,
+        maxDecibels: analyser.maxDecibels,
+      }));
     } else {
       data.fill(0);
     }
@@ -195,15 +187,11 @@ export function WallEqualizer({
       }
     }
 
-    const spectrumTexture = matRef.current.uniforms.uSpectrum.value as DataTexture;
+    const spectrumTexture = shaderMaterial.uniforms.uSpectrum.value as DataTexture;
     const texData = spectrumTexture.image.data as Float32Array;
     texData.set(smoothed);
     spectrumTexture.needsUpdate = true;
   });
 
-  return (
-    <mesh position={position} rotation={rotation} geometry={geometry} material={material}>
-      <primitive object={material} ref={matRef} />
-    </mesh>
-  );
+  return <mesh ref={meshRef} position={position} rotation={rotation} geometry={geometry} material={material} />;
 }

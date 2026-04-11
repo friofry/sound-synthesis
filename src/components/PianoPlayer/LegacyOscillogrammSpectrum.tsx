@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
+import { computeBufferSpectrum } from "../../engine/audioSpectrum";
 
 const SPECTRUM_HEIGHT = 95;
 
@@ -9,30 +10,6 @@ type LegacyOscillogrammSpectrumProps = {
   compact?: boolean;
 };
 
-function buildFallbackSpectrum(buffer: Float32Array | null): number[] {
-  if (!buffer || buffer.length < 64) {
-    return [];
-  }
-
-  const size = Math.min(1024, buffer.length);
-  const binCount = 64;
-  const output: number[] = [];
-
-  for (let bin = 1; bin <= binCount; bin += 1) {
-    let real = 0;
-    let imag = 0;
-    for (let n = 0; n < size; n += 1) {
-      const angle = (2 * Math.PI * bin * n) / size;
-      real += buffer[n] * Math.cos(angle);
-      imag -= buffer[n] * Math.sin(angle);
-    }
-    output.push(Math.sqrt(real * real + imag * imag) / size);
-  }
-
-  const max = output.reduce((value, item) => Math.max(value, item), 0) || 1;
-  return output.map((item) => item / max);
-}
-
 export function LegacyOscillogrammSpectrum({
   analyser,
   sampleRate,
@@ -41,7 +18,11 @@ export function LegacyOscillogrammSpectrum({
 }: LegacyOscillogrammSpectrumProps) {
   const spectrumCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const lastLiveSpectrumAtRef = useRef(0);
-  const fallbackSpectrum = useMemo(() => buildFallbackSpectrum(buffer), [buffer]);
+  const fallbackSpectrum = useMemo(
+    () => computeBufferSpectrum(buffer, sampleRate, { algorithm: "fft", frameSize: 1024, binCount: 64 })
+      .map((point) => point.magnitude),
+    [buffer, sampleRate],
+  );
 
   useEffect(() => {
     const canvas = spectrumCanvasRef.current;

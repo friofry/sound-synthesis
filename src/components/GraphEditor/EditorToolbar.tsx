@@ -1,4 +1,4 @@
-import { useRef, type ChangeEvent, type CSSProperties } from "react";
+import { useEffect, useRef, type ChangeEvent, type CSSProperties } from "react";
 import { graphFromBinary, graphToBinary } from "../../engine/fileIO/graphFile";
 import type { ToolMode } from "../../engine/types";
 import { useGraphStore } from "../../store/graphStore";
@@ -58,6 +58,8 @@ const EXTRA_TOOL_ITEMS = EXTRA_TOOLS.map((entry) =>
         title: entry.implemented ? entry.label : `${entry.label} (not implemented yet)`,
       },
 );
+
+const NOOP = () => {};
 
 export type EditorToolbarViewProps = {
   tool: ToolMode;
@@ -297,6 +299,39 @@ export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
     }
   };
 
+  const handleReprepareAndGenerate = onReprepareAndGenerate ?? NOOP;
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== " " || event.repeat || event.defaultPrevented) {
+        return;
+      }
+      if (event.ctrlKey || event.metaKey || event.altKey) {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement
+        || target instanceof HTMLTextAreaElement
+        || target instanceof HTMLSelectElement
+        || (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (document.querySelector(".mfc-overlay")) {
+        return;
+      }
+
+      event.preventDefault();
+      handleReprepareAndGenerate();
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [handleReprepareAndGenerate]);
+
   return (
     <EditorToolbarView
       tool={tool}
@@ -312,7 +347,7 @@ export function EditorToolbar({ onReprepareAndGenerate }: EditorToolbarProps) {
       }}
       onAddCellGraph={openCellTemplateDialog}
       onAddHexGraph={openHexTemplateDialog}
-      onReprepareAndGenerate={onReprepareAndGenerate ?? (() => {})}
+      onReprepareAndGenerate={handleReprepareAndGenerate}
       onNewGraph={handleNewGraph}
       onLoadGraphFile={handleLoadGraphFile}
       onSaveGraph={handleSaveGraph}

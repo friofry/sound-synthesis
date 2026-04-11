@@ -2,9 +2,19 @@ import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import {
   CylinderGeometry,
+  IcosahedronGeometry,
+  InstancedMesh,
+  Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
+  Object3D,
+  PlaneGeometry,
+  SphereGeometry,
+  type BufferGeometry,
+  type Group,
   type PointLight,
 } from "three";
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { useAudioAnalyserStore } from "../../store/audioAnalyserStore";
 import { WallEqualizer } from "./WallEqualizer";
 
@@ -27,12 +37,20 @@ const LEG_RADIUS = 0.07;
 const FRAME_H = 0.06;
 const FRAME_OFFSET = 0.05;
 
+const DISCO_Y = 2.8;
+const DISCO_RADIUS = 0.35;
+const DISCO_RAY_COUNT = 8;
+const DISCO_RAY_COLORS = [
+  "#ff3090", "#30ff90", "#3090ff", "#ffff30",
+  "#ff9030", "#90ff30", "#ff30ff", "#30ffff",
+];
+
 export function HeatmapSceneShell({ enabled, membraneDots }: HeatmapSceneShellProps) {
   const accentRef = useRef<PointLight>(null);
   const analyser = useAudioAnalyserStore((s) => s.analyser);
 
   useFrame(({ clock }) => {
-    if (!enabled || !accentRef.current) {
+    if (!accentRef.current) {
       return;
     }
     const t = clock.getElapsedTime();
@@ -157,6 +175,9 @@ export function HeatmapSceneShell({ enabled, membraneDots }: HeatmapSceneShellPr
 
       {/* ── Membrane perimeter frame ── */}
       <PerimeterFrame hull={expandedHull} y={frameY} />
+
+      {/* ── Disco ball ── */}
+      <DiscoBall />
     </group>
   );
 }
@@ -200,6 +221,105 @@ function PerimeterFrame({ hull, y }: { hull: Point2D[]; y: number }) {
       ))}
     </group>
   );
+}
+
+/* ── Ornate turned leg ── */
+
+function DiscoBall() {
+  const groupRef = useRef<Group>(null);
+  const raysRef = useRef<Group>(null);
+
+  const { mirrorsMesh, innerMesh } = useMemo(() => buildDiscoBall(DISCO_RADIUS, 0.04), []);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    if (groupRef.current) {
+      groupRef.current.rotation.y = t * 0.6;
+      groupRef.current.rotation.x = Math.sin(t * 0.3) * 0.1;
+    }
+    if (raysRef.current) {
+      raysRef.current.rotation.y = -t * 0.4;
+    }
+  });
+
+  return (
+    <group position={[0, DISCO_Y, 0]}>
+      {/* suspension wire */}
+      <mesh position={[0, (TABLE_Y - TABLE_TOP_H / 2 - LEG_H + ROOM_H - DISCO_Y + DISCO_RADIUS) / 2 + DISCO_RADIUS, 0]}>
+        <cylinderGeometry args={[0.012, 0.012, TABLE_Y - TABLE_TOP_H / 2 - LEG_H + ROOM_H - DISCO_Y + DISCO_RADIUS, 8]} />
+        <meshStandardMaterial color="#888" roughness={0.3} metalness={0.8} />
+      </mesh>
+
+      <group ref={groupRef}>
+        <primitive object={innerMesh} />
+        <primitive object={mirrorsMesh} />
+      </group>
+
+      <pointLight intensity={3} distance={10} color="#f8f0ff" decay={2} />
+
+      <group ref={raysRef}>
+        {DISCO_RAY_COLORS.map((color, i) => {
+          const angle = (i / DISCO_RAY_COUNT) * Math.PI * 2;
+          const elevation = ((i % 3) - 1) * 0.35;
+          return (
+            <pointLight
+              key={i}
+              position={[
+                Math.cos(angle) * 1.2,
+                elevation,
+                Math.sin(angle) * 1.2,
+              ]}
+              intensity={1.5}
+              distance={8}
+              color={color}
+              decay={2}
+            />
+          );
+        })}
+      </group>
+    </group>
+  );
+}
+
+function buildDiscoBall(radius: number, mirrorSize: number) {
+  const dummy = new Object3D();
+
+  const rawGeom = new IcosahedronGeometry(radius, 5);
+  rawGeom.deleteAttribute("normal");
+  rawGeom.deleteAttribute("uv");
+  const baseGeom: BufferGeometry = BufferGeometryUtils.mergeVertices(rawGeom);
+  baseGeom.computeVertexNormals();
+
+  const positions = baseGeom.attributes.position.array;
+  const normals = baseGeom.attributes.normal.array;
+  const vertexCount = baseGeom.attributes.position.count;
+
+  const mirrorGeom = new PlaneGeometry(mirrorSize, mirrorSize);
+  const mirrorMat = new MeshStandardMaterial({
+    color: "#e0e0e0",
+    roughness: 0.05,
+    metalness: 1.0,
+  });
+
+  const instancedMirrors = new InstancedMesh(mirrorGeom, mirrorMat, vertexCount);
+
+  for (let i = 0; i < vertexCount; i++) {
+    const idx = i * 3;
+    dummy.position.set(positions[idx], positions[idx + 1], positions[idx + 2]);
+    dummy.lookAt(
+      positions[idx] + normals[idx],
+      positions[idx + 1] + normals[idx + 1],
+      positions[idx + 2] + normals[idx + 2],
+    );
+    dummy.updateMatrix();
+    instancedMirrors.setMatrixAt(i, dummy.matrix);
+  }
+
+  const innerGeom = new SphereGeometry(radius * 0.97, 32, 24);
+  const innerMat = new MeshBasicMaterial({ color: 0x222222 });
+  const innerMesh = new Mesh(innerGeom, innerMat);
+
+  return { mirrorsMesh: instancedMirrors, innerMesh };
 }
 
 /* ── Ornate turned leg ── */
@@ -341,63 +461,61 @@ function offsetPolygon(polygon: Point2D[], distance: number): Point2D[] {
 }
 
 function pickLegCorners(hull: Point2D[]): Point2D[] {
-  if (hull.length < 4) {
+  const n = hull.length;
+  if (n < 4) {
     return hull.slice();
   }
 
-  const n = hull.length;
-  const perimeterLengths = new Array<number>(n);
-  let totalPerimeter = 0;
+  const cx = hull.reduce((s, p) => s + p.x, 0) / n;
+  const cz = hull.reduce((s, p) => s + p.z, 0) / n;
 
-  for (let i = 0; i < n; i++) {
-    const next = hull[(i + 1) % n];
-    const dx = next.x - hull[i].x;
-    const dz = next.z - hull[i].z;
-    totalPerimeter += Math.sqrt(dx * dx + dz * dz);
-    perimeterLengths[i] = totalPerimeter;
+  const withAngle = hull.map((p) => ({
+    ...p,
+    angle: Math.atan2(p.z - cz, p.x - cx),
+  }));
+  withAngle.sort((a, b) => a.angle - b.angle);
+
+  const legCount = Math.min(n, 6);
+  if (legCount >= n) {
+    return withAngle;
   }
 
-  const cumulativeAtVertex = [0, ...perimeterLengths];
-  const quarter = totalPerimeter / 4;
-  const result: Point2D[] = [];
+  return selectSpreadVertices(withAngle, legCount);
+}
 
-  for (let leg = 0; leg < 4; leg++) {
-    const target = leg * quarter;
-    let bestIdx = 0;
-    let bestDist = Infinity;
+function selectSpreadVertices(
+  sorted: (Point2D & { angle: number })[],
+  count: number,
+): Point2D[] {
+  const n = sorted.length;
+  if (n <= count) return sorted;
 
-    for (let i = 0; i < n; i++) {
-      const dist = Math.abs(cumulativeAtVertex[i] - target);
-      const distWrap = Math.abs(cumulativeAtVertex[i] - target + totalPerimeter);
-      const distWrap2 = Math.abs(cumulativeAtVertex[i] - target - totalPerimeter);
-      const d = Math.min(dist, distWrap, distWrap2);
-      if (d < bestDist) {
-        bestDist = d;
-        bestIdx = i;
-      }
+  let bestScore = -Infinity;
+  let bestSet: number[] = [];
+
+  for (let start = 0; start < n; start++) {
+    const indices = [start];
+    const step = n / count;
+    for (let k = 1; k < count; k++) {
+      const ideal = start + k * step;
+      const idx = Math.round(ideal) % n;
+      indices.push(idx);
     }
 
-    const candidate = hull[bestIdx];
-    if (!result.some((r) => r.x === candidate.x && r.z === candidate.z)) {
-      result.push(candidate);
+    let minGap = Infinity;
+    for (let k = 0; k < indices.length; k++) {
+      const a = sorted[indices[k]].angle;
+      const b = sorted[indices[(k + 1) % indices.length]].angle;
+      let gap = b - a;
+      if (gap <= 0) gap += Math.PI * 2;
+      if (gap < minGap) minGap = gap;
     }
-  }
 
-  if (result.length < 4) {
-    const step = Math.max(1, Math.floor(n / 4));
-    for (let i = 0; i < n && result.length < 4; i += step) {
-      const p = hull[i];
-      if (!result.some((r) => r.x === p.x && r.z === p.z)) {
-        result.push(p);
-      }
-    }
-    for (let i = 0; i < n && result.length < 4; i++) {
-      const p = hull[i];
-      if (!result.some((r) => r.x === p.x && r.z === p.z)) {
-        result.push(p);
-      }
+    if (minGap > bestScore) {
+      bestScore = minGap;
+      bestSet = indices;
     }
   }
 
-  return result;
+  return bestSet.map((i) => sorted[i]);
 }
