@@ -7,7 +7,11 @@ import { parseInstrumentFile, serializeInstrumentFile } from "../engine/fileIO/i
 import { SncCreator } from "../engine/snc/sncCreator";
 import { buildSncPlaybackIntervals, scheduleSncPlaybackKeySimulation } from "../engine/snc/sncPlaybackKeys";
 import { renderSncTextToWav } from "../engine/snc/renderSncFromText";
-import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "../engine/tuning";
+import {
+  derivePitchCalibrationRatio,
+  estimateFrequencyFromZeroCrossings,
+  estimateProminentFrequencyAWeighted,
+} from "../engine/tuning";
 import { clonePerturbation, GraphModel } from "../engine/graph";
 import type {
   GraphPerturbation,
@@ -550,7 +554,9 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
             abortController.signal,
             generationWorkers[0],
           );
-          const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, safeSampleRate);
+          const measuredFirstFrequency =
+            estimateProminentFrequencyAWeighted(calibrationResult.playingPointBuffer, safeSampleRate) ??
+            estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, safeSampleRate);
           if (measuredFirstFrequency !== null) {
             calibrationPitchRatio = derivePitchCalibrationRatio(baseFrequency * firstTargetRatio, measuredFirstFrequency);
           }

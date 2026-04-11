@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { GraphModel } from "./graph";
 import { scaleGraphForPitchRatio, stiffnessRatioForPitchRatio } from "./gridGenerators";
 import { runSimulation } from "./simulation";
-import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "./tuning";
+import {
+  derivePitchCalibrationRatio,
+  estimateFrequencyFromZeroCrossings,
+  estimateProminentFrequencyAWeighted,
+} from "./tuning";
 
 function buildSingleSpringGraph(baseK: number): GraphModel {
   const graph = new GraphModel();
@@ -51,5 +55,34 @@ describe("pitch-to-stiffness scaling", () => {
     expect(derivePitchCalibrationRatio(200, 100)).toBe(2);
     expect(derivePitchCalibrationRatio(100, 200)).toBe(0.5);
     expect(derivePitchCalibrationRatio(100, 0)).toBe(1);
+  });
+
+  it("estimates A-weighted prominent peak from a pure tone", () => {
+    const sampleRate = 48_000;
+    const frequency = 440;
+    const size = 16384;
+    const buffer = new Float32Array(size);
+    for (let i = 0; i < size; i += 1) {
+      const t = i / sampleRate;
+      buffer[i] = Math.sin(2 * Math.PI * frequency * t);
+    }
+    const prominent = estimateProminentFrequencyAWeighted(buffer, sampleRate);
+    expect(prominent).not.toBeNull();
+    expect(Math.abs((prominent as number) - frequency)).toBeLessThan(3);
+  });
+
+  it("prefers perceptually louder harmonic for A-weighted prominence", () => {
+    const sampleRate = 48_000;
+    const fundamental = 261.63;
+    const harmonic = fundamental * 2;
+    const size = 16384;
+    const buffer = new Float32Array(size);
+    for (let i = 0; i < size; i += 1) {
+      const t = i / sampleRate;
+      buffer[i] = 0.35 * Math.sin(2 * Math.PI * fundamental * t) + 1.0 * Math.sin(2 * Math.PI * harmonic * t);
+    }
+    const prominent = estimateProminentFrequencyAWeighted(buffer, sampleRate);
+    expect(prominent).not.toBeNull();
+    expect(Math.abs((prominent as number) - harmonic)).toBeLessThan(4);
   });
 });

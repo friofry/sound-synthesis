@@ -4,6 +4,8 @@ import {
   drawSpectrogramPitchOverlay,
   findDominantFrequencyDecibels,
   findDominantFrequencyLinearMagnitudes,
+  findProminentFrequencyDecibels,
+  findProminentFrequencyLinearMagnitudes,
   pickLoudestStftFrameIndex,
 } from "./pitchAnalysis";
 import {
@@ -25,6 +27,7 @@ type SpectrogramViewProps = {
   fftSize: number;
   maxFrequency: number;
   highlightFundamental?: boolean;
+  highlightProminent?: boolean;
   highlightOvertones?: boolean;
   showNoteLabels?: boolean;
 };
@@ -167,6 +170,7 @@ export function SpectrogramView({
   fftSize,
   maxFrequency,
   highlightFundamental = false,
+  highlightProminent = false,
   highlightOvertones = false,
   showNoteLabels = false,
 }: SpectrogramViewProps) {
@@ -221,7 +225,7 @@ export function SpectrogramView({
           ["0 s"],
           showNoteLabels,
         );
-        if (highlightFundamental || highlightOvertones || showNoteLabels) {
+        if (highlightFundamental || highlightProminent || highlightOvertones || showNoteLabels) {
           drawSpectrogramPitchOverlay(ctx, {
             chartLeft: layout.chartLeft,
             chartTop: layout.chartTop,
@@ -231,7 +235,9 @@ export function SpectrogramView({
             chartHeight: layout.chartHeight,
             maxFrequency,
             fundamentalHz: null,
+            prominentHz: null,
             highlightFundamental,
+            highlightProminent,
             highlightOvertones,
             showNoteLabels,
             theme: "dark",
@@ -270,11 +276,19 @@ export function SpectrogramView({
       const durationSeconds = buffer.length / sampleRate;
 
       let fundamentalHz: number | null = null;
-      if (highlightFundamental || highlightOvertones) {
+      let prominentHz: number | null = null;
+      if (highlightFundamental || highlightProminent || highlightOvertones) {
         const frameIndex = pickLoudestStftFrameIndex(stft.magnitudes);
         const magFrame = stft.magnitudes[frameIndex];
         if (magFrame) {
           fundamentalHz = findDominantFrequencyLinearMagnitudes(
+            magFrame,
+            sampleRate,
+            stft.frameSize,
+            MIN_FREQUENCY,
+            maxFrequency,
+          );
+          prominentHz = findProminentFrequencyLinearMagnitudes(
             magFrame,
             sampleRate,
             stft.frameSize,
@@ -299,7 +313,7 @@ export function SpectrogramView({
         showNoteLabels,
       );
 
-      if (highlightFundamental || highlightOvertones || showNoteLabels) {
+      if (highlightFundamental || highlightProminent || highlightOvertones || showNoteLabels) {
         drawSpectrogramPitchOverlay(ctx, {
           chartLeft: layout.chartLeft,
           chartTop: layout.chartTop,
@@ -309,7 +323,9 @@ export function SpectrogramView({
           chartHeight: layout.chartHeight,
           maxFrequency,
           fundamentalHz,
+          prominentHz,
           highlightFundamental,
+          highlightProminent,
           highlightOvertones,
           showNoteLabels,
           theme: "dark",
@@ -381,9 +397,16 @@ export function SpectrogramView({
       }
 
       let fundamentalHz: number | null = null;
-      if ((highlightFundamental || highlightOvertones) && liveFrame) {
+      let prominentHz: number | null = null;
+      if ((highlightFundamental || highlightProminent || highlightOvertones) && liveFrame) {
         analyser.getFloatFrequencyData(liveFrame);
         fundamentalHz = findDominantFrequencyDecibels(
+          liveFrame,
+          analyser.context.sampleRate,
+          MIN_FREQUENCY,
+          maxFrequency,
+        );
+        prominentHz = findProminentFrequencyDecibels(
           liveFrame,
           analyser.context.sampleRate,
           MIN_FREQUENCY,
@@ -410,7 +433,7 @@ export function SpectrogramView({
         showNoteLabels,
       );
 
-      if (highlightFundamental || highlightOvertones || showNoteLabels) {
+      if (highlightFundamental || highlightProminent || highlightOvertones || showNoteLabels) {
         drawSpectrogramPitchOverlay(ctx, {
           chartLeft: layout.chartLeft,
           chartTop: layout.chartTop,
@@ -420,7 +443,9 @@ export function SpectrogramView({
           chartHeight: layout.chartHeight,
           maxFrequency,
           fundamentalHz,
+          prominentHz,
           highlightFundamental,
+          highlightProminent,
           highlightOvertones,
           showNoteLabels,
           theme: "dark",
@@ -460,6 +485,7 @@ export function SpectrogramView({
     buffer,
     fftSize,
     highlightFundamental,
+    highlightProminent,
     highlightOvertones,
     maxFrequency,
     sampleRate,
