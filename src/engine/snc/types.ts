@@ -30,4 +30,9 @@ export type SncExecutionContext = {
   sampleRate: number;
   knownAliases?: Iterable<string>;
   createStreamForAlias: (alias: string) => SncStream;
+  /**
+   * Fade-out duration when a sustaining note is released (`r`), to avoid a click at note-off.
+   * Defaults are applied in `executeSncCommands` if unset.
+   */
+  releaseFadeMs?: number;
 };

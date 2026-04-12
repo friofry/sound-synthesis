@@ -3,10 +3,9 @@ import { executeSncCommands, parseSncText } from "./sncParser";
 import { SimpleMixer } from "./simpleMixer";
 import type { SncCommand } from "./types";
 
-function createConstantStream(value: number) {
+function createConstantStream(value: number, sampleRate: number) {
   return {
     getSamples(durationSeconds: number): Int16Array {
-      const sampleRate = 10;
       const size = Math.max(0, Math.round(durationSeconds * sampleRate));
       const out = new Int16Array(size);
       out.fill(value);
@@ -81,7 +80,8 @@ describe("executeSncCommands", () => {
       {
         sampleRate: 10,
         knownAliases: ["a"],
-        createStreamForAlias: () => createConstantStream(100),
+        releaseFadeMs: 0,
+        createStreamForAlias: () => createConstantStream(100, 10),
       },
       (chunk) => waits.push(chunk),
     );
@@ -100,7 +100,7 @@ describe("executeSncCommands", () => {
         {
           sampleRate: 10,
           knownAliases: ["known"],
-          createStreamForAlias: () => createConstantStream(1),
+          createStreamForAlias: () => createConstantStream(1, 10),
         },
       ),
     ).toThrow(/Unknown alias/);
@@ -153,6 +153,43 @@ describe("executeSncCommands", () => {
     expect(Array.from(waits[1])).toEqual([7, 8]);
   });
 
+  it("ramps down sustaining note on release before the next rest (anti-click)", () => {
+    const sr = 100;
+    const releaseFadeMs = 30;
+    const commands: SncCommand[] = [
+      { type: "alias", name: "a", flag: "a", duration: -1 as const },
+      { type: "wait", seconds: 0.1 },
+      { type: "alias", name: "a", flag: "r", duration: 0 },
+      { type: "wait", seconds: 0.1 },
+    ];
+    const mixer = new SimpleMixer();
+    const waits: Int16Array[] = [];
+
+    executeSncCommands(
+      commands,
+      mixer,
+      {
+        sampleRate: sr,
+        knownAliases: ["a"],
+        releaseFadeMs,
+        createStreamForAlias: () => createConstantStream(1000, sr),
+      },
+      (chunk) => waits.push(chunk),
+    );
+
+    expect(waits.length).toBe(2);
+    const afterRelease = waits[1]!;
+    expect(afterRelease.length).toBe(10);
+    const fadeLen = Math.max(1, Math.round((releaseFadeMs / 1000) * sr));
+    for (let i = 0; i < fadeLen; i += 1) {
+      const g = fadeLen === 1 ? 1 : 1 - i / (fadeLen - 1);
+      expect(afterRelease[i]).toBe(Math.round(1000 * g));
+    }
+    for (let i = fadeLen; i < 10; i += 1) {
+      expect(afterRelease[i]).toBe(0);
+    }
+  });
+
   it("emits silence for !wait when no aliases are sustaining (rests)", () => {
     const commands: SncCommand[] = [
       { type: "wait", seconds: 0.3 },
@@ -168,7 +205,7 @@ describe("executeSncCommands", () => {
       {
         sampleRate: 10,
         knownAliases: ["a"],
-        createStreamForAlias: () => createConstantStream(50),
+        createStreamForAlias: () => createConstantStream(50, 10),
       },
       (chunk) => waits.push(chunk),
     );

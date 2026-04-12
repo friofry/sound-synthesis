@@ -932,6 +932,37 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     }
   }, [handleLoadSncFile]);
 
+  const handlePlayMarioThemeMidi = useCallback(async () => {
+    if (instrumentNotes.length === 0) {
+      window.alert("Generate or load an instrument first, then play the MIDI.");
+      return;
+    }
+    try {
+      const response = await fetch("/midi/mario_theme.MID", { cache: "no-store" });
+      if (!response.ok) {
+        window.alert(`Failed to load mario_theme.MID: HTTP ${response.status}`);
+        return;
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      const midi = new Midi(arrayBuffer);
+      const parts = listMidiTracksWithNotes(midi);
+      const first = parts[0];
+      if (!first) {
+        window.alert("No MIDI tracks with notes were found in mario_theme.MID.");
+        return;
+      }
+      const track = midi.tracks[first.trackIndex];
+      if (!track) {
+        window.alert("mario_theme.MID: invalid track index.");
+        return;
+      }
+      const sncText = midiTrackToSnc(track, instrumentNotes.length);
+      await playMelodyFromSncText(sncText, { monophonicLead: false });
+    } catch (error) {
+      window.alert(`Failed to play mario_theme.MID: ${(error as Error).message}`);
+    }
+  }, [instrumentNotes.length, playMelodyFromSncText]);
+
   const handlePlayRenderedWav = useCallback(async () => {
     if (!lastRenderedWav) return;
     stopAllMelodyPreviewPlayback();
@@ -980,6 +1011,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     handleSaveSnc,
     handleLoadSncFile,
     handlePlayPopcornSnc,
+    handlePlayMarioThemeMidi,
     handlePlayRenderedWav,
     midiPartPicker,
     handleConfirmMidiPart,

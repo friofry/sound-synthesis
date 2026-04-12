@@ -2,6 +2,7 @@ import { floatToInt16Pcm } from "./pcm";
 import { normalizeParsedSncForInstrumentNotes } from "./legacySncPitch";
 import { executeSncCommands, parseSncText } from "./sncParser";
 import { SimpleMixer } from "./simpleMixer";
+import { MixMode } from "./types";
 import { encodeWavBlob } from "./wavExport";
 import type { RawInstrumentNote } from "../types";
 
@@ -37,7 +38,8 @@ export function renderSncTextToWav(text: string, instrumentNotes: RawInstrumentN
   const noteMap = new Map(instrumentNotes.map((note) => [note.alias, note]));
   const chunks: Int16Array[] = [];
   const sampleRate = instrumentNotes[0]?.sampleRate ?? 48_000;
-  const mixer = new SimpleMixer();
+  /** Regulation avoids hard int16 clipping when several sustained notes overlap (e.g. polyphonic MIDI). */
+  const mixer = new SimpleMixer(MixMode.Regulation);
 
   executeSncCommands(
     parsed.commands,

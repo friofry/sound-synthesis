@@ -45,6 +45,7 @@ export function PianoPlayerPage({ onBackToModeller, visible = true }: PianoPlaye
     handleSaveSnc,
     handleLoadSncFile,
     handlePlayPopcornSnc,
+    handlePlayMarioThemeMidi,
     midiPartPicker,
     handleConfirmMidiPart,
     handleCancelMidiPart,
@@ -83,6 +84,7 @@ export function PianoPlayerPage({ onBackToModeller, visible = true }: PianoPlaye
         onSaveSnc={handleSaveSnc}
         onLoadSncFile={handleLoadSncFile}
         onPlayPopcorn={handlePlayPopcornSnc}
+        onPlayMarioTheme={handlePlayMarioThemeMidi}
         navigationButton={{
           label: "Back to Membrane Modeller",
           title: "Back to Membrane Modeller",

@@ -80,6 +80,7 @@ export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyze
     handleSaveSnc,
     handleLoadSncFile,
     handlePlayPopcornSnc,
+    handlePlayMarioThemeMidi,
     midiPartPicker,
     handleConfirmMidiPart,
     handleCancelMidiPart,
@@ -299,6 +300,7 @@ export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyze
               onSaveSnc={handleSaveSnc}
               onLoadSncFile={handleLoadSncFile}
               onPlayPopcorn={handlePlayPopcornSnc}
+              onPlayMarioTheme={handlePlayMarioThemeMidi}
               navigationButton={{
                 label: "Open Piano Player",
                 title: "Open Piano Player",

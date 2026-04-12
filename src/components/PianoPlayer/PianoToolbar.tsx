@@ -12,6 +12,7 @@ type PianoToolbarProps = {
   onSaveSnc: () => void;
   onLoadSncFile: (file: File) => void | Promise<void>;
   onPlayPopcorn: () => void | Promise<void>;
+  onPlayMarioTheme: () => void | Promise<void>;
   navigationButton?: {
     label: string;
     title?: string;
@@ -31,7 +32,8 @@ type PianoActionId =
   | "loadIns"
   | "saveSnc"
   | "loadSnc"
-  | "popcorn";
+  | "popcorn"
+  | "marioTheme";
 
 type PianoToolbarButton = MfcToolbarItem<PianoActionId> & {
   spriteIndex?: number;
@@ -52,6 +54,7 @@ export function PianoToolbar({
   onSaveSnc,
   onLoadSncFile,
   onPlayPopcorn,
+  onPlayMarioTheme,
   navigationButton,
 }: PianoToolbarProps) {
   const instrumentInputRef = useRef<HTMLInputElement | null>(null);
@@ -137,6 +140,12 @@ export function PianoToolbar({
             text: "🍿",
           },
           {
+            id: "marioTheme" as const,
+            label: "Play mario_theme.MID (first track with notes)",
+            title: "Play midi/mario_theme.MID — first track that contains notes",
+            text: "🕹️",
+          },
+          {
             id: "navigate" as const,
             label: navigationButton.label,
             title: navigationButton.title ?? navigationButton.label,
@@ -149,6 +158,12 @@ export function PianoToolbar({
             label: "Play popcorn.snc",
             title: "Play popcorn.snc from library",
             text: "🍿",
+          },
+          {
+            id: "marioTheme" as const,
+            label: "Play mario_theme.MID (first track with notes)",
+            title: "Play midi/mario_theme.MID — first track that contains notes",
+            text: "🕹️",
           },
         ]),
   ];
@@ -191,6 +206,9 @@ export function PianoToolbar({
               return;
             case "popcorn":
               void onPlayPopcorn();
+              return;
+            case "marioTheme":
+              void onPlayMarioTheme();
               return;
             default:
               return;
