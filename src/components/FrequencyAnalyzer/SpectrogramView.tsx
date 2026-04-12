@@ -178,6 +178,12 @@ export function SpectrogramView({
   const lastLiveColumnAtRef = useRef(0);
   const lastLiveWidthRef = useRef(0);
   const lastLiveHeightRef = useRef(0);
+
+  useEffect(() => {
+    lastLiveWidthRef.current = 0;
+    lastLiveHeightRef.current = 0;
+    lastLiveColumnAtRef.current = 0;
+  }, [analyser]);
   const stft = useMemo(
     () => computeSTFT(buffer, sampleRate, {
       frameSize: fftSize,
@@ -359,17 +365,19 @@ export function SpectrogramView({
       const now = performance.now();
       if (shouldReset || now - lastLiveColumnAtRef.current >= LIVE_COLUMN_MS) {
         analyser.getFloatFrequencyData(liveFrame);
-        ctx.drawImage(
-          canvas,
-          layout.chartLeft + 1,
-          layout.chartTop,
-          layout.chartWidth - 1,
-          layout.chartHeight,
-          layout.chartLeft,
-          layout.chartTop,
-          layout.chartWidth - 1,
-          layout.chartHeight,
-        );
+        if (layout.chartWidth > 1) {
+          ctx.drawImage(
+            canvas,
+            layout.chartLeft + 1,
+            layout.chartTop,
+            layout.chartWidth - 1,
+            layout.chartHeight,
+            layout.chartLeft,
+            layout.chartTop,
+            layout.chartWidth - 1,
+            layout.chartHeight,
+          );
+        }
 
         const rowCount = Math.min(192, layout.chartHeight);
         const bands = buildLogBands(rowCount, maxFrequency);
