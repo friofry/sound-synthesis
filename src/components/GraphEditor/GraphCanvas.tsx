@@ -8,7 +8,7 @@ const HAMMER_CHARGE_MS = 1200;
 const HAMMER_CHARGE_MIN = 1;
 const HAMMER_CHARGE_MAX = 10;
 const HAMMER_CURSOR =
-  'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%271%27 y=%2718%27 font-size=%2718%27%3E%F0%9F%94%A8%3C/text%3E%3C/svg%3E") 4 20, crosshair';
+  'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%2712%27 y=%2718%27 font-size=%2718%27 text-anchor=%27middle%27%3E%F0%9F%94%A8%3C/text%3E%3C/svg%3E") 12 4, crosshair';
 
 type GraphCanvasProps = {
   onHammerImpact?: (payload: {
