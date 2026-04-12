@@ -117,14 +117,14 @@ export function PianoToolbar({
     { kind: "separator", id: "sep-3" },
     {
       id: "saveSnc",
-      label: "Save melody to file",
-      title: "Save melody to file",
+      label: "Save melody to file (SNC)",
+      title: "Save melody to file (SNC)",
       spriteIndex: 6,
     },
     {
       id: "loadSnc",
-      label: "Play melody from file (SNC, WAV)",
-      title: "Play melody from file (SNC, WAV)",
+      label: "Play melody from file (SNC, MIDI)",
+      title: "Play melody from file (SNC, MIDI)",
       spriteIndex: 7,
     },
     ...(navigationButton
@@ -221,7 +221,13 @@ export function PianoToolbar({
         className="hidden-input"
         onChange={handleInstrumentChange}
       />
-      <input ref={sncInputRef} type="file" accept=".snc,.txt" className="hidden-input" onChange={handleSncChange} />
+      <input
+        ref={sncInputRef}
+        type="file"
+        accept=".snc,.txt,.mid,.midi"
+        className="hidden-input"
+        onChange={handleSncChange}
+      />
     </div>
   );
 }

@@ -78,7 +78,7 @@ export function parseSncText(text: string): SncParseResult {
   for (let index = 0; index < lines.length; index += 1) {
     const lineNo = index + 1;
     const raw = lines[index];
-    let line = stripInlineComment(raw.trim()).trim();
+    const line = stripInlineComment(raw.trim()).trim();
 
     if (line.length === 0 || line.startsWith("--")) {
       continue;
@@ -173,7 +173,14 @@ export function executeSncCommands(
       const chunk = stream.getSamples(command.seconds);
       mixer.addBuffer(chunk);
     }
-    const mixedChunk = mixer.getBuffer(waitSamples);
+    /** Rests with no sustaining notes must still advance time (digital silence). */
+    let mixedChunk: Int16Array =
+      mixer.size === 0 && waitSamples > 0 ? new Int16Array(waitSamples) : mixer.getBuffer(waitSamples);
+    if (mixedChunk.length < waitSamples) {
+      const padded = new Int16Array(waitSamples);
+      padded.set(mixedChunk);
+      mixedChunk = padded;
+    }
     if (onWait) {
       onWait(mixedChunk, command.seconds);
     }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Midi } from "@tonejs/midi";
 import { AudioEngine } from "../components/PianoPlayer/AudioEngine";
 import { DEFAULT_KEYBINDS, DEFAULT_KEY_LABELS, getNoteIndexByCode } from "../components/PianoPlayer/KeyboardMapping";
 import { generateInstrumentFromGraph } from "../engine/noteGenerator";
@@ -28,6 +29,14 @@ import type { GenerateNotesDialogValues } from "../components/PianoPlayer/Genera
 import { registerMelodyPreviewAudioConnector } from "../audio/melodyPreviewBridge";
 import { usePianoStore, VIEWER_BASE_GRAPH_SNAPSHOT_IDS } from "../store/pianoStore";
 import { DEFAULT_ONE_NOTE_GENERATION_SETTINGS, resolveDefaultSimulationBackend } from "../config/defaults";
+import { listMidiTracksWithNotes, midiTrackToSnc } from "../engine/midi";
+import type { MidiTrackListEntry } from "../engine/midi/listMidiParts";
+
+type MidiPartPickerState = {
+  fileName: string;
+  parts: MidiTrackListEntry[];
+  arrayBuffer: ArrayBuffer;
+};
 
 type InstrumentBundle = {
   type: "sound-synthesis-instrument";
@@ -243,6 +252,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   const setInstrumentGenerationState = usePianoStore((s) => s.setInstrumentGenerationState);
   const setRecording = usePianoStore((s) => s.setRecording);
   const setLastSncText = usePianoStore((s) => s.setLastSncText);
+  const setLastSncMonophonicLead = usePianoStore((s) => s.setLastSncMonophonicLead);
+  const lastSncMonophonicLead = usePianoStore((s) => s.lastSncMonophonicLead);
   const setLastRenderedWav = usePianoStore((s) => s.setLastRenderedWav);
 
   const [initialNotes] = useState<RawInstrumentNote[]>(() =>
@@ -258,6 +269,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   const sncPlaybackCleanupRef = useRef<(() => void) | null>(null);
   const previewAudioAnalyserDisconnectRef = useRef<(() => void) | null>(null);
   const generationAbortRef = useRef<AbortController | null>(null);
+  const [midiPartPicker, setMidiPartPicker] = useState<MidiPartPickerState | null>(null);
 
   useEffect(() => {
     registerMelodyPreviewAudioConnector(audioEngine);
@@ -265,9 +277,9 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   }, [audioEngine]);
 
   const startSncPlaybackKeySimulation = useCallback(
-    (audio: HTMLAudioElement, text: string) => {
+    (audio: HTMLAudioElement, text: string, monophonicLead = true) => {
       sncPlaybackCleanupRef.current?.();
-      const intervals = buildSncPlaybackIntervals(text, instrumentNotes);
+      const intervals = buildSncPlaybackIntervals(text, instrumentNotes, { monophonicLead });
       const { pressKey: storePress, releaseKey: storeRelease } = usePianoStore.getState();
       sncPlaybackCleanupRef.current = scheduleSncPlaybackKeySimulation(audio, intervals, storePress, storeRelease);
     },
@@ -711,12 +723,14 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       recorder.start();
       setRecording(true);
       setLastSncText("");
+      setLastSncMonophonicLead(true);
       return;
     }
     const text = recorder.finish();
     setRecording(false);
     setLastSncText(text);
-  }, [recording, setRecording, setLastSncText]);
+    setLastSncMonophonicLead(true);
+  }, [recording, setRecording, setLastSncMonophonicLead, setLastSncText]);
 
   const handleSaveInstrument = useCallback(() => {
     const manifest = serializeInstrumentFile(
@@ -789,16 +803,17 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     downloadBlob("melody.snc", new Blob([lastSncText], { type: "text/plain" }));
   }, [lastSncText]);
 
-  const handleLoadSncFile = useCallback(
-    async (file: File) => {
-      const text = await file.text();
+  const playMelodyFromSncText = useCallback(
+    async (text: string, options?: { monophonicLead?: boolean }) => {
       if (instrumentNotes.length === 0) {
-        window.alert("Generate or load an instrument first, then open an SNC file.");
+        window.alert("Generate or load an instrument first, then open a melody file.");
         return;
       }
+      const monophonicLead = options?.monophonicLead ?? true;
       try {
         const { wavBlob } = renderSncTextToWav(text, instrumentNotes);
         setLastSncText(text);
+        setLastSncMonophonicLead(monophonicLead);
         setLastRenderedWav(wavBlob);
 
         const url = URL.createObjectURL(wavBlob);
@@ -809,7 +824,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
         sncPlaybackCleanupRef.current?.();
         audioPreviewRef.current = audio;
         previewAudioAnalyserDisconnectRef.current = await audioEngine.connectHtml5AudioForVisualization(audio);
-        startSncPlaybackKeySimulation(audio, text);
+        startSncPlaybackKeySimulation(audio, text, monophonicLead);
         const cleanupPlayback = () => {
           previewAudioAnalyserDisconnectRef.current?.();
           previewAudioAnalyserDisconnectRef.current = null;
@@ -825,11 +840,65 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
           throw playError;
         }
       } catch (error) {
-        window.alert(`Failed to play SNC: ${(error as Error).message}`);
+        window.alert(`Failed to play melody: ${(error as Error).message}`);
       }
     },
-    [audioEngine, instrumentNotes, setLastSncText, setLastRenderedWav, startSncPlaybackKeySimulation],
+    [audioEngine, instrumentNotes, setLastSncMonophonicLead, setLastSncText, setLastRenderedWav, startSncPlaybackKeySimulation],
   );
+
+  const handleLoadMelodyFile = useCallback(
+    async (file: File) => {
+      const lower = file.name.toLowerCase();
+      if (lower.endsWith(".mid") || lower.endsWith(".midi")) {
+        if (instrumentNotes.length === 0) {
+          window.alert("Generate or load an instrument first, then open a MIDI file.");
+          return;
+        }
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const midi = new Midi(arrayBuffer);
+          const parts = listMidiTracksWithNotes(midi);
+          if (parts.length === 0) {
+            window.alert("No MIDI tracks with notes were found in this file.");
+            return;
+          }
+          setMidiPartPicker({ fileName: file.name, parts, arrayBuffer });
+        } catch (error) {
+          window.alert(`Failed to read MIDI: ${(error as Error).message}`);
+        }
+        return;
+      }
+
+      const text = await file.text();
+      await playMelodyFromSncText(text);
+    },
+    [instrumentNotes.length, playMelodyFromSncText],
+  );
+
+  const handleConfirmMidiPart = useCallback(
+    async (pick: MidiPartPickerState, trackIndex: number) => {
+      setMidiPartPicker(null);
+      try {
+        const midi = new Midi(pick.arrayBuffer);
+        const track = midi.tracks[trackIndex];
+        if (!track) {
+          window.alert("Invalid track index.");
+          return;
+        }
+        const sncText = midiTrackToSnc(track, instrumentNotes.length);
+        await playMelodyFromSncText(sncText, { monophonicLead: false });
+      } catch (error) {
+        window.alert(`Failed to convert MIDI: ${(error as Error).message}`);
+      }
+    },
+    [instrumentNotes.length, playMelodyFromSncText],
+  );
+
+  const handleCancelMidiPart = useCallback(() => {
+    setMidiPartPicker(null);
+  }, []);
+
+  const handleLoadSncFile = handleLoadMelodyFile;
 
   const handlePlayPopcornSnc = useCallback(async () => {
     try {
@@ -857,7 +926,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     audioPreviewRef.current = audio;
     previewAudioAnalyserDisconnectRef.current = await audioEngine.connectHtml5AudioForVisualization(audio);
     if (lastSncText) {
-      startSncPlaybackKeySimulation(audio, lastSncText);
+      startSncPlaybackKeySimulation(audio, lastSncText, lastSncMonophonicLead);
     }
     const cleanupPlayback = () => {
       previewAudioAnalyserDisconnectRef.current?.();
@@ -873,7 +942,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       cleanupPlayback();
       window.alert(`Playback failed: ${(error as Error).message}`);
     }
-  }, [audioEngine, lastRenderedWav, lastSncText, startSncPlaybackKeySimulation]);
+  }, [audioEngine, lastRenderedWav, lastSncMonophonicLead, lastSncText, startSncPlaybackKeySimulation]);
 
   return {
     noteCount,
@@ -904,5 +973,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     handleLoadSncFile,
     handlePlayPopcornSnc,
     handlePlayRenderedWav,
+    midiPartPicker,
+    handleConfirmMidiPart,
+    handleCancelMidiPart,
   };
 }

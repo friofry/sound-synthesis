@@ -20,13 +20,23 @@ function noteIndexFromNormalizedAlias(name: string): number | null {
  * Builds time intervals [start, end) during which each piano key index should appear held,
  * matching sustain (`a -1` / `r`) and one-shot (`a` duration ≥ 0) commands in order.
  */
+export type BuildSncPlaybackIntervalsOptions = {
+  /**
+   * When true (default), a new sustain `a -1` releases other held notes first — matches monophonic lead lines
+   * (e.g. `popcorn.snc`). Set false for polyphonic scores (e.g. MIDI chords) where overlaps are intentional.
+   */
+  monophonicLead?: boolean;
+};
+
 export function buildSncPlaybackIntervals(
   sncText: string,
   instrumentNotes: RawInstrumentNote[],
+  options?: BuildSncPlaybackIntervalsOptions,
 ): SncPlaybackInterval[] {
   if (instrumentNotes.length === 0) {
     return [];
   }
+  const monophonicLead = options?.monophonicLead ?? true;
   const parsed = normalizeParsedSncForInstrumentNotes(parseSncText(sncText), instrumentNotes.length);
   const intervals: { start: number; end: number; index: number }[] = [];
   let t = 0;
@@ -71,9 +81,11 @@ export function buildSncPlaybackIntervals(
       if (cmd.duration === -1) {
         // Lead lines often omit `r` between notes; without this, every distinct key stays
         // "held" until EOF (only same-alias retrigger closed). Release other sustains here.
-        for (const other of [...sustainStart.keys()]) {
-          if (other !== index) {
-            closeSustain(other, t);
+        if (monophonicLead) {
+          for (const other of [...sustainStart.keys()]) {
+            if (other !== index) {
+              closeSustain(other, t);
+            }
           }
         }
         closeSustain(index, t);

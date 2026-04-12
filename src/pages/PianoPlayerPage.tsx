@@ -4,6 +4,7 @@ import { GenerateNotesDialog } from "../components/PianoPlayer/GenerateNotesDial
 import { FrequencyAnalyzer } from "../components/PianoPlayer/FrequencyAnalyzer";
 import { OscillogramView } from "../components/PianoPlayer/OscillogramView";
 import { PianoKeyboard } from "../components/PianoPlayer/PianoKeyboard";
+import { MidiPartDialog } from "../components/PianoPlayer/MidiPartDialog";
 import { PianoToolbar } from "../components/PianoPlayer/PianoToolbar";
 import { useGraphStore } from "../store/graphStore";
 import { useAudioAnalyserStore } from "../store/audioAnalyserStore";
@@ -44,6 +45,9 @@ export function PianoPlayerPage({ onBackToModeller, visible = true }: PianoPlaye
     handleSaveSnc,
     handleLoadSncFile,
     handlePlayPopcornSnc,
+    midiPartPicker,
+    handleConfirmMidiPart,
+    handleCancelMidiPart,
   } = usePianoToolbar({ graph, simulationParams });
 
   const setAnalyser = useAudioAnalyserStore((s) => s.setAnalyser);
@@ -91,6 +95,17 @@ export function PianoPlayerPage({ onBackToModeller, visible = true }: PianoPlaye
         initialValues={generateNotesSettings}
         onClose={closeGenerateNotesDialog}
         onSubmit={handleConfirmGenerateNotes}
+      />
+      <MidiPartDialog
+        open={midiPartPicker !== null}
+        fileName={midiPartPicker?.fileName ?? ""}
+        parts={midiPartPicker?.parts ?? []}
+        onClose={handleCancelMidiPart}
+        onSelectPart={(trackIndex) => {
+          if (midiPartPicker) {
+            void handleConfirmMidiPart(midiPartPicker, trackIndex);
+          }
+        }}
       />
       <GenerationProgressDialog
         open={isGeneratingInstrument && generationProgressDialogOpen}

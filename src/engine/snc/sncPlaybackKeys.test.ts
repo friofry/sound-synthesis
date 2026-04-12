@@ -23,7 +23,7 @@ note-2 a -1
 !wait 0.25
 note-1 r 0
 `;
-    const iv = buildSncPlaybackIntervals(text, dummyNotes(24));
+    const iv = buildSncPlaybackIntervals(text, dummyNotes(24), { monophonicLead: false });
     const one = iv.filter((x) => x.index === 1);
     const two = iv.filter((x) => x.index === 2);
     expect(one.some((x) => x.startSec === 0 && x.endSec === 0.5)).toBe(true);
@@ -38,7 +38,7 @@ note-1 a -1
 note-0 r 0
 note-1 r 0
 `;
-    const iv = buildSncPlaybackIntervals(text, dummyNotes(24));
+    const iv = buildSncPlaybackIntervals(text, dummyNotes(24), { monophonicLead: false });
     expect(iv).toContainEqual({ startSec: 0, endSec: 0.1, index: 0 });
     expect(iv).toContainEqual({ startSec: 0, endSec: 0.1, index: 1 });
   });

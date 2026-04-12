@@ -1,3 +1,4 @@
+import { Midi } from "@tonejs/midi";
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import "./App.css";
 import { MfcMenuBar, type MfcMenuBarItem } from "./components/ui/MfcMenu";
@@ -7,15 +8,26 @@ import { FrequencyAnalyzerPage } from "./pages/FrequencyAnalyzerPage";
 import { graphFromBinary, graphToBinary } from "./engine/fileIO/graphFile";
 import { buildSncPlaybackIntervals, scheduleSncPlaybackKeySimulation } from "./engine/snc/sncPlaybackKeys";
 import { renderSncTextToWav } from "./engine/snc/renderSncFromText";
+import { CommunityMidiDialog } from "./components/PianoPlayer/CommunityMidiDialog";
 import { CommunitySncDialog } from "./components/PianoPlayer/CommunitySncDialog";
+import { MidiPartDialog } from "./components/PianoPlayer/MidiPartDialog";
 import { connectMelodyPreviewToAnalyser } from "./audio/melodyPreviewBridge";
+import { listMidiTracksWithNotes, midiTrackToSnc } from "./engine/midi";
+import type { MidiTrackListEntry } from "./engine/midi/listMidiParts";
 import { useGraphStore } from "./store/graphStore";
 import { usePianoStore } from "./store/pianoStore";
 
 type AppTab = "modeller" | "piano" | "frequency-analyzer";
 
+type CommunityMidiPartPick = {
+  fileName: string;
+  arrayBuffer: ArrayBuffer;
+  parts: MidiTrackListEntry[];
+};
+
 function App() {
   const [tab, setTab] = useState<AppTab>("modeller");
+  const [communityMidiPartPick, setCommunityMidiPartPick] = useState<CommunityMidiPartPick | null>(null);
   const graphInputRef = useRef<HTMLInputElement | null>(null);
   const communitySncAudioRef = useRef<HTMLAudioElement | null>(null);
   const communitySncPlaybackCleanupRef = useRef<(() => void) | null>(null);
@@ -33,50 +45,120 @@ function App() {
   const communitySncDialogOpen = usePianoStore((s) => s.communitySncDialogOpen);
   const openCommunitySncDialog = usePianoStore((s) => s.openCommunitySncDialog);
   const closeCommunitySncDialog = usePianoStore((s) => s.closeCommunitySncDialog);
+  const communityMidiDialogOpen = usePianoStore((s) => s.communityMidiDialogOpen);
+  const openCommunityMidiDialog = usePianoStore((s) => s.openCommunityMidiDialog);
+  const closeCommunityMidiDialog = usePianoStore((s) => s.closeCommunityMidiDialog);
   const setLastSncText = usePianoStore((s) => s.setLastSncText);
+  const setLastSncMonophonicLead = usePianoStore((s) => s.setLastSncMonophonicLead);
   const setLastRenderedWav = usePianoStore((s) => s.setLastRenderedWav);
-  const handleOpenCommunitySnc = useCallback(async (sncPath: string) => {
-    const { instrumentNotes } = usePianoStore.getState();
-    if (instrumentNotes.length === 0) {
-      throw new Error("Generate or load an instrument first.");
-    }
-    const response = await fetch(`/snc/${encodeURIComponent(sncPath)}`, { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    const text = await response.text();
-    const { wavBlob } = renderSncTextToWav(text, instrumentNotes);
-    setLastSncText(text);
-    setLastRenderedWav(wavBlob);
-    const url = URL.createObjectURL(wavBlob);
-    const audio = new Audio(url);
-    communitySncAnalyserDisconnectRef.current?.();
-    communitySncAnalyserDisconnectRef.current = null;
-    communitySncPlaybackCleanupRef.current?.();
-    communitySncAudioRef.current?.pause();
-    communitySncAudioRef.current = audio;
-    communitySncAnalyserDisconnectRef.current = await connectMelodyPreviewToAnalyser(audio);
-    const intervals = buildSncPlaybackIntervals(text, instrumentNotes);
-    const { pressKey, releaseKey } = usePianoStore.getState();
-    communitySncPlaybackCleanupRef.current = scheduleSncPlaybackKeySimulation(audio, intervals, pressKey, releaseKey);
-    const cleanupPlayback = () => {
+
+  const startMelodyPreviewFromSnc = useCallback(
+    async (text: string, monophonicLead: boolean) => {
+      const { instrumentNotes } = usePianoStore.getState();
+      if (instrumentNotes.length === 0) {
+        throw new Error("Generate or load an instrument first.");
+      }
+      const { wavBlob } = renderSncTextToWav(text, instrumentNotes);
+      setLastSncText(text);
+      setLastSncMonophonicLead(monophonicLead);
+      setLastRenderedWav(wavBlob);
+      const url = URL.createObjectURL(wavBlob);
+      const audio = new Audio(url);
       communitySncAnalyserDisconnectRef.current?.();
       communitySncAnalyserDisconnectRef.current = null;
       communitySncPlaybackCleanupRef.current?.();
-      communitySncPlaybackCleanupRef.current = null;
-      if (communitySncAudioRef.current === audio) {
-        communitySncAudioRef.current = null;
+      communitySncAudioRef.current?.pause();
+      communitySncAudioRef.current = audio;
+      communitySncAnalyserDisconnectRef.current = await connectMelodyPreviewToAnalyser(audio);
+      const intervals = buildSncPlaybackIntervals(text, instrumentNotes, { monophonicLead });
+      const { pressKey, releaseKey } = usePianoStore.getState();
+      communitySncPlaybackCleanupRef.current = scheduleSncPlaybackKeySimulation(audio, intervals, pressKey, releaseKey);
+      const cleanupPlayback = () => {
+        communitySncAnalyserDisconnectRef.current?.();
+        communitySncAnalyserDisconnectRef.current = null;
+        communitySncPlaybackCleanupRef.current?.();
+        communitySncPlaybackCleanupRef.current = null;
+        if (communitySncAudioRef.current === audio) {
+          communitySncAudioRef.current = null;
+        }
+        URL.revokeObjectURL(url);
+      };
+      audio.onended = cleanupPlayback;
+      try {
+        await audio.play();
+      } catch (error) {
+        cleanupPlayback();
+        throw error;
       }
-      URL.revokeObjectURL(url);
-    };
-    audio.onended = cleanupPlayback;
-    try {
-      await audio.play();
-    } catch (error) {
-      cleanupPlayback();
-      throw error;
-    }
-  }, [setLastRenderedWav, setLastSncText]);
+    },
+    [setLastRenderedWav, setLastSncMonophonicLead, setLastSncText],
+  );
+
+  const handleOpenCommunitySnc = useCallback(
+    async (sncPath: string) => {
+      const response = await fetch(`/snc/${encodeURIComponent(sncPath)}`, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const text = await response.text();
+      await startMelodyPreviewFromSnc(text, true);
+    },
+    [startMelodyPreviewFromSnc],
+  );
+
+  const handleOpenCommunityMidi = useCallback(
+    async (midiPath: string) => {
+      const { instrumentNotes } = usePianoStore.getState();
+      if (instrumentNotes.length === 0) {
+        throw new Error("Generate or load an instrument first.");
+      }
+      const response = await fetch(`/midi/${encodeURIComponent(midiPath)}`, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      const midi = new Midi(arrayBuffer);
+      const parts = listMidiTracksWithNotes(midi);
+      if (parts.length === 0) {
+        throw new Error("No MIDI tracks with notes were found in this file.");
+      }
+      if (parts.length === 1) {
+        const track = midi.tracks[parts[0]!.trackIndex];
+        if (!track) {
+          throw new Error("Invalid MIDI track.");
+        }
+        const sncText = midiTrackToSnc(track, instrumentNotes.length);
+        await startMelodyPreviewFromSnc(sncText, false);
+        return;
+      }
+      setCommunityMidiPartPick({ fileName: midiPath, arrayBuffer, parts });
+    },
+    [startMelodyPreviewFromSnc],
+  );
+
+  const handleConfirmCommunityMidiPart = useCallback(
+    async (pick: CommunityMidiPartPick, trackIndex: number) => {
+      setCommunityMidiPartPick(null);
+      const { instrumentNotes } = usePianoStore.getState();
+      if (instrumentNotes.length === 0) {
+        window.alert("Generate or load an instrument first.");
+        return;
+      }
+      try {
+        const midi = new Midi(pick.arrayBuffer);
+        const track = midi.tracks[trackIndex];
+        if (!track) {
+          window.alert("Invalid track index.");
+          return;
+        }
+        const sncText = midiTrackToSnc(track, instrumentNotes.length);
+        await startMelodyPreviewFromSnc(sncText, false);
+      } catch (error) {
+        window.alert(`Failed to play MIDI: ${(error as Error).message}`);
+      }
+    },
+    [startMelodyPreviewFromSnc],
+  );
 
   const handleOpenGraph = async (event: ChangeEvent<HTMLInputElement>) => {
     const [file] = Array.from(event.target.files ?? []);
@@ -201,7 +283,10 @@ function App() {
       {
         id: "piano",
         label: "Piano",
-        items: [{ id: "community-snc", label: "Community SNC...", onClick: openCommunitySncDialog }],
+        items: [
+          { id: "community-snc", label: "Community SNC...", onClick: openCommunitySncDialog },
+          { id: "community-midi", label: "Community MIDI...", onClick: openCommunityMidiDialog },
+        ],
       },
       {
         id: "graph",
@@ -239,6 +324,7 @@ function App() {
       handleSaveGraph,
       openCellTemplateDialog,
       openCommunityGraphsDialog,
+      openCommunityMidiDialog,
       openCommunitySncDialog,
       openFrequencyAnalyzer,
       openHexTemplateDialog,
@@ -282,6 +368,22 @@ function App() {
         open={communitySncDialogOpen}
         onClose={closeCommunitySncDialog}
         onOpenSnc={handleOpenCommunitySnc}
+      />
+      <CommunityMidiDialog
+        open={communityMidiDialogOpen}
+        onClose={closeCommunityMidiDialog}
+        onOpenMidi={handleOpenCommunityMidi}
+      />
+      <MidiPartDialog
+        open={communityMidiPartPick !== null}
+        fileName={communityMidiPartPick?.fileName ?? ""}
+        parts={communityMidiPartPick?.parts ?? []}
+        onClose={() => setCommunityMidiPartPick(null)}
+        onSelectPart={(trackIndex) => {
+          if (communityMidiPartPick) {
+            void handleConfirmCommunityMidiPart(communityMidiPartPick, trackIndex);
+          }
+        }}
       />
     </main>
   );

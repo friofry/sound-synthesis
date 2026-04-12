@@ -152,4 +152,31 @@ describe("executeSncCommands", () => {
     expect(Array.from(waits[0])).toEqual([7, 8]);
     expect(Array.from(waits[1])).toEqual([7, 8]);
   });
+
+  it("emits silence for !wait when no aliases are sustaining (rests)", () => {
+    const commands: SncCommand[] = [
+      { type: "wait", seconds: 0.3 },
+      { type: "alias", name: "a", flag: "a", duration: -1 as const },
+      { type: "wait", seconds: 0.2 },
+    ];
+    const mixer = new SimpleMixer();
+    const waits: Int16Array[] = [];
+
+    executeSncCommands(
+      commands,
+      mixer,
+      {
+        sampleRate: 10,
+        knownAliases: ["a"],
+        createStreamForAlias: () => createConstantStream(50),
+      },
+      (chunk) => waits.push(chunk),
+    );
+
+    expect(waits).toHaveLength(2);
+    expect(waits[0]!.length).toBe(3);
+    expect(Array.from(waits[0]!)).toEqual([0, 0, 0]);
+    expect(waits[1]!.length).toBe(2);
+    expect(Array.from(waits[1]!)).toEqual([50, 50]);
+  });
 });
