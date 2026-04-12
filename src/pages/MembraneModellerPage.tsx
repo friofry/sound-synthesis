@@ -198,6 +198,7 @@ export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyze
     impactX: number;
     impactY: number;
     charge: number;
+    velocityScale?: number;
     settings: {
       distribution: "equivalent" | "smoothed";
       weight: number;
@@ -218,6 +219,7 @@ export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyze
       impactX: payload.impactX,
       impactY: payload.impactY,
       charge: payload.charge,
+      velocityScale: payload.velocityScale ?? 1,
       settings: payload.settings,
     });
     const { initializeSource, setActiveSource } = useMembraneViewerStore.getState();

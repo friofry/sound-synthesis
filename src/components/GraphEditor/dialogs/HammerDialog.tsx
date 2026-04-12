@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { DEFAULT_HAMMER_DIALOG_SETTINGS } from "../../../config/defaults";
-import type { HammerDistributionMode, HammerPlayingPointMode, HammerSettings } from "../../../store/graphStore";
+import type {
+  HammerAttackMode,
+  HammerDistributionMode,
+  HammerPlayingPointMode,
+  HammerRepeatForceMode,
+  HammerRepeatStopMode,
+  HammerSettings,
+} from "../../../store/graphStore";
 import { useGraphStore } from "../../../store/graphStore";
 import { MfcButton, MfcDialog, MfcField, MfcGroupBox, MfcNumberInput } from "../../ui/MfcDialog";
 
@@ -24,6 +31,10 @@ const SQUARE_ATTENUATION_MIN = 0;
 const SQUARE_ATTENUATION_MAX = 1;
 const RADIUS_MIN = 4;
 const RADIUS_MAX = 240;
+const REPEAT_HZ_MIN = 0.5;
+const REPEAT_HZ_MAX = 24;
+const REPEAT_COUNT_MIN = 1;
+const REPEAT_COUNT_MAX = 128;
 
 export function HammerDialogForm({ initialValues, onApply, onClose }: HammerFormProps) {
   const [distribution, setDistribution] = useState<HammerDistributionMode>(initialValues.distribution);
@@ -34,6 +45,11 @@ export function HammerDialogForm({ initialValues, onApply, onClose }: HammerForm
   const [squareAttenuation, setSquareAttenuation] = useState(initialValues.squareAttenuation);
   const [radius, setRadius] = useState(initialValues.radius);
   const [playingPointMode, setPlayingPointMode] = useState<HammerPlayingPointMode>(initialValues.playingPointMode);
+  const [attackMode, setAttackMode] = useState<HammerAttackMode>(initialValues.attackMode);
+  const [repeatHz, setRepeatHz] = useState(initialValues.repeatHz);
+  const [repeatForceMode, setRepeatForceMode] = useState<HammerRepeatForceMode>(initialValues.repeatForceMode);
+  const [repeatStopMode, setRepeatStopMode] = useState<HammerRepeatStopMode>(initialValues.repeatStopMode);
+  const [repeatCount, setRepeatCount] = useState(initialValues.repeatCount);
 
   return (
     <MfcDialog
@@ -51,6 +67,11 @@ export function HammerDialogForm({ initialValues, onApply, onClose }: HammerForm
           squareAttenuation,
           radius,
           playingPointMode,
+          attackMode,
+          repeatHz,
+          repeatForceMode,
+          repeatStopMode,
+          repeatCount,
         })
       }
       actions={
@@ -163,6 +184,76 @@ export function HammerDialogForm({ initialValues, onApply, onClose }: HammerForm
           </select>
         </MfcField>
       </MfcGroupBox>
+      <MfcGroupBox legend="Attack">
+        <MfcField label="Mode" labelWidth={130}>
+          <select value={attackMode} onChange={(event) => setAttackMode(event.target.value as HammerAttackMode)}>
+            <option value="single">Single strike (per release)</option>
+            <option value="repeat">Repeat strikes after release</option>
+          </select>
+        </MfcField>
+        {attackMode === "repeat" ? (
+          <>
+            <MfcField label="Rate (Hz)" labelWidth={130}>
+              <div className="mfc-slider-field">
+                <MfcNumberInput
+                  step="0.5"
+                  min={REPEAT_HZ_MIN}
+                  max={REPEAT_HZ_MAX}
+                  value={repeatHz}
+                  onChange={setRepeatHz}
+                />
+                <input
+                  type="range"
+                  min={REPEAT_HZ_MIN}
+                  max={REPEAT_HZ_MAX}
+                  step={0.5}
+                  value={clamp(repeatHz, REPEAT_HZ_MIN, REPEAT_HZ_MAX)}
+                  onChange={(event) => setRepeatHz(Number(event.target.value))}
+                />
+              </div>
+            </MfcField>
+            <MfcField label="Force" labelWidth={130}>
+              <select
+                value={repeatForceMode}
+                onChange={(event) => setRepeatForceMode(event.target.value as HammerRepeatForceMode)}
+              >
+                <option value="constant">Constant strength</option>
+                <option value="fading">Fading (each hit weaker)</option>
+              </select>
+            </MfcField>
+            <MfcField label="Until" labelWidth={130}>
+              <select
+                value={repeatStopMode}
+                onChange={(event) => setRepeatStopMode(event.target.value as HammerRepeatStopMode)}
+              >
+                <option value="next-click">Next mouse click</option>
+                <option value="count">Fixed number of strikes</option>
+              </select>
+            </MfcField>
+            {repeatStopMode === "count" ? (
+              <MfcField label="Strikes" labelWidth={130}>
+                <div className="mfc-slider-field">
+                  <MfcNumberInput
+                    step="1"
+                    min={REPEAT_COUNT_MIN}
+                    max={REPEAT_COUNT_MAX}
+                    value={repeatCount}
+                    onChange={setRepeatCount}
+                  />
+                  <input
+                    type="range"
+                    min={REPEAT_COUNT_MIN}
+                    max={REPEAT_COUNT_MAX}
+                    step={1}
+                    value={clamp(repeatCount, REPEAT_COUNT_MIN, REPEAT_COUNT_MAX)}
+                    onChange={(event) => setRepeatCount(Number(event.target.value))}
+                  />
+                </div>
+              </MfcField>
+            ) : null}
+          </>
+        ) : null}
+      </MfcGroupBox>
     </MfcDialog>
   );
 }
@@ -189,6 +280,11 @@ export function HammerDialog() {
             : hammerSettings.squareAttenuation,
           radius: Number.isFinite(values.radius) ? values.radius : hammerSettings.radius,
           playingPointMode: values.playingPointMode,
+          attackMode: values.attackMode,
+          repeatHz: Number.isFinite(values.repeatHz) ? values.repeatHz : hammerSettings.repeatHz,
+          repeatForceMode: values.repeatForceMode,
+          repeatStopMode: values.repeatStopMode,
+          repeatCount: Number.isFinite(values.repeatCount) ? values.repeatCount : hammerSettings.repeatCount,
         });
         closeHammerDialog();
       }}

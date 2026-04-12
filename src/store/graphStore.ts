@@ -30,6 +30,9 @@ interface DialogState<T> {
 
 export type HammerDistributionMode = "equivalent" | "smoothed";
 export type HammerPlayingPointMode = "impact-point" | "graph-center";
+export type HammerAttackMode = "single" | "repeat";
+export type HammerRepeatForceMode = "constant" | "fading";
+export type HammerRepeatStopMode = "next-click" | "count";
 
 export type HammerSettings = {
   distribution: HammerDistributionMode;
@@ -40,6 +43,11 @@ export type HammerSettings = {
   squareAttenuation: number;
   radius: number;
   playingPointMode: HammerPlayingPointMode;
+  attackMode: HammerAttackMode;
+  repeatHz: number;
+  repeatForceMode: HammerRepeatForceMode;
+  repeatStopMode: HammerRepeatStopMode;
+  repeatCount: number;
 };
 
 interface GraphStore {
