@@ -24,8 +24,8 @@ test.describe("Piano Toolbar on Membrane Modeller", () => {
     await expect(panel.locator('button[title="Stop"]')).toBeVisible();
     await expect(panel.locator('button[title="Save instrument"]')).toBeVisible();
     await expect(panel.locator('button[title="Load instrument"]')).toBeVisible();
-    await expect(panel.locator('button[title="Save melody to file"]')).toBeVisible();
-    await expect(panel.locator('button[title="Play melody from file (SNC, WAV)"]')).toBeVisible();
+    await expect(panel.locator('button[title="Save melody to file (SNC)"]')).toBeVisible();
+    await expect(panel.locator('button[title="Play melody from file (SNC, MIDI)"]')).toBeVisible();
   });
 
   test("toolbar has separators between button groups", async ({ page }) => {
@@ -95,8 +95,8 @@ test.describe("Piano Toolbar on Piano Player page", () => {
     await expect(panel.locator('button[title="Stop"]')).toBeVisible();
     await expect(panel.locator('button[title="Save instrument"]')).toBeVisible();
     await expect(panel.locator('button[title="Load instrument"]')).toBeVisible();
-    await expect(panel.locator('button[title="Save melody to file"]')).toBeVisible();
-    await expect(panel.locator('button[title="Play melody from file (SNC, WAV)"]')).toBeVisible();
+    await expect(panel.locator('button[title="Save melody to file (SNC)"]')).toBeVisible();
+    await expect(panel.locator('button[title="Play melody from file (SNC, MIDI)"]')).toBeVisible();
   });
 
   test("Stop is disabled by default, Record enables it", async ({ page }) => {
