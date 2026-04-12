@@ -35,4 +35,9 @@ export type SncExecutionContext = {
    * Defaults are applied in `executeSncCommands` if unset.
    */
   releaseFadeMs?: number;
+  /**
+   * Fade-in on note attack for sustaining (`a -1`) and one-shot samples — applied only in `!wait`
+   * mixing, not during release (`r`), so short notes do not get conflicting envelopes.
+   */
+  noteAttackMs?: number;
 };

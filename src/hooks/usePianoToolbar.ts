@@ -7,7 +7,7 @@ import { scaleGraphForPitchRatio } from "../engine/gridGenerators";
 import { parseInstrumentFile, serializeInstrumentFile } from "../engine/fileIO/instrumentFile";
 import { SncCreator } from "../engine/snc/sncCreator";
 import { buildSncPlaybackIntervals, scheduleSncPlaybackKeySimulation } from "../engine/snc/sncPlaybackKeys";
-import { renderSncTextToWav } from "../engine/snc/renderSncFromText";
+import { renderSncTextToWav, type RenderSncFromTextOptions } from "../engine/snc/renderSncFromText";
 import {
   derivePitchCalibrationRatio,
   estimateFrequencyFromZeroCrossings,
@@ -30,7 +30,7 @@ import { registerMelodyPreviewAudioConnector } from "../audio/melodyPreviewBridg
 import { registerMelodyPreviewStop, stopAllMelodyPreviewPlayback } from "../audio/melodyPreviewStop";
 import { usePianoStore, VIEWER_BASE_GRAPH_SNAPSHOT_IDS } from "../store/pianoStore";
 import { DEFAULT_ONE_NOTE_GENERATION_SETTINGS, resolveDefaultSimulationBackend } from "../config/defaults";
-import { listMidiTracksWithNotes, midiTrackToSnc } from "../engine/midi";
+import { listMidiTracksWithNotes, midiTrackToSnc, renderEnvelopeOptionsForMidiTrack } from "../engine/midi";
 import type { MidiTrackListEntry } from "../engine/midi/listMidiParts";
 
 type MidiPartPickerState = {
@@ -822,7 +822,10 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   }, [lastSncText]);
 
   const playMelodyFromSncText = useCallback(
-    async (text: string, options?: { monophonicLead?: boolean }) => {
+    async (
+      text: string,
+      options?: { monophonicLead?: boolean; renderWav?: RenderSncFromTextOptions },
+    ) => {
       if (instrumentNotes.length === 0) {
         window.alert("Generate or load an instrument first, then open a melody file.");
         return;
@@ -830,7 +833,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       const monophonicLead = options?.monophonicLead ?? true;
       try {
         stopAllMelodyPreviewPlayback();
-        const { wavBlob } = renderSncTextToWav(text, instrumentNotes);
+        const { wavBlob } = renderSncTextToWav(text, instrumentNotes, options?.renderWav);
         setLastSncText(text);
         setLastSncMonophonicLead(monophonicLead);
         setLastRenderedWav(wavBlob);
@@ -903,7 +906,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
           return;
         }
         const sncText = midiTrackToSnc(track, instrumentNotes.length);
-        await playMelodyFromSncText(sncText, { monophonicLead: false });
+        const renderWav = renderEnvelopeOptionsForMidiTrack(track);
+        await playMelodyFromSncText(sncText, { monophonicLead: false, renderWav });
       } catch (error) {
         window.alert(`Failed to convert MIDI: ${(error as Error).message}`);
       }
@@ -957,7 +961,8 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
         return;
       }
       const sncText = midiTrackToSnc(track, instrumentNotes.length);
-      await playMelodyFromSncText(sncText, { monophonicLead: false });
+      const renderWav = renderEnvelopeOptionsForMidiTrack(track);
+      await playMelodyFromSncText(sncText, { monophonicLead: false, renderWav });
     } catch (error) {
       window.alert(`Failed to play mario_theme.MID: ${(error as Error).message}`);
     }

@@ -81,6 +81,7 @@ describe("executeSncCommands", () => {
         sampleRate: 10,
         knownAliases: ["a"],
         releaseFadeMs: 0,
+        noteAttackMs: 0,
         createStreamForAlias: () => createConstantStream(100, 10),
       },
       (chunk) => waits.push(chunk),
@@ -100,6 +101,7 @@ describe("executeSncCommands", () => {
         {
           sampleRate: 10,
           knownAliases: ["known"],
+          noteAttackMs: 0,
           createStreamForAlias: () => createConstantStream(1, 10),
         },
       ),
@@ -124,6 +126,7 @@ describe("executeSncCommands", () => {
       {
         sampleRate: 10,
         knownAliases: ["n"],
+        noteAttackMs: 0,
         createStreamForAlias: () => {
           let offset = 0;
           return {
@@ -172,6 +175,7 @@ describe("executeSncCommands", () => {
         sampleRate: sr,
         knownAliases: ["a"],
         releaseFadeMs,
+        noteAttackMs: 0,
         createStreamForAlias: () => createConstantStream(1000, sr),
       },
       (chunk) => waits.push(chunk),
@@ -205,6 +209,7 @@ describe("executeSncCommands", () => {
       {
         sampleRate: 10,
         knownAliases: ["a"],
+        noteAttackMs: 0,
         createStreamForAlias: () => createConstantStream(50, 10),
       },
       (chunk) => waits.push(chunk),

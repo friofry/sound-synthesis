@@ -115,6 +115,7 @@ export function parseSncText(text: string): SncParseResult {
 const INT16_MAX = 32_767;
 const INT16_MIN = -32_768;
 const DEFAULT_RELEASE_FADE_MS = 14;
+const DEFAULT_NOTE_ATTACK_MS = 5;
 
 function clampInt16(v: number): number {
   if (v > INT16_MAX) {
@@ -157,6 +158,53 @@ function mergeResidualFade(residual: Float64Array | null, fade: Int16Array): Flo
 }
 
 /** Takes the first `take` samples from `residual` as int16, shifts the rest left. */
+type AttackEmitted = { emitted: number };
+
+/**
+ * Sustain / one-shot attack: ramps 0→1 over `targetAttack` samples when the chunk is long enough;
+ * if the chunk is shorter than the remaining ramp, compresses the ramp into this chunk so the last
+ * sample reaches full gain (avoids a level jump into the release tail on short MIDI notes).
+ */
+function applyNoteAttackToChunk(chunk: Int16Array, emittedRef: AttackEmitted, targetAttack: number): Int16Array {
+  let emitted = emittedRef.emitted;
+  if (emitted >= targetAttack) {
+    return chunk;
+  }
+  const n = chunk.length;
+  const remaining = targetAttack - emitted;
+  const out = new Int16Array(n);
+
+  if (n >= remaining) {
+    for (let i = 0; i < n; i += 1) {
+      if (emitted >= targetAttack) {
+        out[i] = chunk[i]!;
+      } else {
+        const g = targetAttack <= 1 ? 1 : emitted / (targetAttack - 1);
+        out[i] = clampInt16(chunk[i]! * g);
+        emitted += 1;
+      }
+    }
+  } else {
+    const g0 = targetAttack <= 1 ? 0 : emitted / (targetAttack - 1);
+    for (let i = 0; i < n; i += 1) {
+      const t = n <= 1 ? 1 : i / (n - 1);
+      const g = g0 + t * (1 - g0);
+      out[i] = clampInt16(chunk[i]! * g);
+    }
+    emitted = targetAttack;
+  }
+
+  emittedRef.emitted = emitted;
+  return out;
+}
+
+function attackTargetSamples(attackMs: number, sampleRate: number): number {
+  if (attackMs <= 0) {
+    return 0;
+  }
+  return Math.max(2, Math.round((attackMs / 1000) * sampleRate));
+}
+
 function takeResidualHead(residual: Float64Array, take: number): { head: Int16Array; rest: Float64Array | null } {
   if (take <= 0) {
     return { head: new Int16Array(0), rest: residual.length > 0 ? residual : null };
@@ -195,15 +243,20 @@ export function executeSncCommands(
   onWait?: (pcmChunk: Int16Array, seconds: number) => void,
 ): void {
   const activeStreams = new Map<string, SncStream>();
+  const sustainAttackEmitted = new Map<string, number>();
   const known = context.knownAliases ? new Set(context.knownAliases) : undefined;
   let releaseResidual: Float64Array | null = null;
   const fadeMs = context.releaseFadeMs ?? DEFAULT_RELEASE_FADE_MS;
   const fadeSec = fadeMs / 1000;
+  const noteAttackMs = context.noteAttackMs ?? DEFAULT_NOTE_ATTACK_MS;
+  const attackTarget =
+    noteAttackMs > 0 ? attackTargetSamples(noteAttackMs, context.sampleRate) : 0;
 
   for (const command of commands) {
     if (command.type === "clear") {
       mixer.clearBuffer();
       releaseResidual = null;
+      sustainAttackEmitted.clear();
       continue;
     }
 
@@ -214,6 +267,7 @@ export function executeSncCommands(
       if (command.flag === "r") {
         const stream = activeStreams.get(command.name);
         activeStreams.delete(command.name);
+        sustainAttackEmitted.delete(command.name);
         if (stream && fadeMs > 0) {
           const fadeSamples = Math.max(1, Math.round(fadeSec * context.sampleRate));
           const actualFadeSec = fadeSamples / context.sampleRate;
@@ -226,6 +280,7 @@ export function executeSncCommands(
 
       if (command.duration === -1) {
         getOrCreateStream(activeStreams, command.name, context);
+        sustainAttackEmitted.set(command.name, 0);
         continue;
       }
 
@@ -235,8 +290,13 @@ export function executeSncCommands(
 
       const stream = context.createStreamForAlias(command.name);
       stream.reset();
-      const oneshot = stream.getSamples(command.duration);
-      mixer.addBuffer(oneshot);
+      const raw = stream.getSamples(command.duration);
+      if (attackTarget > 0) {
+        const ref: AttackEmitted = { emitted: 0 };
+        mixer.addBuffer(applyNoteAttackToChunk(raw, ref, attackTarget));
+      } else {
+        mixer.addBuffer(raw);
+      }
       continue;
     }
 
@@ -248,9 +308,15 @@ export function executeSncCommands(
         mixer.addBuffer(head);
       }
     }
-    for (const stream of activeStreams.values()) {
+    for (const [name, stream] of activeStreams) {
       const chunk = stream.getSamples(command.seconds);
-      mixer.addBuffer(chunk);
+      if (attackTarget > 0) {
+        const ref: AttackEmitted = { emitted: sustainAttackEmitted.get(name) ?? 0 };
+        mixer.addBuffer(applyNoteAttackToChunk(chunk, ref, attackTarget));
+        sustainAttackEmitted.set(name, ref.emitted);
+      } else {
+        mixer.addBuffer(chunk);
+      }
     }
     /** Rests with no sustaining notes must still advance time (digital silence). */
     let mixedChunk: Int16Array =
