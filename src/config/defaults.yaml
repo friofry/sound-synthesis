@@ -37,6 +37,11 @@ simulation:
       squareAttenuation: 0.01
       radius: 75
       playingPointMode: impact-point
+      attackMode: single
+      repeatHz: 4
+      repeatForceMode: constant
+      repeatStopMode: next-click
+      repeatCount: 8
 
     cellTemplate:
       widthPoints: 3

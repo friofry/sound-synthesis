@@ -7,6 +7,8 @@ type HammerPerturbationOptions = {
   impactX: number;
   impactY: number;
   charge: number;
+  /** Extra multiplier on impact velocity (e.g. fading repeat strikes). Default 1. */
+  velocityScale?: number;
   settings: Pick<HammerSettings, "distribution" | "weight" | "velocity" | "restitution" | "radius" | "playingPointMode">;
 };
 
@@ -15,7 +17,8 @@ export function createHammerToolPerturbation(options: HammerPerturbationOptions)
   const radius = Math.max(1, options.settings.radius);
   const hammerMass = Math.max(0.000001, options.settings.weight);
   const restitution = clamp(options.settings.restitution, 0, 1);
-  const effectiveVelocity = options.settings.velocity * clamp(options.charge, 1, 10);
+  const velocityScale = options.velocityScale ?? 1;
+  const effectiveVelocity = options.settings.velocity * clamp(options.charge, 1, 10) * velocityScale;
   const activeDotIndices: number[] = [];
 
   for (let index = 0; index < options.graph.dots.length; index += 1) {

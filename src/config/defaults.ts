@@ -56,6 +56,11 @@ type HammerDialogDefaults = {
   squareAttenuation: number;
   radius: number;
   playingPointMode: HammerPlayingPointMode;
+  attackMode: "single" | "repeat";
+  repeatHz: number;
+  repeatForceMode: "constant" | "fading";
+  repeatStopMode: "next-click" | "count";
+  repeatCount: number;
 };
 
 type CellTemplateDialogDefaults = {
@@ -317,6 +322,11 @@ function parseHammerDialogDefaults(value: Record<string, unknown>, path: string)
     squareAttenuation: expectNumber(value.squareAttenuation, `${path}.squareAttenuation`),
     radius: expectNumber(value.radius, `${path}.radius`),
     playingPointMode: expectOneOf(value.playingPointMode, ["impact-point", "graph-center"] as const, `${path}.playingPointMode`),
+    attackMode: expectOneOf(value.attackMode, ["single", "repeat"] as const, `${path}.attackMode`),
+    repeatHz: expectNumber(value.repeatHz, `${path}.repeatHz`),
+    repeatForceMode: expectOneOf(value.repeatForceMode, ["constant", "fading"] as const, `${path}.repeatForceMode`),
+    repeatStopMode: expectOneOf(value.repeatStopMode, ["next-click", "count"] as const, `${path}.repeatStopMode`),
+    repeatCount: expectNumber(value.repeatCount, `${path}.repeatCount`),
   };
 }
 

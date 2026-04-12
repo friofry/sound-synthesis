@@ -7,6 +7,11 @@ const LINE_HIT_THRESHOLD = 10;
 const HAMMER_CHARGE_MS = 1200;
 const HAMMER_CHARGE_MIN = 1;
 const HAMMER_CHARGE_MAX = 10;
+const HAMMER_REPEAT_HZ_MIN = 0.5;
+const HAMMER_REPEAT_HZ_MAX = 24;
+const HAMMER_REPEAT_COUNT_MIN = 1;
+const HAMMER_REPEAT_COUNT_MAX = 128;
+const HAMMER_REPEAT_FADE_PER_STRIKE = 0.88;
 const HAMMER_CURSOR =
   'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2724%27 height=%2724%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%2712%27 y=%2718%27 font-size=%2718%27 text-anchor=%27middle%27%3E%F0%9F%94%A8%3C/text%3E%3C/svg%3E") 12 4, crosshair';
 
@@ -15,6 +20,8 @@ type GraphCanvasProps = {
     impactX: number;
     impactY: number;
     charge: number;
+    /** Scales impact velocity (fading repeats). Default 1. */
+    velocityScale?: number;
     settings: {
       distribution: "equivalent" | "smoothed";
       weight: number;
@@ -34,6 +41,10 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
   const [groupMoveBase, setGroupMoveBase] = useState<Rect | null>(null);
   const [groupMoveSnapshot, setGroupMoveSnapshot] = useState<Array<{ x: number; y: number }> | null>(null);
   const hammerPressStartRef = useRef<number | null>(null);
+  const hammerRepeatIntervalRef = useRef<number | null>(null);
+  const hammerConsumeNextMouseUpRef = useRef(false);
+  /** Latest hammer cursor position (world); updated on move so repeat strikes follow the mouse. */
+  const hammerImpactPointRef = useRef<{ x: number; y: number } | null>(null);
 
   const {
     graph,
@@ -78,8 +89,13 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
   useEffect(() => {
     if (tool !== "hammer") {
       hammerPressStartRef.current = null;
+      hammerImpactPointRef.current = null;
       setHammerPreviewPoint(null);
       setHammerCharge(HAMMER_CHARGE_MIN);
+      if (hammerRepeatIntervalRef.current !== null) {
+        window.clearInterval(hammerRepeatIntervalRef.current);
+        hammerRepeatIntervalRef.current = null;
+      }
     }
   }, [setHammerCharge, setHammerPreviewPoint, tool]);
 
@@ -244,6 +260,7 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
     setHoveredLine(lineIndex >= 0 ? lineIndex : null);
 
     if (tool === "hammer") {
+      hammerImpactPointRef.current = point;
       setHammerPreviewPoint(point);
       if (hammerPressStartRef.current !== null) {
         setHammerCharge(resolveHammerCharge(hammerPressStartRef.current));
@@ -374,6 +391,13 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
     }
 
     if (tool === "hammer") {
+      if (hammerRepeatIntervalRef.current !== null) {
+        window.clearInterval(hammerRepeatIntervalRef.current);
+        hammerRepeatIntervalRef.current = null;
+        hammerConsumeNextMouseUpRef.current = true;
+        return;
+      }
+      hammerImpactPointRef.current = point;
       setHammerPreviewPoint(point);
       hammerPressStartRef.current = performance.now();
       setHammerCharge(HAMMER_CHARGE_MIN);
@@ -502,27 +526,92 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
     }
 
     if (tool === "hammer") {
+      if (hammerConsumeNextMouseUpRef.current) {
+        hammerConsumeNextMouseUpRef.current = false;
+        hammerPressStartRef.current = null;
+        setHammerCharge(HAMMER_CHARGE_MIN);
+        hammerImpactPointRef.current = point;
+        setHammerPreviewPoint(point);
+        return;
+      }
+
       const charge =
         hammerPressStartRef.current === null ? hammerCharge : resolveHammerCharge(hammerPressStartRef.current);
       hammerPressStartRef.current = null;
       setHammerCharge(HAMMER_CHARGE_MIN);
+      hammerImpactPointRef.current = point;
       setHammerPreviewPoint(point);
       if (graph.dots.length === 0) {
         return;
       }
-      onHammerImpact?.({
-        impactX: point.x,
-        impactY: point.y,
-        charge,
-        settings: {
-          distribution: hammerSettings.distribution,
-          weight: hammerSettings.weight,
-          velocity: hammerSettings.velocity,
-          restitution: hammerSettings.restitution,
-          radius: hammerSettings.radius,
-          playingPointMode: hammerSettings.playingPointMode,
-        },
-      });
+
+      const settingsPayload = {
+        distribution: hammerSettings.distribution,
+        weight: hammerSettings.weight,
+        velocity: hammerSettings.velocity,
+        restitution: hammerSettings.restitution,
+        radius: hammerSettings.radius,
+        playingPointMode: hammerSettings.playingPointMode,
+      };
+
+      const emitImpact = (velocityScale: number) => {
+        const impact = hammerImpactPointRef.current;
+        if (!impact) {
+          return;
+        }
+        onHammerImpact?.({
+          impactX: impact.x,
+          impactY: impact.y,
+          charge,
+          velocityScale,
+          settings: settingsPayload,
+        });
+      };
+
+      if (!onHammerImpact || hammerSettings.attackMode !== "repeat") {
+        emitImpact(1);
+        return;
+      }
+
+      const repeatHz = clamp(
+        Number.isFinite(hammerSettings.repeatHz) ? hammerSettings.repeatHz : 4,
+        HAMMER_REPEAT_HZ_MIN,
+        HAMMER_REPEAT_HZ_MAX,
+      );
+      const intervalMs = Math.max(16, 1000 / repeatHz);
+      const forceFading = hammerSettings.repeatForceMode === "fading";
+      const strikeVelocityScale = (index: number) =>
+        forceFading ? HAMMER_REPEAT_FADE_PER_STRIKE ** index : 1;
+
+      let nextIndex = 1;
+      emitImpact(strikeVelocityScale(0));
+
+      if (hammerSettings.repeatStopMode === "count") {
+        const totalStrikes = Math.round(
+          clamp(
+            Number.isFinite(hammerSettings.repeatCount) ? hammerSettings.repeatCount : 8,
+            HAMMER_REPEAT_COUNT_MIN,
+            HAMMER_REPEAT_COUNT_MAX,
+          ),
+        );
+        if (nextIndex >= totalStrikes) {
+          return;
+        }
+        hammerRepeatIntervalRef.current = window.setInterval(() => {
+          emitImpact(strikeVelocityScale(nextIndex));
+          nextIndex += 1;
+          if (nextIndex >= totalStrikes && hammerRepeatIntervalRef.current !== null) {
+            window.clearInterval(hammerRepeatIntervalRef.current);
+            hammerRepeatIntervalRef.current = null;
+          }
+        }, intervalMs);
+        return;
+      }
+
+      hammerRepeatIntervalRef.current = window.setInterval(() => {
+        emitImpact(strikeVelocityScale(nextIndex));
+        nextIndex += 1;
+      }, intervalMs);
       return;
     }
 
@@ -578,8 +667,13 @@ export function GraphCanvas({ onHammerImpact }: GraphCanvasProps) {
           setDragDotIndex(null);
           setDragStart(null);
           setHammerPreviewPoint(null);
+          hammerImpactPointRef.current = null;
           setHammerCharge(HAMMER_CHARGE_MIN);
           hammerPressStartRef.current = null;
+          if (hammerRepeatIntervalRef.current !== null) {
+            window.clearInterval(hammerRepeatIntervalRef.current);
+            hammerRepeatIntervalRef.current = null;
+          }
         }}
         style={{ cursor: cursorMap[tool] ?? "default" }}
       />
