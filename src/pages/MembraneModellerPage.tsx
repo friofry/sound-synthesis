@@ -13,6 +13,7 @@ import { HammerDialog } from "../components/GraphEditor/dialogs/HammerDialog";
 import { MembraneViewer } from "../components/Viewer3D/MembraneViewer";
 import { GenerationProgressDialog } from "../components/PianoPlayer/GenerationProgressDialog";
 import { GenerateNotesDialog } from "../components/PianoPlayer/GenerateNotesDialog";
+import { MidiPartDialog } from "../components/PianoPlayer/MidiPartDialog";
 import { PianoKeyboard } from "../components/PianoPlayer/PianoKeyboard";
 import { PianoToolbar } from "../components/PianoPlayer/PianoToolbar";
 import { LegacyOscillogrammWaveform } from "../components/PianoPlayer/LegacyOscillogrammWaveform";
@@ -78,6 +79,11 @@ export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyze
     handleLoadInstrumentFile,
     handleSaveSnc,
     handleLoadSncFile,
+    handlePlayPopcornSnc,
+    handlePlayMarioThemeMidi,
+    midiPartPicker,
+    handleConfirmMidiPart,
+    handleCancelMidiPart,
   } = usePianoToolbar({ graph, simulationParams });
 
   const setAnalyser = useAudioAnalyserStore((s) => s.setAnalyser);
@@ -293,6 +299,8 @@ export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyze
               onLoadInstrumentFile={handleLoadInstrumentFile}
               onSaveSnc={handleSaveSnc}
               onLoadSncFile={handleLoadSncFile}
+              onPlayPopcorn={handlePlayPopcornSnc}
+              onPlayMarioTheme={handlePlayMarioThemeMidi}
               navigationButton={{
                 label: "Open Piano Player",
                 title: "Open Piano Player",
@@ -305,6 +313,17 @@ export function MembraneModellerPage({ onOpenPianoPlayer, onOpenFrequencyAnalyze
               initialValues={generateNotesSettings}
               onClose={closeGenerateNotesDialog}
               onSubmit={handleConfirmGenerateNotes}
+            />
+            <MidiPartDialog
+              open={midiPartPicker !== null}
+              fileName={midiPartPicker?.fileName ?? ""}
+              parts={midiPartPicker?.parts ?? []}
+              onClose={handleCancelMidiPart}
+              onSelectPart={(trackIndex) => {
+                if (midiPartPicker) {
+                  void handleConfirmMidiPart(midiPartPicker, trackIndex);
+                }
+              }}
             />
             <GenerationProgressDialog
               open={isGeneratingInstrument && generationProgressDialogOpen}

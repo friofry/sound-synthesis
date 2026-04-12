@@ -89,6 +89,7 @@ export function FrequencyAnalyzerPage({ onBack }: FrequencyAnalyzerPageProps) {
 
   const [fftSize, setFftSize] = useState(8192);
   const [highlightFundamental, setHighlightFundamental] = useState(false);
+  const [highlightProminent, setHighlightProminent] = useState(false);
   const [highlightOvertones, setHighlightOvertones] = useState(false);
   const [showNoteLabels, setShowNoteLabels] = useState(false);
 
@@ -164,6 +165,15 @@ export function FrequencyAnalyzerPage({ onBack }: FrequencyAnalyzerPageProps) {
         </button>
         <button
           type="button"
+          className={`freq-toolbar-btn${highlightProminent ? " freq-toolbar-btn-active" : ""}`}
+          onClick={() => setHighlightProminent((prev) => !prev)}
+          aria-pressed={highlightProminent}
+          title="Highlight perceptual prominent frequency (A-weighted peak)"
+        >
+          🎯 Prominent (A)
+        </button>
+        <button
+          type="button"
           className={`freq-toolbar-btn${highlightOvertones ? " freq-toolbar-btn-active" : ""}`}
           onClick={() => setHighlightOvertones((prev) => !prev)}
           aria-pressed={highlightOvertones}
@@ -202,6 +212,7 @@ export function FrequencyAnalyzerPage({ onBack }: FrequencyAnalyzerPageProps) {
               fftSize={effectiveFftSize}
               maxFrequency={effectiveMaxFrequency}
               highlightFundamental={highlightFundamental}
+              highlightProminent={highlightProminent}
               highlightOvertones={highlightOvertones}
               showNoteLabels={showNoteLabels}
             />
@@ -214,6 +225,7 @@ export function FrequencyAnalyzerPage({ onBack }: FrequencyAnalyzerPageProps) {
               fftSize={effectiveFftSize}
               maxFrequency={effectiveMaxFrequency}
               highlightFundamental={highlightFundamental}
+              highlightProminent={highlightProminent}
               highlightOvertones={highlightOvertones}
               showNoteLabels={showNoteLabels}
             />

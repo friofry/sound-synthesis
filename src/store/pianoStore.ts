@@ -31,6 +31,8 @@ export type PianoGenerateSettings = {
 type PianoStore = {
   noteCount: number;
   pressedKeys: Set<number>;
+  /** Order keys were pressed (each index at most once); used for "last held" after releases. */
+  pressOrder: number[];
   lastPressedKeyIndex: number | null;
   viewerBaseGraphSnapshots: Record<string, SerializedGraph>;
   activeBuffer: Float32Array | null;
@@ -44,7 +46,11 @@ type PianoStore = {
   instrumentGenerationLabel: string;
   recording: boolean;
   lastSncText: string;
+  /** How `buildSncPlaybackIntervals` should treat overlapping sustains for the current melody (keyboard sim + MIDI export). */
+  lastSncMonophonicLead: boolean;
   lastRenderedWav: Blob | null;
+  communitySncDialogOpen: boolean;
+  communityMidiDialogOpen: boolean;
   pressKey: (index: number) => void;
   releaseKey: (index: number) => void;
   releaseAll: () => void;
@@ -62,12 +68,18 @@ type PianoStore = {
   }) => void;
   setRecording: (recording: boolean) => void;
   setLastSncText: (text: string) => void;
+  setLastSncMonophonicLead: (value: boolean) => void;
   setLastRenderedWav: (blob: Blob | null) => void;
+  openCommunitySncDialog: () => void;
+  closeCommunitySncDialog: () => void;
+  openCommunityMidiDialog: () => void;
+  closeCommunityMidiDialog: () => void;
 };
 
 export const usePianoStore = create<PianoStore>((set) => ({
   noteCount: APP_DEFAULTS.piano.noteCount,
   pressedKeys: new Set<number>(),
+  pressOrder: [],
   lastPressedKeyIndex: null,
   viewerBaseGraphSnapshots: {},
   activeBuffer: null,
@@ -81,7 +93,10 @@ export const usePianoStore = create<PianoStore>((set) => ({
   instrumentGenerationLabel: "",
   recording: false,
   lastSncText: "",
+  lastSncMonophonicLead: true,
   lastRenderedWav: null,
+  communitySncDialogOpen: false,
+  communityMidiDialogOpen: false,
   pressKey: (index) =>
     set((state) => {
       if (state.pressedKeys.has(index)) {
@@ -89,7 +104,8 @@ export const usePianoStore = create<PianoStore>((set) => ({
       }
       const next = new Set(state.pressedKeys);
       next.add(index);
-      return { pressedKeys: next, lastPressedKeyIndex: index };
+      const pressOrder = [...state.pressOrder, index];
+      return { pressedKeys: next, pressOrder, lastPressedKeyIndex: index };
     }),
   releaseKey: (index) =>
     set((state) => {
@@ -98,9 +114,15 @@ export const usePianoStore = create<PianoStore>((set) => ({
       }
       const next = new Set(state.pressedKeys);
       next.delete(index);
-      return { pressedKeys: next };
+      const pressOrder = [...state.pressOrder];
+      const pos = pressOrder.lastIndexOf(index);
+      if (pos >= 0) {
+        pressOrder.splice(pos, 1);
+      }
+      const lastPressedKeyIndex = pressOrder.at(-1) ?? null;
+      return { pressedKeys: next, pressOrder, lastPressedKeyIndex };
     }),
-  releaseAll: () => set({ pressedKeys: new Set<number>() }),
+  releaseAll: () => set({ pressedKeys: new Set<number>(), pressOrder: [], lastPressedKeyIndex: null }),
   setActiveBuffer: (buffer, sampleRate = 48_000) =>
     set({
       activeBuffer: buffer,
@@ -155,5 +177,10 @@ export const usePianoStore = create<PianoStore>((set) => ({
     })),
   setRecording: (recording) => set({ recording }),
   setLastSncText: (text) => set({ lastSncText: text }),
+  setLastSncMonophonicLead: (value) => set({ lastSncMonophonicLead: value }),
   setLastRenderedWav: (blob) => set({ lastRenderedWav: blob }),
+  openCommunitySncDialog: () => set({ communitySncDialogOpen: true }),
+  closeCommunitySncDialog: () => set({ communitySncDialogOpen: false }),
+  openCommunityMidiDialog: () => set({ communityMidiDialogOpen: true }),
+  closeCommunityMidiDialog: () => set({ communityMidiDialogOpen: false }),
 }));

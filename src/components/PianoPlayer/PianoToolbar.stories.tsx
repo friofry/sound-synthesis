@@ -15,6 +15,8 @@ const meta = {
     onLoadInstrumentFile: fn(),
     onSaveSnc: fn(),
     onLoadSncFile: fn(),
+    onPlayPopcorn: fn(),
+    onPlayMarioTheme: fn(),
   },
 } satisfies Meta<typeof PianoToolbar>;
 

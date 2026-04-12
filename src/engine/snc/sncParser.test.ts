@@ -3,10 +3,9 @@ import { executeSncCommands, parseSncText } from "./sncParser";
 import { SimpleMixer } from "./simpleMixer";
 import type { SncCommand } from "./types";
 
-function createConstantStream(value: number) {
+function createConstantStream(value: number, sampleRate: number) {
   return {
     getSamples(durationSeconds: number): Int16Array {
-      const sampleRate = 10;
       const size = Math.max(0, Math.round(durationSeconds * sampleRate));
       const out = new Int16Array(size);
       out.fill(value);
@@ -19,6 +18,22 @@ function createConstantStream(value: number) {
 }
 
 describe("parseSncText", () => {
+  it("strips inline -- comments from command lines", () => {
+    const parsed = parseSncText("1G a 0.5 --f\n!wait 0.5\n");
+    expect(parsed.commands).toEqual([
+      { type: "alias", name: "1G", flag: "a", duration: 0.5 },
+      { type: "wait", seconds: 0.5 },
+    ]);
+  });
+
+  it("maps !stop alias to release", () => {
+    const parsed = parseSncText("4E a -1\n!stop 4E\n");
+    expect(parsed.commands).toEqual([
+      { type: "alias", name: "4E", flag: "a", duration: -1 },
+      { type: "alias", name: "4E", flag: "r", duration: 0 },
+    ]);
+  });
+
   it("parses alias blocks and command lines", () => {
     const parsed = parseSncText(`
       !begin alias
@@ -65,7 +80,9 @@ describe("executeSncCommands", () => {
       {
         sampleRate: 10,
         knownAliases: ["a"],
-        createStreamForAlias: () => createConstantStream(100),
+        releaseFadeMs: 0,
+        noteAttackMs: 0,
+        createStreamForAlias: () => createConstantStream(100, 10),
       },
       (chunk) => waits.push(chunk),
     );
@@ -84,9 +101,124 @@ describe("executeSncCommands", () => {
         {
           sampleRate: 10,
           knownAliases: ["known"],
-          createStreamForAlias: () => createConstantStream(1),
+          noteAttackMs: 0,
+          createStreamForAlias: () => createConstantStream(1, 10),
         },
       ),
     ).toThrow(/Unknown alias/);
+  });
+
+  it("resets the stream when the same alias is attacked again with a -1", () => {
+    const pcm = Int16Array.from([7, 8, 9, 1, 2, 3, 4, 5, 6]);
+    let resetCount = 0;
+    const commands: SncCommand[] = [
+      { type: "alias", name: "n", flag: "a", duration: -1 as const },
+      { type: "wait", seconds: 0.2 },
+      { type: "alias", name: "n", flag: "a", duration: -1 as const },
+      { type: "wait", seconds: 0.2 },
+    ];
+    const mixer = new SimpleMixer();
+    const waits: Int16Array[] = [];
+
+    executeSncCommands(
+      commands,
+      mixer,
+      {
+        sampleRate: 10,
+        knownAliases: ["n"],
+        noteAttackMs: 0,
+        createStreamForAlias: () => {
+          let offset = 0;
+          return {
+            getSamples(durationSeconds: number) {
+              const sampleCount = Math.max(0, Math.round(durationSeconds * 10));
+              const chunk = new Int16Array(sampleCount);
+              const available = Math.max(0, Math.min(sampleCount, pcm.length - offset));
+              if (available > 0) {
+                chunk.set(pcm.subarray(offset, offset + available));
+                offset += available;
+              }
+              return chunk;
+            },
+            reset() {
+              resetCount += 1;
+              offset = 0;
+            },
+          };
+        },
+      },
+      (chunk) => waits.push(chunk),
+    );
+
+    expect(resetCount).toBe(1);
+    expect(waits).toHaveLength(2);
+    expect(Array.from(waits[0])).toEqual([7, 8]);
+    expect(Array.from(waits[1])).toEqual([7, 8]);
+  });
+
+  it("ramps down sustaining note on release before the next rest (anti-click)", () => {
+    const sr = 100;
+    const releaseFadeMs = 30;
+    const commands: SncCommand[] = [
+      { type: "alias", name: "a", flag: "a", duration: -1 as const },
+      { type: "wait", seconds: 0.1 },
+      { type: "alias", name: "a", flag: "r", duration: 0 },
+      { type: "wait", seconds: 0.1 },
+    ];
+    const mixer = new SimpleMixer();
+    const waits: Int16Array[] = [];
+
+    executeSncCommands(
+      commands,
+      mixer,
+      {
+        sampleRate: sr,
+        knownAliases: ["a"],
+        releaseFadeMs,
+        noteAttackMs: 0,
+        createStreamForAlias: () => createConstantStream(1000, sr),
+      },
+      (chunk) => waits.push(chunk),
+    );
+
+    expect(waits.length).toBe(2);
+    const afterRelease = waits[1]!;
+    expect(afterRelease.length).toBe(10);
+    const fadeLen = Math.max(1, Math.round((releaseFadeMs / 1000) * sr));
+    for (let i = 0; i < fadeLen; i += 1) {
+      const g = fadeLen === 1 ? 1 : 1 - i / (fadeLen - 1);
+      expect(afterRelease[i]).toBe(Math.round(1000 * g));
+    }
+    for (let i = fadeLen; i < 10; i += 1) {
+      expect(afterRelease[i]).toBe(0);
+    }
+  });
+
+  it("emits silence for !wait when no aliases are sustaining (rests)", () => {
+    const commands: SncCommand[] = [
+      { type: "wait", seconds: 0.3 },
+      { type: "alias", name: "a", flag: "a", duration: -1 as const },
+      { type: "wait", seconds: 0.2 },
+    ];
+    const mixer = new SimpleMixer();
+    const waits: Int16Array[] = [];
+
+    executeSncCommands(
+      commands,
+      mixer,
+      {
+        sampleRate: 10,
+        knownAliases: ["a"],
+        noteAttackMs: 0,
+        createStreamForAlias: () => createConstantStream(50, 10),
+      },
+      (chunk) => waits.push(chunk),
+    );
+
+    expect(waits).toHaveLength(2);
+    expect(waits[0]!.length).toBe(3);
+    expect(Array.from(waits[0]!)).toEqual([0, 0, 0]);
+    expect(waits[1]!.length).toBe(2);
+    expect(Array.from(waits[1]!)).toEqual([50, 50]);
   });
 });

@@ -1,0 +1,142 @@
+!begin alias
+--first octave
+2C 1/1_do_131.wav 1
+2C# 1/2_do#_138.wav 1
+2D 1/3_re_148.wav 0.7
+2D# 1/4_re#_156.wav 1
+2E 1/5_mi_165.wav 1
+2F 1/6_fa_175.wav 1
+2F# 1/7_fa#_185.wav 1
+2G 1/8_sol_195.wav 1
+2G# 1/9_sol#_207.wav 1
+2A 1/a_lya_220.wav 1
+2A# 1/b_lya#_233.wav 1
+2B 1/c_si_245.wav 1
+
+--second octave
+C 2/1_do_262.wav 2
+C# 2/2_do#_277.wav 2
+D 2/3_re_296.wav 2
+D# 2/4_re#_312.wav 2
+E 2/5_mi_328.wav 2
+F 2/6_fa_350.wav 2
+F# 2/7_fa#_370.wav 2
+G 2/8_sol_390.wav 2
+G# 2/9_sol#_415.wav 2
+A 2/a_lya_438.wav 2
+A# 2/b_lya#_466.wav 2
+B 2/c_si_491.wav 2
+!end alias
+
+--Intro
+B a 0.7
+!wait 0.7
+
+A a 0.2
+!wait 0.2
+G a 0.2
+!wait 0.2
+F# a 0.2
+!wait 0.2
+E a 0.3
+!wait 0.3
+
+--2
+E a 0.2
+!wait 0.2
+G a 0.2
+!wait 0.2
+F# a 0.2
+!wait 0.2
+E a 0.2
+!wait 0.2
+
+2D a 0.2
+!wait 0.2
+E a 0.2
+!wait 0.2
+2B a 0.2
+!wait 0.2
+2A a 0.2
+!wait 0.2
+2B a 1
+!wait 1.7
+
+--Intro2
+B a 0.7
+!wait 0.7
+
+A a 0.2
+!wait 0.2
+G a 0.2
+!wait 0.2
+F# a 0.2
+!wait 0.2
+E a 0.3
+!wait 0.3
+
+--3
+E a 0.2
+!wait 0.2
+G a 0.2
+!wait 0.2
+F# a 0.2
+!wait 0.2
+E a 0.2
+!wait 0.2
+
+2D a 0.2
+!wait 0.2
+E a 0.2
+!wait 0.2
+2B a 0.2
+!wait 0.2
+2A a 0.2
+!wait 0.2
+2B a 1
+!wait 1.7
+
+--outro
+A a 0.4
+!wait 0.4
+A a 0.2
+!wait 0.2
+G a 0.2
+!wait 0.2
+C a 0.4
+!wait 0.4
+
+E a 0.2
+!wait 0.2
+G a 0.2
+!wait 0.2
+B a 0.4
+!wait 0.4
+
+A a 0.2
+!wait 0.2
+G a 0.2
+!wait 0.2
+C a 0.4
+!wait 0.4
+
+E a 0.2
+!wait 0.2
+G a 0.2
+!wait 0.2
+F# a 0.4
+!wait 0.4
+
+E a 0.3
+!wait 0.2
+D a 0.45
+!wait 0.2
+E a 0.3
+!wait 0.2
+D a 0.45 
+!wait 0.2
+E a 0.5 
+!wait 1
+
+
+

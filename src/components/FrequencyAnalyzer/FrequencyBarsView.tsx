@@ -8,6 +8,8 @@ import {
   drawBarsPitchOverlay,
   findDominantFrequencyDecibels,
   findDominantFrequencySpectrumPoints,
+  findProminentFrequencyDecibels,
+  findProminentFrequencySpectrumPoints,
 } from "./pitchAnalysis";
 import {
   FALLBACK_MAX_DB,
@@ -25,6 +27,7 @@ type FrequencyBarsViewProps = {
   fftSize: number;
   maxFrequency: number;
   highlightFundamental?: boolean;
+  highlightProminent?: boolean;
   highlightOvertones?: boolean;
   showNoteLabels?: boolean;
 };
@@ -38,6 +41,7 @@ export function FrequencyBarsView({
   fftSize,
   maxFrequency,
   highlightFundamental = false,
+  highlightProminent = false,
   highlightOvertones = false,
   showNoteLabels = false,
 }: FrequencyBarsViewProps) {
@@ -152,11 +156,19 @@ export function FrequencyBarsView({
 
       const bandMaxHz = Math.min(maxFrequency, sampleRate / 2);
       let fundamentalHz: number | null = null;
-      if (highlightFundamental || highlightOvertones) {
+      let prominentHz: number | null = null;
+      if (highlightFundamental || highlightProminent || highlightOvertones) {
         if (buffer && buffer.length > 0 && bufferSpectrum.length > 0) {
           fundamentalHz = findDominantFrequencySpectrumPoints(bufferSpectrum, MIN_FREQUENCY, bandMaxHz);
+          prominentHz = findProminentFrequencySpectrumPoints(bufferSpectrum, MIN_FREQUENCY, bandMaxHz);
         } else if ((!buffer || buffer.length === 0) && analyser && liveData) {
           fundamentalHz = findDominantFrequencyDecibels(
+            liveData,
+            analyser.context.sampleRate,
+            MIN_FREQUENCY,
+            bandMaxHz,
+          );
+          prominentHz = findProminentFrequencyDecibels(
             liveData,
             analyser.context.sampleRate,
             MIN_FREQUENCY,
@@ -165,7 +177,7 @@ export function FrequencyBarsView({
         }
       }
 
-      if (highlightFundamental || highlightOvertones || showNoteLabels) {
+      if (highlightFundamental || highlightProminent || highlightOvertones || showNoteLabels) {
         drawBarsPitchOverlay(ctx, {
           chartLeft: layout.chartLeft,
           chartTop: layout.chartTop,
@@ -177,7 +189,9 @@ export function FrequencyBarsView({
           maxFrequency,
           sampleRate,
           fundamentalHz,
+          prominentHz,
           highlightFundamental,
+          highlightProminent,
           highlightOvertones,
           showNoteLabels,
           theme: "light",
@@ -205,6 +219,7 @@ export function FrequencyBarsView({
     bufferBars,
     bufferSpectrum,
     highlightFundamental,
+    highlightProminent,
     highlightOvertones,
     maxFrequency,
     sampleRate,

@@ -1,0 +1,169 @@
+--Axel F
+--First part
+1A a -1
+!wait 0.5
+
+2C a -1
+Drum a -1
+!wait 0.4
+
+1A a -1
+!wait 0.25
+
+1A a -1
+!wait 0.125
+
+2D a -1
+!wait 0.25
+
+1A a -1
+Drum a -1
+!wait 0.25
+
+1G a -1
+!wait 0.25
+
+--Second part
+1A a -1
+!wait 0.5
+
+2E a -1
+Drum a -1
+!wait 0.4
+
+1A a -1
+!wait 0.25
+
+1A a -1
+!wait 0.125
+
+2F a -1
+!wait 0.25
+
+2E a -1
+Drum a -1
+!wait 0.25
+
+2C a -1
+!wait 0.25
+
+--Third part
+
+1A a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+2A a -1
+Drum a -1
+!wait 0.25
+
+1A a -1
+!wait 0.125
+
+1G a -1
+!wait 0.25
+
+1G a -1
+!wait 0.125
+
+1E a -1
+!wait 0.25
+
+1B a -1 
+Drum a -1
+!wait 0.25
+
+1A a -1
+!wait 1.25
+
+--Outro
+1A a -1
+Drum a -1
+!wait 0.5
+
+1A a -1
+Drum a -1
+!wait 0.5
+
+--Repeat
+--First part
+1A a -1
+!wait 0.5
+
+2C a -1
+Drum a -1
+!wait 0.4
+
+1A a -1
+!wait 0.25
+
+1A a -1
+!wait 0.125
+
+2D a -1
+!wait 0.25
+
+1A a -1
+Drum a -1
+!wait 0.25
+
+1G a -1
+!wait 0.25
+
+--Second part
+1A a -1
+!wait 0.5
+
+2E a -1
+Drum a -1
+!wait 0.4
+
+1A a -1
+!wait 0.25
+
+1A a -1
+!wait 0.125
+
+2F a -1
+!wait 0.25
+
+2E a -1
+Drum a -1
+!wait 0.25
+
+2C a -1
+!wait 0.25
+
+--Third part
+
+1A a -1
+!wait 0.25
+
+2E a -1
+!wait 0.25
+
+2A a -1
+Drum a -1
+!wait 0.25
+
+1A a -1
+!wait 0.125
+
+1G a -1
+!wait 0.25
+
+1G a -1
+!wait 0.125
+
+1E a -1
+!wait 0.25
+
+1B a -1
+Drum a -1
+!wait 0.25
+
+1A a -1
+!wait 1
+

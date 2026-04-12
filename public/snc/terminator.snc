@@ -1,0 +1,118 @@
+
+--Current position: 0:0,422 ms
+!wait 0.4220
+
+2D a -1
+
+--Current position: 0:0,610 ms
+!wait 0.1880
+
+2E a -1
+
+--Current position: 0:0,829 ms
+!wait 0.2190
+
+2F a -1
+
+--Current position: 0:2,157 ms
+!wait 1.3280
+
+2E a -1
+
+--Current position: 0:2,844 ms
+!wait 0.6870
+
+2C a -1
+
+--Current position: 0:3,563 ms
+!wait 0.7190
+
+1F a -1
+
+--Current position: 0:4,907 ms
+!wait 1.3440
+
+2D a -1
+
+--Current position: 0:5,94 ms
+!wait 0.1870
+
+2E a -1
+
+--Current position: 0:5,329 ms
+!wait 0.2350
+
+2F a -1
+
+--Current position: 0:6,407 ms
+!wait 1.0780
+
+2E a -1
+
+--Current position: 0:7,79 ms
+!wait 0.6720
+
+2C a -1
+
+--Current position: 0:7,610 ms
+!wait 0.5310
+
+2A a -1
+
+--Current position: 0:9,141 ms
+!wait 1.5310
+
+2G a -1
+
+--Current position: 0:10,141 ms
+!wait 1.0000
+
+2D a -1
+
+--Current position: 0:10,329 ms
+!wait 0.1880
+
+2E a -1
+
+--Current position: 0:10,532 ms
+!wait 0.2030
+
+2F a -1
+
+--Current position: 0:11,641 ms
+!wait 1.1090
+
+2E a -1
+
+--Current position: 0:12,344 ms
+!wait 0.7030
+
+2C a -1
+
+--Current position: 0:13,266 ms
+!wait 0.9220
+
+1G a -1
+
+--Current position: 0:14,563 ms
+!wait 1.2970
+
+1F a -1
+
+--Current position: 0:16,47 ms
+!wait 1.4840
+
+1D a -1
+
+--Current position: 0:16,641 ms
+!wait 0.5940
+
+1F a -1
+
+--Current position: 0:17,813 ms
+!wait 1.1720
+
+1E a -1
+
+--Finishing wait
+!wait 2

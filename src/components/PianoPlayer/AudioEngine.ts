@@ -8,16 +8,34 @@ type ActiveVoice = {
 export class AudioEngine {
   private readonly audioContext: AudioContext;
   private readonly analyserNode: AnalyserNode;
+  private readonly dynamicsCompressor: DynamicsCompressorNode;
+  private readonly masterOutput: GainNode;
   private readonly noteBuffers = new Map<string, AudioBuffer>();
   private readonly rawNotes = new Map<string, RawInstrumentNote>();
   private readonly activeVoices = new Map<string, Set<ActiveVoice>>();
+  /** One MediaElementAudioSourceNode per HTMLMediaElement (browser limit). */
+  private readonly htmlMediaElementSources = new Map<HTMLAudioElement, MediaElementAudioSourceNode>();
 
   public constructor() {
     this.audioContext = new AudioContext();
     this.analyserNode = this.audioContext.createAnalyser();
     this.analyserNode.fftSize = 2048;
     this.analyserNode.smoothingTimeConstant = 0.82;
-    this.analyserNode.connect(this.audioContext.destination);
+
+    this.dynamicsCompressor = this.audioContext.createDynamicsCompressor();
+    this.dynamicsCompressor.threshold.value = -22;
+    this.dynamicsCompressor.knee.value = 24;
+    this.dynamicsCompressor.ratio.value = 8;
+    this.dynamicsCompressor.attack.value = 0.002;
+    this.dynamicsCompressor.release.value = 0.08;
+
+    this.masterOutput = this.audioContext.createGain();
+    /** Headroom when several notes stack; compressor catches brief peaks. */
+    this.masterOutput.gain.value = 0.42;
+
+    this.analyserNode.connect(this.dynamicsCompressor);
+    this.dynamicsCompressor.connect(this.masterOutput);
+    this.masterOutput.connect(this.audioContext.destination);
   }
 
   public get analyser(): AnalyserNode {
@@ -98,7 +116,11 @@ export class AudioEngine {
     const now = this.audioContext.currentTime;
     for (const voice of voices) {
       if (immediate) {
-        voice.source.stop();
+        const v = voice.gain.gain.value;
+        voice.gain.gain.cancelScheduledValues(now);
+        voice.gain.gain.setValueAtTime(v, now);
+        voice.gain.gain.linearRampToValueAtTime(0, now + 0.008);
+        voice.source.stop(now + 0.009);
         continue;
       }
       voice.gain.gain.cancelScheduledValues(now);
@@ -113,6 +135,31 @@ export class AudioEngine {
     for (const alias of aliases) {
       this.stopNote(alias, immediate);
     }
+  }
+
+  /**
+   * Routes an HTML5 audio element through the same analyser as note playback so visualizers
+   * (e.g. wall equalizers) see spectrum during SNC / WAV preview.
+   */
+  public async connectHtml5AudioForVisualization(audio: HTMLAudioElement): Promise<() => void> {
+    await this.ensureRunning();
+    let node = this.htmlMediaElementSources.get(audio);
+    if (!node) {
+      node = this.audioContext.createMediaElementSource(audio);
+      this.htmlMediaElementSources.set(audio, node);
+    }
+    node.connect(this.analyserNode);
+    let cleanedUp = false;
+    return () => {
+      if (cleanedUp) {
+        return;
+      }
+      cleanedUp = true;
+      node.disconnect(this.analyserNode);
+      if (this.htmlMediaElementSources.get(audio) === node) {
+        this.htmlMediaElementSources.delete(audio);
+      }
+    };
   }
 
   private async ensureRunning(): Promise<void> {

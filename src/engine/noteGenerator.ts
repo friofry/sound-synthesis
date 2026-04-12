@@ -1,7 +1,11 @@
 import { clonePerturbation, GraphModel } from "./graph";
 import { scaleGraphForPitchRatio } from "./gridGenerators";
 import { runSimulation } from "./simulation";
-import { derivePitchCalibrationRatio, estimateFrequencyFromZeroCrossings } from "./tuning";
+import {
+  derivePitchCalibrationRatio,
+  estimateFrequencyFromZeroCrossings,
+  estimateProminentFrequencyAWeighted,
+} from "./tuning";
 import type { GraphPerturbation, RawInstrumentNote, SimulationBackend, SimulationParams, SimulationPrecision } from "./types";
 import { DEFAULT_KEYBINDS, DEFAULT_KEY_LABELS } from "../components/PianoPlayer/KeyboardMapping";
 import { DEFAULT_GRAPH_STORE_SIMULATION_PARAMS, DEFAULT_SIMULATION_PRECISION, resolveDefaultSimulationBackend } from "../config/defaults";
@@ -64,7 +68,9 @@ export function generateInstrumentFromGraph(
       undefined,
       { capture: "playing-point-only", backend },
     );
-    const measuredFirstFrequency = estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, sampleRate);
+    const measuredFirstFrequency =
+      estimateProminentFrequencyAWeighted(calibrationResult.playingPointBuffer, sampleRate) ??
+      estimateFrequencyFromZeroCrossings(calibrationResult.playingPointBuffer, sampleRate);
     if (measuredFirstFrequency !== null) {
       calibrationPitchRatio = derivePitchCalibrationRatio(baseFrequency * firstTargetRatio, measuredFirstFrequency);
     }

@@ -1,0 +1,63 @@
+--Bon Jovi - It's my life
+
+!wait 0.5
+
+--Intro
+2D a -1
+2C a -1
+1G a -1
+1C a -1
+!wait 0.5
+
+2D a -1
+2C a -1
+1G a -1
+1C a -1
+!wait 0.75
+
+1G a -1
+!wait 0.25
+
+2C a -1
+!wait 0.25
+
+2D# a -1
+!wait 0.25
+
+2G# a -1
+!wait 1
+
+2G a -1
+!wait 0.5
+
+!wait 0.5 
+
+2D a -1
+2C a -1
+1G a -1
+1C a -1
+!wait 0.5
+
+2D a -1
+2C a -1
+1G a -1
+1C a -1
+!wait 0.75
+
+1G a -1
+!wait 0.25
+
+2C a -1
+!wait 0.25
+
+2D# a -1
+!wait 0.25
+
+2G# a -1
+!wait 1
+
+2G a -1
+!wait 0.5
+
+
+!wait 0.5

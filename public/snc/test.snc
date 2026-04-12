@@ -1,0 +1,43 @@
+!begin alias
+do 1/1_do_131.wav 1
+do# 1/2_do#_138.wav 1
+re 1/3_re_148.wav 1
+re# 1/4_re#_156.wav 1
+mi 1/5_mi_165.wav 1
+fa 1/6_fa_175.wav 1
+fa# 1/7_fa#_185.wav 1
+sol 1/8_sol_195.wav 1
+sol# 1/9_sol#_207.wav 1
+lya 1/a_lya_220.wav 1
+lya# 1/b_lya#_233.wav 1
+si 1/c_si_245.wav 1
+
+!end alias
+
+mi a 0.125
+!wait 0.125
+lya a 1
+!wait 1
+mi a 1
+!wait 1
+
+fa# a 0.125
+!wait 0.125
+sol# a 1
+!wait 1
+do# a 1
+!wait 1
+
+do# a 0.125
+!wait 0.125
+sol a 1
+!wait 1
+mi a 1
+!wait 1
+
+re a 0.125
+!wait 0.125
+mi a 1
+!wait 1
+lya a 1
+!wait 1

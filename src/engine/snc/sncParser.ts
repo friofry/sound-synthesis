@@ -15,6 +15,15 @@ function parseNumber(value: string, lineNo: number, label: string): number {
   return parsed;
 }
 
+/** Legacy scores use `1G a 0.5 -- comment` — strip from ` --` so the line stays three tokens. */
+function stripInlineComment(line: string): string {
+  const idx = line.search(/\s--/);
+  if (idx === -1) {
+    return line;
+  }
+  return line.slice(0, idx).trimEnd();
+}
+
 function parseAliasBlockLine(line: string, lineNo: number): SncAliasDefinition {
   const parts = line.split(/\s+/);
   if (parts.length !== 3) {
@@ -34,6 +43,14 @@ function parseCommandLine(line: string, lineNo: number): SncCommand {
   if (line.startsWith("!wait ")) {
     const waitValue = line.slice("!wait ".length).trim();
     return { type: "wait", seconds: parseNumber(waitValue, lineNo, "wait duration") };
+  }
+  /** MIDI export / tooling: `!stop 4E` releases that alias (same as `4E r 0`). */
+  if (line.startsWith("!stop ")) {
+    const name = line.slice("!stop ".length).trim();
+    if (!name.length) {
+      throw new Error(`Invalid !stop at line ${lineNo}`);
+    }
+    return { type: "alias", name, flag: "r", duration: 0 };
   }
 
   const parts = line.split(/\s+/);
@@ -61,7 +78,7 @@ export function parseSncText(text: string): SncParseResult {
   for (let index = 0; index < lines.length; index += 1) {
     const lineNo = index + 1;
     const raw = lines[index];
-    const line = raw.trim();
+    const line = stripInlineComment(raw.trim()).trim();
 
     if (line.length === 0 || line.startsWith("--")) {
       continue;
@@ -95,6 +112,114 @@ export function parseSncText(text: string): SncParseResult {
   return { aliases, commands };
 }
 
+const INT16_MAX = 32_767;
+const INT16_MIN = -32_768;
+const DEFAULT_RELEASE_FADE_MS = 14;
+const DEFAULT_NOTE_ATTACK_MS = 5;
+
+function clampInt16(v: number): number {
+  if (v > INT16_MAX) {
+    return INT16_MAX;
+  }
+  if (v < INT16_MIN) {
+    return INT16_MIN;
+  }
+  return Math.round(v);
+}
+
+/** Linear ramp from full level to zero — removes step discontinuity when a note is cut. */
+function applyLinearFadeOut(samples: Int16Array): Int16Array {
+  const n = samples.length;
+  if (n === 0) {
+    return samples;
+  }
+  const out = new Int16Array(n);
+  const denom = n === 1 ? 1 : n - 1;
+  for (let i = 0; i < n; i += 1) {
+    const g = 1 - i / denom;
+    out[i] = clampInt16(samples[i] * g);
+  }
+  return out;
+}
+
+function mergeResidualFade(residual: Float64Array | null, fade: Int16Array): Float64Array {
+  if (fade.length === 0) {
+    return residual ?? new Float64Array(0);
+  }
+  const maxL = Math.max(residual?.length ?? 0, fade.length);
+  const out = new Float64Array(maxL);
+  if (residual) {
+    out.set(residual);
+  }
+  for (let i = 0; i < fade.length; i += 1) {
+    out[i] += fade[i];
+  }
+  return out;
+}
+
+/** Takes the first `take` samples from `residual` as int16, shifts the rest left. */
+type AttackEmitted = { emitted: number };
+
+/**
+ * Sustain / one-shot attack: ramps 0→1 over `targetAttack` samples when the chunk is long enough;
+ * if the chunk is shorter than the remaining ramp, compresses the ramp into this chunk so the last
+ * sample reaches full gain (avoids a level jump into the release tail on short MIDI notes).
+ */
+function applyNoteAttackToChunk(chunk: Int16Array, emittedRef: AttackEmitted, targetAttack: number): Int16Array {
+  let emitted = emittedRef.emitted;
+  if (emitted >= targetAttack) {
+    return chunk;
+  }
+  const n = chunk.length;
+  const remaining = targetAttack - emitted;
+  const out = new Int16Array(n);
+
+  if (n >= remaining) {
+    for (let i = 0; i < n; i += 1) {
+      if (emitted >= targetAttack) {
+        out[i] = chunk[i]!;
+      } else {
+        const g = targetAttack <= 1 ? 1 : emitted / (targetAttack - 1);
+        out[i] = clampInt16(chunk[i]! * g);
+        emitted += 1;
+      }
+    }
+  } else {
+    const g0 = targetAttack <= 1 ? 0 : emitted / (targetAttack - 1);
+    for (let i = 0; i < n; i += 1) {
+      const t = n <= 1 ? 1 : i / (n - 1);
+      const g = g0 + t * (1 - g0);
+      out[i] = clampInt16(chunk[i]! * g);
+    }
+    emitted = targetAttack;
+  }
+
+  emittedRef.emitted = emitted;
+  return out;
+}
+
+function attackTargetSamples(attackMs: number, sampleRate: number): number {
+  if (attackMs <= 0) {
+    return 0;
+  }
+  return Math.max(2, Math.round((attackMs / 1000) * sampleRate));
+}
+
+function takeResidualHead(residual: Float64Array, take: number): { head: Int16Array; rest: Float64Array | null } {
+  if (take <= 0) {
+    return { head: new Int16Array(0), rest: residual.length > 0 ? residual : null };
+  }
+  const n = Math.min(take, residual.length);
+  const head = new Int16Array(n);
+  for (let i = 0; i < n; i += 1) {
+    head[i] = clampInt16(residual[i]);
+  }
+  if (n >= residual.length) {
+    return { head, rest: null };
+  }
+  return { head, rest: Float64Array.from(residual.subarray(n)) };
+}
+
 function getOrCreateStream(
   activeStreams: Map<string, SncStream>,
   alias: string,
@@ -104,6 +229,9 @@ function getOrCreateStream(
   if (!stream) {
     stream = context.createStreamForAlias(alias);
     activeStreams.set(alias, stream);
+  } else {
+    /** Re-triggering the same note (`a -1`) must restart the sample; otherwise the PCM offset stays at EOF and the note is silent. */
+    stream.reset();
   }
   return stream;
 }
@@ -115,11 +243,20 @@ export function executeSncCommands(
   onWait?: (pcmChunk: Int16Array, seconds: number) => void,
 ): void {
   const activeStreams = new Map<string, SncStream>();
+  const sustainAttackEmitted = new Map<string, number>();
   const known = context.knownAliases ? new Set(context.knownAliases) : undefined;
+  let releaseResidual: Float64Array | null = null;
+  const fadeMs = context.releaseFadeMs ?? DEFAULT_RELEASE_FADE_MS;
+  const fadeSec = fadeMs / 1000;
+  const noteAttackMs = context.noteAttackMs ?? DEFAULT_NOTE_ATTACK_MS;
+  const attackTarget =
+    noteAttackMs > 0 ? attackTargetSamples(noteAttackMs, context.sampleRate) : 0;
 
   for (const command of commands) {
     if (command.type === "clear") {
       mixer.clearBuffer();
+      releaseResidual = null;
+      sustainAttackEmitted.clear();
       continue;
     }
 
@@ -128,12 +265,22 @@ export function executeSncCommands(
         throw new Error(`Unknown alias '${command.name}'`);
       }
       if (command.flag === "r") {
+        const stream = activeStreams.get(command.name);
         activeStreams.delete(command.name);
+        sustainAttackEmitted.delete(command.name);
+        if (stream && fadeMs > 0) {
+          const fadeSamples = Math.max(1, Math.round(fadeSec * context.sampleRate));
+          const actualFadeSec = fadeSamples / context.sampleRate;
+          const raw = stream.getSamples(actualFadeSec);
+          const faded = applyLinearFadeOut(raw);
+          releaseResidual = mergeResidualFade(releaseResidual, faded);
+        }
         continue;
       }
 
       if (command.duration === -1) {
         getOrCreateStream(activeStreams, command.name, context);
+        sustainAttackEmitted.set(command.name, 0);
         continue;
       }
 
@@ -143,20 +290,66 @@ export function executeSncCommands(
 
       const stream = context.createStreamForAlias(command.name);
       stream.reset();
-      const oneshot = stream.getSamples(command.duration);
-      mixer.addBuffer(oneshot);
+      const raw = stream.getSamples(command.duration);
+      if (attackTarget > 0) {
+        const ref: AttackEmitted = { emitted: 0 };
+        mixer.addBuffer(applyNoteAttackToChunk(raw, ref, attackTarget));
+      } else {
+        mixer.addBuffer(raw);
+      }
       continue;
     }
 
     const waitSamples = Math.max(0, Math.round(command.seconds * context.sampleRate));
-    for (const stream of activeStreams.values()) {
-      const chunk = stream.getSamples(command.seconds);
-      mixer.addBuffer(chunk);
+    if (releaseResidual && releaseResidual.length > 0 && waitSamples > 0) {
+      const { head, rest } = takeResidualHead(releaseResidual, waitSamples);
+      releaseResidual = rest;
+      if (head.length > 0) {
+        mixer.addBuffer(head);
+      }
     }
-    const mixedChunk = mixer.getBuffer(waitSamples);
+    for (const [name, stream] of activeStreams) {
+      const chunk = stream.getSamples(command.seconds);
+      if (attackTarget > 0) {
+        const ref: AttackEmitted = { emitted: sustainAttackEmitted.get(name) ?? 0 };
+        mixer.addBuffer(applyNoteAttackToChunk(chunk, ref, attackTarget));
+        sustainAttackEmitted.set(name, ref.emitted);
+      } else {
+        mixer.addBuffer(chunk);
+      }
+    }
+    /** Rests with no sustaining notes must still advance time (digital silence). */
+    let mixedChunk: Int16Array =
+      mixer.size === 0 && waitSamples > 0 ? new Int16Array(waitSamples) : mixer.getBuffer(waitSamples);
+    if (mixedChunk.length < waitSamples) {
+      const padded = new Int16Array(waitSamples);
+      padded.set(mixedChunk);
+      mixedChunk = padded;
+    }
     if (onWait) {
       onWait(mixedChunk, command.seconds);
     }
     mixer.cutBuffer(waitSamples);
+  }
+
+  /** Score ends with `r` and no trailing `!wait` — flush the fade tail into the mixer. */
+  if (releaseResidual && releaseResidual.length > 0) {
+    const n = releaseResidual.length;
+    const head = new Int16Array(n);
+    for (let i = 0; i < n; i += 1) {
+      head[i] = clampInt16(releaseResidual[i]);
+    }
+    mixer.addBuffer(head);
+    let mixedChunk: Int16Array =
+      mixer.size === 0 ? new Int16Array(0) : mixer.getBuffer(n);
+    if (mixedChunk.length < n) {
+      const padded = new Int16Array(n);
+      padded.set(mixedChunk);
+      mixedChunk = padded;
+    }
+    if (onWait) {
+      onWait(mixedChunk, n / context.sampleRate);
+    }
+    mixer.cutBuffer(n);
   }
 }
