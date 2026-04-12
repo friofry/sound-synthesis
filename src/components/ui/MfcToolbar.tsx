@@ -6,6 +6,8 @@ export type MfcToolbarItem<T extends string = string> = {
   label: string;
   title?: string;
   disabled?: boolean;
+  /** When set, controls the pressed (selected) look independently of selectedId — for multi-toggle toolbars */
+  pressed?: boolean;
 };
 
 export type MfcToolbarSeparator = {
@@ -23,6 +25,8 @@ type MfcToolbarProps<TItem extends MfcToolbarItem<string>> = {
   orientation?: "horizontal" | "vertical";
   className?: string;
   buttonClassName?: string;
+  /** Set false when this bar sits inside an outer element with role="toolbar" */
+  hasToolbarRole?: boolean;
 };
 
 export function MfcToolbar<TItem extends MfcToolbarItem<string>>({
@@ -33,16 +37,22 @@ export function MfcToolbar<TItem extends MfcToolbarItem<string>>({
   orientation = "horizontal",
   className = "",
   buttonClassName = "",
+  hasToolbarRole = true,
 }: MfcToolbarProps<TItem>) {
   const rootClassName = ["mfc-toolbar", orientation === "vertical" ? "vertical" : "", className].filter(Boolean).join(" ");
 
   return (
-    <div className={rootClassName} role="toolbar" aria-orientation={orientation}>
+    <div
+      className={rootClassName}
+      role={hasToolbarRole ? "toolbar" : undefined}
+      aria-orientation={hasToolbarRole ? orientation : undefined}
+    >
       {items.map((item) => {
         if (isSeparator(item)) {
           return <div key={item.id} className="mfc-toolbar-separator" role="separator" aria-orientation={orientation} />;
         }
-        const isSelected = item.id === selectedId;
+        const isSelected =
+          item.pressed !== undefined ? item.pressed : item.id === selectedId;
         const itemClassName = ["mfc-toolbar-button", isSelected ? "is-selected" : "", buttonClassName].filter(Boolean).join(" ");
         return (
           <button

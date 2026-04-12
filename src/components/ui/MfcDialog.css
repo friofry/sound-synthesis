@@ -114,6 +114,19 @@
     inset -1px -1px 0 #dfdfdf;
 }
 
+.mfc-button:disabled {
+  color: #808080;
+  cursor: default;
+  background: #ece9d8;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #404040;
+  border-bottom: 1px solid #404040;
+  box-shadow:
+    inset -1px -1px 0 #808080,
+    inset 1px 1px 0 #dfdfdf;
+}
+
 .mfc-button.danger {
   color: #6b0000;
 }

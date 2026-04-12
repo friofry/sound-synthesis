@@ -809,14 +809,24 @@
   min-width: 170px;
 }
 
-.freq-toolbar-select {
-  min-width: 80px;
+.mfc-toolbar-fft-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mfc-toolbar-select {
+  min-width: 72px;
+  max-width: 96px;
   background: #fff;
-  border: 1px solid #7f9db9;
+  border: 1px solid #7f7f7f;
+  box-shadow:
+    inset 1px 1px 0 #404040,
+    inset -1px -1px 0 #fff;
   color: #000;
   padding: 2px 4px;
   font-size: 11px;
-  font-family: inherit;
+  font-family: Tahoma, "Segoe UI", sans-serif;
 }
 
 .freq-toolbar-range {
@@ -839,6 +849,13 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.freq-analyzer-toolbar .mfc-toolbar.piano-toolbar-mfc,
+.gauss-noise-toolbar .mfc-toolbar.piano-toolbar-mfc {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .freq-analyzer-error {
@@ -914,4 +931,126 @@
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* ── Gauss Noise Page ── */
+
+.gauss-noise-page {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #d4d0c8;
+  color: #000;
+  overflow: hidden;
+  font-family: Tahoma, "Segoe UI", sans-serif;
+}
+
+.gauss-noise-toolbar .gauss-noise-toolbar-status {
+  margin-left: 0;
+  flex: 1 1 auto;
+  white-space: normal;
+}
+
+.gauss-noise-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(280px, 400px) minmax(320px, 1fr);
+  gap: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.gauss-noise-left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+}
+
+.gauss-noise-parameters-form {
+  flex: 0 1 auto;
+}
+
+.gauss-noise-waveform-form {
+  flex: 1 1 42%;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+}
+
+.gauss-noise-waveform-form .mfc-form-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gauss-noise-spectrum-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  gap: 6px;
+}
+
+.gauss-noise-spectrum-toolbar {
+  flex: 0 0 auto;
+  min-height: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: #d4d0c8;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
+  box-shadow:
+    inset 1px 1px 0 #dfdfdf,
+    inset -1px -1px 0 #404040;
+  font-size: 11px;
+}
+
+.gauss-noise-fft-note {
+  color: #444;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gauss-noise-spectrum-split {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.gauss-noise-freq-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gauss-noise-freq-panel .freq-analyzer-panel-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.gauss-noise-waveform-inner {
+  flex: 1 1 auto;
+  min-height: 100px;
+  background: #fff;
+}
+
+.gauss-noise-waveform-inner .legacy-oscillogramm-waveform-view {
+  height: 100%;
+}
+
+@media (max-width: 720px) {
+  .gauss-noise-body {
+    grid-template-columns: 1fr;
+  }
 }

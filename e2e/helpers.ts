@@ -238,7 +238,10 @@ async function getCanvasScreenPoint(page: Page, worldX: number, worldY: number):
   return { clientX: box.x + clampedX, clientY: box.y + clampedY };
 }
 
-export async function switchToWindowPage(page: Page, label: "Membrane Modeller" | "Piano Player"): Promise<void> {
+export async function switchToWindowPage(
+  page: Page,
+  label: "Membrane Modeller" | "Piano Player" | "Frequency Analyzer" | "Gauss Noise",
+): Promise<void> {
   await page.click('.mfc-menu-root-button:text("Window")');
   await page.getByRole("menuitem", { name: label }).click();
 }

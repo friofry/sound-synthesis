@@ -1,0 +1,56 @@
+/* Embedded form shell — WinXP-style raised client area (same language as MfcDialog). */
+
+.mfc-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  color: #000;
+  background: #ece9d8;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #404040;
+  border-bottom: 1px solid #404040;
+  box-shadow:
+    inset -1px -1px 0 #808080,
+    inset 1px 1px 0 #dfdfdf;
+  font: 12px Tahoma, "MS Sans Serif", "Segoe UI", sans-serif;
+}
+
+.mfc-form-titlebar {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 1.25;
+  background: linear-gradient(90deg, #0a246a 0%, #3a6ea5 100%);
+  color: #fff;
+}
+
+.mfc-form-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+}
+
+.mfc-form-footer {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0 12px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.mfc-form-hint {
+  margin: 0;
+  padding: 0 2px;
+  font-size: 11px;
+  color: #333;
+  line-height: 1.35;
+}

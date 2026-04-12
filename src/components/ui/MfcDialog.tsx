@@ -49,6 +49,9 @@ type MfcButtonProps = {
   variant?: "normal" | "danger";
   defaultAction?: boolean;
   className?: string;
+  disabled?: boolean;
+  /** Maps to `aria-pressed` for toggle-style actions (e.g. Play/Stop). */
+  pressed?: boolean;
 };
 
 type MfcSelectOption<T extends string> = {
@@ -334,11 +337,15 @@ export function MfcButton({
   variant = "normal",
   defaultAction = false,
   className = "",
+  disabled = false,
+  pressed,
 }: MfcButtonProps) {
   return (
     <button
       type={type}
       onClick={onClick}
+      disabled={disabled}
+      aria-pressed={pressed === undefined ? undefined : pressed}
       className={`mfc-button ${variant === "danger" ? "danger" : ""} ${defaultAction ? "default" : ""} ${className}`.trim()}
     >
       {children}

@@ -49,4 +49,11 @@ test.describe("Navigation", () => {
     await expect(page.locator(".workspace-layout")).toBeVisible();
     await expect(page.locator("canvas.graph-canvas")).toBeVisible();
   });
+
+  test("can open Gauss Noise page via Window menu", async ({ page }) => {
+    await page.goto("/");
+    await switchToWindowPage(page, "Gauss Noise");
+    await expect(page.locator(".gauss-noise-page")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Generate" })).toBeVisible();
+  });
 });

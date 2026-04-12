@@ -5,6 +5,7 @@ import { MfcMenuBar, type MfcMenuBarItem } from "./components/ui/MfcMenu";
 import { MembraneModellerPage } from "./pages/MembraneModellerPage";
 import { PianoPlayerPage } from "./pages/PianoPlayerPage";
 import { FrequencyAnalyzerPage } from "./pages/FrequencyAnalyzerPage";
+import { GaussNoisePage } from "./pages/GaussNoisePage";
 import { graphFromBinary, graphToBinary } from "./engine/fileIO/graphFile";
 import { buildSncPlaybackIntervals, scheduleSncPlaybackKeySimulation } from "./engine/snc/sncPlaybackKeys";
 import { renderSncTextToWav } from "./engine/snc/renderSncFromText";
@@ -18,7 +19,7 @@ import type { MidiTrackListEntry } from "./engine/midi/listMidiParts";
 import { useGraphStore } from "./store/graphStore";
 import { usePianoStore } from "./store/pianoStore";
 
-type AppTab = "modeller" | "piano" | "frequency-analyzer";
+type AppTab = "modeller" | "piano" | "frequency-analyzer" | "gauss-noise";
 
 type CommunityMidiPartPick = {
   fileName: string;
@@ -205,7 +206,14 @@ function App() {
     setTab("frequency-analyzer");
   }, []);
 
-  const TAB_CYCLE: AppTab[] = useMemo(() => ["modeller", "piano", "frequency-analyzer"], []);
+  const openGaussNoise = useCallback(() => {
+    setTab("gauss-noise");
+  }, []);
+
+  const TAB_CYCLE: AppTab[] = useMemo(
+    () => ["modeller", "piano", "frequency-analyzer", "gauss-noise"],
+    [],
+  );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -287,6 +295,12 @@ function App() {
             disabled: tab === "frequency-analyzer",
             onClick: openFrequencyAnalyzer,
           },
+          {
+            id: "show-gauss-noise",
+            label: "Gauss Noise",
+            disabled: tab === "gauss-noise",
+            onClick: openGaussNoise,
+          },
         ],
       },
       {
@@ -336,6 +350,7 @@ function App() {
       openCommunityMidiDialog,
       openCommunitySncDialog,
       openFrequencyAnalyzer,
+      openGaussNoise,
       openHexTemplateDialog,
       openInsertDialog,
       openModeller,
@@ -363,6 +378,14 @@ function App() {
         {tab === "frequency-analyzer" ? (
           <div className="app-page">
             <FrequencyAnalyzerPage onBack={() => setTab("modeller")} />
+          </div>
+        ) : null}
+        {tab === "gauss-noise" ? (
+          <div className="app-page">
+            <GaussNoisePage
+              onBack={() => setTab("modeller")}
+              onOpenFrequencyAnalyzer={openFrequencyAnalyzer}
+            />
           </div>
         ) : null}
       </section>
