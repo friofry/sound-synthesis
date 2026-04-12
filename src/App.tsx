@@ -12,6 +12,7 @@ import { CommunityMidiDialog } from "./components/PianoPlayer/CommunityMidiDialo
 import { CommunitySncDialog } from "./components/PianoPlayer/CommunitySncDialog";
 import { MidiPartDialog } from "./components/PianoPlayer/MidiPartDialog";
 import { connectMelodyPreviewToAnalyser } from "./audio/melodyPreviewBridge";
+import { registerMelodyPreviewStop, stopAllMelodyPreviewPlayback } from "./audio/melodyPreviewStop";
 import { listMidiTracksWithNotes, midiTrackToSnc } from "./engine/midi";
 import type { MidiTrackListEntry } from "./engine/midi/listMidiParts";
 import { useGraphStore } from "./store/graphStore";
@@ -30,8 +31,28 @@ function App() {
   const [communityMidiPartPick, setCommunityMidiPartPick] = useState<CommunityMidiPartPick | null>(null);
   const graphInputRef = useRef<HTMLInputElement | null>(null);
   const communitySncAudioRef = useRef<HTMLAudioElement | null>(null);
+  const communitySncBlobUrlRef = useRef<string | null>(null);
   const communitySncPlaybackCleanupRef = useRef<(() => void) | null>(null);
   const communitySncAnalyserDisconnectRef = useRef<(() => void) | null>(null);
+
+  const cleanupCommunityMelodyPlayback = useCallback(() => {
+    communitySncAnalyserDisconnectRef.current?.();
+    communitySncAnalyserDisconnectRef.current = null;
+    communitySncPlaybackCleanupRef.current?.();
+    communitySncPlaybackCleanupRef.current = null;
+    const audio = communitySncAudioRef.current;
+    if (audio) {
+      audio.onended = null;
+      audio.pause();
+    }
+    communitySncAudioRef.current = null;
+    if (communitySncBlobUrlRef.current) {
+      URL.revokeObjectURL(communitySncBlobUrlRef.current);
+      communitySncBlobUrlRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => registerMelodyPreviewStop(cleanupCommunityMelodyPlayback), [cleanupCommunityMelodyPlayback]);
   const openInsertDialog = useGraphStore((s) => s.openInsertDialog);
   const openCellTemplateDialog = useGraphStore((s) => s.openCellTemplateDialog);
   const openHexTemplateDialog = useGraphStore((s) => s.openHexTemplateDialog);
@@ -58,40 +79,28 @@ function App() {
       if (instrumentNotes.length === 0) {
         throw new Error("Generate or load an instrument first.");
       }
+      stopAllMelodyPreviewPlayback();
       const { wavBlob } = renderSncTextToWav(text, instrumentNotes);
       setLastSncText(text);
       setLastSncMonophonicLead(monophonicLead);
       setLastRenderedWav(wavBlob);
       const url = URL.createObjectURL(wavBlob);
+      communitySncBlobUrlRef.current = url;
       const audio = new Audio(url);
-      communitySncAnalyserDisconnectRef.current?.();
-      communitySncAnalyserDisconnectRef.current = null;
-      communitySncPlaybackCleanupRef.current?.();
-      communitySncAudioRef.current?.pause();
       communitySncAudioRef.current = audio;
       communitySncAnalyserDisconnectRef.current = await connectMelodyPreviewToAnalyser(audio);
       const intervals = buildSncPlaybackIntervals(text, instrumentNotes, { monophonicLead });
       const { pressKey, releaseKey } = usePianoStore.getState();
       communitySncPlaybackCleanupRef.current = scheduleSncPlaybackKeySimulation(audio, intervals, pressKey, releaseKey);
-      const cleanupPlayback = () => {
-        communitySncAnalyserDisconnectRef.current?.();
-        communitySncAnalyserDisconnectRef.current = null;
-        communitySncPlaybackCleanupRef.current?.();
-        communitySncPlaybackCleanupRef.current = null;
-        if (communitySncAudioRef.current === audio) {
-          communitySncAudioRef.current = null;
-        }
-        URL.revokeObjectURL(url);
-      };
-      audio.onended = cleanupPlayback;
+      audio.onended = cleanupCommunityMelodyPlayback;
       try {
         await audio.play();
       } catch (error) {
-        cleanupPlayback();
+        cleanupCommunityMelodyPlayback();
         throw error;
       }
     },
-    [setLastRenderedWav, setLastSncMonophonicLead, setLastSncText],
+    [cleanupCommunityMelodyPlayback, setLastRenderedWav, setLastSncMonophonicLead, setLastSncText],
   );
 
   const handleOpenCommunitySnc = useCallback(

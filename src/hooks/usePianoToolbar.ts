@@ -27,6 +27,7 @@ import type {
 } from "../engine/types";
 import type { GenerateNotesDialogValues } from "../components/PianoPlayer/GenerateNotesDialog";
 import { registerMelodyPreviewAudioConnector } from "../audio/melodyPreviewBridge";
+import { registerMelodyPreviewStop, stopAllMelodyPreviewPlayback } from "../audio/melodyPreviewStop";
 import { usePianoStore, VIEWER_BASE_GRAPH_SNAPSHOT_IDS } from "../store/pianoStore";
 import { DEFAULT_ONE_NOTE_GENERATION_SETTINGS, resolveDefaultSimulationBackend } from "../config/defaults";
 import { listMidiTracksWithNotes, midiTrackToSnc } from "../engine/midi";
@@ -266,10 +267,26 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   const wasGraphEmptyRef = useRef(graph.dots.length === 0);
   const recorderRef = useRef<SncCreator | null>(null);
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
+  const previewBlobUrlRef = useRef<string | null>(null);
   const sncPlaybackCleanupRef = useRef<(() => void) | null>(null);
   const previewAudioAnalyserDisconnectRef = useRef<(() => void) | null>(null);
   const generationAbortRef = useRef<AbortController | null>(null);
   const [midiPartPicker, setMidiPartPicker] = useState<MidiPartPickerState | null>(null);
+
+  const stopPianoMelodyPreview = useCallback(() => {
+    previewAudioAnalyserDisconnectRef.current?.();
+    previewAudioAnalyserDisconnectRef.current = null;
+    sncPlaybackCleanupRef.current?.();
+    sncPlaybackCleanupRef.current = null;
+    audioPreviewRef.current?.pause();
+    audioPreviewRef.current = null;
+    if (previewBlobUrlRef.current) {
+      URL.revokeObjectURL(previewBlobUrlRef.current);
+      previewBlobUrlRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => registerMelodyPreviewStop(stopPianoMelodyPreview), [stopPianoMelodyPreview]);
 
   useEffect(() => {
     registerMelodyPreviewAudioConnector(audioEngine);
@@ -293,14 +310,9 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
 
     return () => {
       audioEngine.stopAll(true);
-      sncPlaybackCleanupRef.current?.();
-      sncPlaybackCleanupRef.current = null;
-      previewAudioAnalyserDisconnectRef.current?.();
-      previewAudioAnalyserDisconnectRef.current = null;
-      audioPreviewRef.current?.pause();
-      audioPreviewRef.current = null;
+      stopPianoMelodyPreview();
     };
-  }, [audioEngine, initialNotes, setActiveBuffer, setInstrumentNotes]);
+  }, [audioEngine, initialNotes, setActiveBuffer, setInstrumentNotes, stopPianoMelodyPreview]);
 
   useEffect(() => {
     if (!instrumentNotes.length) return;
@@ -342,6 +354,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code === "Space") {
         event.preventDefault();
+        stopAllMelodyPreviewPlayback();
         audioEngine.stopAll(true);
         releaseAll();
         activeAliases.clear();
@@ -352,6 +365,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
 
       const index = getNoteIndexByCode(event.code);
       if (index === null || heldCodes.has(event.code)) return;
+      stopAllMelodyPreviewPlayback();
       heldCodes.add(event.code);
       pressKey(index);
       syncOscillogram(index);
@@ -386,6 +400,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
   const handlePressKey = useCallback(
     (index: number) => {
       if (pressedKeys.has(index)) return;
+      stopAllMelodyPreviewPlayback();
       pressKey(index);
       syncOscillogram(index);
       activeAliasesRef.current.add(aliasForIndex(index));
@@ -433,6 +448,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       autoplay?: boolean;
       snapshotId?: string;
     }): Promise<RawInstrumentNote | null> => {
+      stopAllMelodyPreviewPlayback();
       const targetGraph = options?.sourceGraph ?? graph;
       if (targetGraph.dots.length === 0) {
         const fallback = createFallbackNotes(1)[0];
@@ -482,6 +498,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       sourceGraph?: GraphModel,
       options?: { persistSettings?: boolean },
     ) => {
+      stopAllMelodyPreviewPlayback();
       const targetGraph = sourceGraph ?? graph;
       const basePerturbation = clonePerturbation(targetGraph.getEditorPerturbation());
       const safeOctaves = Math.max(1, Math.min(3, Math.round(values.octaves))) as 1 | 2 | 3;
@@ -699,6 +716,7 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
 
   const handlePlayPreviewBuffer = useCallback(
     async (buffer: Float32Array, sampleRate: number) => {
+      stopAllMelodyPreviewPlayback();
       const alias = "__hammer-preview__";
       const note: RawInstrumentNote = {
         alias,
@@ -811,39 +829,38 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
       }
       const monophonicLead = options?.monophonicLead ?? true;
       try {
+        stopAllMelodyPreviewPlayback();
         const { wavBlob } = renderSncTextToWav(text, instrumentNotes);
         setLastSncText(text);
         setLastSncMonophonicLead(monophonicLead);
         setLastRenderedWav(wavBlob);
 
         const url = URL.createObjectURL(wavBlob);
+        previewBlobUrlRef.current = url;
         const audio = new Audio(url);
-        audioPreviewRef.current?.pause();
-        previewAudioAnalyserDisconnectRef.current?.();
-        previewAudioAnalyserDisconnectRef.current = null;
-        sncPlaybackCleanupRef.current?.();
         audioPreviewRef.current = audio;
         previewAudioAnalyserDisconnectRef.current = await audioEngine.connectHtml5AudioForVisualization(audio);
         startSncPlaybackKeySimulation(audio, text, monophonicLead);
-        const cleanupPlayback = () => {
-          previewAudioAnalyserDisconnectRef.current?.();
-          previewAudioAnalyserDisconnectRef.current = null;
-          sncPlaybackCleanupRef.current?.();
-          sncPlaybackCleanupRef.current = null;
-          URL.revokeObjectURL(url);
-        };
-        audio.onended = cleanupPlayback;
+        audio.onended = stopPianoMelodyPreview;
         try {
           await audio.play();
         } catch (playError) {
-          cleanupPlayback();
+          stopPianoMelodyPreview();
           throw playError;
         }
       } catch (error) {
         window.alert(`Failed to play melody: ${(error as Error).message}`);
       }
     },
-    [audioEngine, instrumentNotes, setLastSncMonophonicLead, setLastSncText, setLastRenderedWav, startSncPlaybackKeySimulation],
+    [
+      audioEngine,
+      instrumentNotes,
+      setLastSncMonophonicLead,
+      setLastSncText,
+      setLastRenderedWav,
+      startSncPlaybackKeySimulation,
+      stopPianoMelodyPreview,
+    ],
   );
 
   const handleLoadMelodyFile = useCallback(
@@ -917,32 +934,23 @@ export function usePianoToolbar({ graph, simulationParams }: UsePianoToolbarOpti
 
   const handlePlayRenderedWav = useCallback(async () => {
     if (!lastRenderedWav) return;
+    stopAllMelodyPreviewPlayback();
     const url = URL.createObjectURL(lastRenderedWav);
+    previewBlobUrlRef.current = url;
     const audio = new Audio(url);
-    audioPreviewRef.current?.pause();
-    previewAudioAnalyserDisconnectRef.current?.();
-    previewAudioAnalyserDisconnectRef.current = null;
-    sncPlaybackCleanupRef.current?.();
     audioPreviewRef.current = audio;
     previewAudioAnalyserDisconnectRef.current = await audioEngine.connectHtml5AudioForVisualization(audio);
     if (lastSncText) {
       startSncPlaybackKeySimulation(audio, lastSncText, lastSncMonophonicLead);
     }
-    const cleanupPlayback = () => {
-      previewAudioAnalyserDisconnectRef.current?.();
-      previewAudioAnalyserDisconnectRef.current = null;
-      sncPlaybackCleanupRef.current?.();
-      sncPlaybackCleanupRef.current = null;
-      URL.revokeObjectURL(url);
-    };
-    audio.onended = cleanupPlayback;
+    audio.onended = stopPianoMelodyPreview;
     try {
       await audio.play();
     } catch (error) {
-      cleanupPlayback();
+      stopPianoMelodyPreview();
       window.alert(`Playback failed: ${(error as Error).message}`);
     }
-  }, [audioEngine, lastRenderedWav, lastSncMonophonicLead, lastSncText, startSncPlaybackKeySimulation]);
+  }, [audioEngine, lastRenderedWav, lastSncMonophonicLead, lastSncText, startSncPlaybackKeySimulation, stopPianoMelodyPreview]);
 
   return {
     noteCount,
